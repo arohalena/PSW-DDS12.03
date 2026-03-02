@@ -1,13 +1,11 @@
 package com.Votify.backend.repository;
 
+import com.Votify.backend.model.Organizador;
+import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+public interface OrganizadorRepository extends JpaRepository<Organizador, UUID> {
 
-import com.Votify.backend.model.Organizador;
-
-public interface OrganizadorRepository extends JpaRepository<Organizador, UUID>{
-    
     boolean existsByEmail(String email);
-
+    
 }
