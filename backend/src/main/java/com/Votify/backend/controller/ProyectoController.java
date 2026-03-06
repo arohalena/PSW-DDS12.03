@@ -1,0 +1,47 @@
+package com.Votify.backend.controller;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.Votify.backend.model.Proyecto;
+import com.Votify.backend.service.GenericService;
+import com.Votify.backend.service.ProyectoService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/proyectos")
+@RequiredArgsConstructor
+public class ProyectoController extends GenericController<Proyecto>{
+
+    private final ProyectoService proyectoService;
+
+    @Override
+    protected GenericService<Proyecto> getService(){
+
+        return proyectoService;
+
+    }
+
+    @GetMapping("/evento/{eventoId}")
+    public List<Proyecto> getByEvento_Id(@PathVariable UUID eventoId){
+
+        return proyectoService.findByEvento_Id(eventoId);
+
+    }
+
+    @PostMapping("/crear")
+    public com.Votify.backend.model.Proyecto crear(@RequestBody Proyecto proyecto){
+
+        return proyectoService.crear(proyecto);
+    }
+
+    
+}
