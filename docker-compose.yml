@@ -3,7 +3,7 @@ services:
     image: postgres:16
     container_name: votify_bd
     environment:
-      POSTGRES_DB: VotifyPrototipo
+      POSTGRES_DB: votify
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
@@ -38,9 +38,10 @@ services:
     environment:
       - POSTGRE_HOST=db
       - POSTGRE_PORT=5432
-      - POSTGRES_DB=VotifyPrototipo
+      - POSTGRES_DB=votify
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD}
     depends_on:
       db:
         condition: service_healthy

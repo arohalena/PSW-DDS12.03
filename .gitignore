@@ -24,4 +24,8 @@ hs_err_pid*
 replay_pid*
 
 # .env.properties
+.env.properties
+
+#.env
+.env
 
