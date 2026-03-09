@@ -1,0 +1,8 @@
+.create-event-wrapper{ max-width: 680px; margin: 0 auto; }
+.create-event-title{ font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+.create-event-row2{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.reate-event-submit{
+  background:var(--brand-600); color:#fff; border:none; border-radius:8px;
+  padding:.6rem .9rem; cursor:pointer; margin-top:.5rem;
+}
+.submit:hover{ background:var(--brand-700); }

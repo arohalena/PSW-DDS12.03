@@ -1,0 +1,8 @@
+.events-header{
+  display:flex; gap:1rem; align-items:flex-end; justify-content:space-between;
+  margin-bottom:1rem;
+}
+.events-search{ width:360px; }
+.events-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-top:1rem;
+}

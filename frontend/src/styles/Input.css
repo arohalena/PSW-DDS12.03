@@ -1,0 +1,28 @@
+.input-wrapper{ margin-bottom: 16px; }
+.input-label{ display: block; font-weight: 600; margin-bottom: 4px; }
+.input-field{
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  background: #fff;
+}
+.input-error{ color:#b91c1c; font-size:.875rem; margin-top:4px; }
+.textarea{
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  background: #fff;
+  resize: vertical;
+}
+.select{
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  background: #fff;
+}

@@ -1,0 +1,20 @@
+.card{
+  background:var(--bg); border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 1px 1px rgba(0,0,0,.02); padding:1.25rem;
+}
+.event-card-header{ display:flex; justify-content:space-between; align-items:start; margin-bottom:.25rem; }
+.event-card-title{ font-weight:700; font-size:1rem; margin:0; }
+.event-card-badge{ font-size:.75rem; padding:2px 8px; border-radius:999px; background:#ecfeff; color:#155e75; }
+.event-card-desc{ color:var(--muted); margin:.25rem 0 .5rem; }
+.event-card-meta{ font-size:.9rem; }
+.event-card-actions{ display:flex; gap:.5rem; margin-top:.75rem; }
+.btnGray{
+  background:#e5e7eb; color:#111827; border:none; border-radius:8px;
+  padding:.45rem .75rem; cursor:pointer;
+}
+.btnGray:hover{ background:#d1d5db; }
+.btnPrimary{
+  background: var(--brand-600); color:#fff; border:none; border-radius:8px;
+  padding:.6rem .9rem; cursor:pointer;
+}
+.btnPrimary:hover{ background: var(--brand-700); }
