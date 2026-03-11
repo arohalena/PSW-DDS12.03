@@ -26,6 +26,8 @@ public class EventoController extends GenericController<EventoMO>{
         
     }
 
+
+    //Uso de DTO a la hora de crear el evento mediante el controlador de REST para simplificar el paso de parámetros
     @PostMapping("/crear")
     public com.Votify.backend.model.EventoMO crear(@RequestBody CrearEventoPeticion body){
 
