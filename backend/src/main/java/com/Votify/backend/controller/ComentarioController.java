@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.Votify.backend.model.Comentario;
+import com.Votify.backend.model.ComentarioMO;
 import com.Votify.backend.service.ComentarioService;
 import com.Votify.backend.service.GenericService;
 
@@ -18,26 +18,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/comentarios")
-public class ComentarioController extends GenericController<Comentario>{
+public class ComentarioController extends GenericController<ComentarioMO>{
 
     private final ComentarioService comentarioService;
 
     @Override
-    protected GenericService<Comentario> getService(){
+    protected GenericService<ComentarioMO> getService(){
 
         return comentarioService;
         
     }
 
     @PostMapping
-    public Comentario create(@RequestBody Comentario comentario){
+    public ComentarioMO create(@RequestBody ComentarioMO comentario){
 
         return comentarioService.save(comentario);
 
     }
 
     @GetMapping("/votacion-proyecto/{votacionProyectoId}")
-    public List<Comentario> findByVotacionProyecto_Id(UUID votacionProyectoId){
+    public List<ComentarioMO> findByVotacionProyecto_Id(UUID votacionProyectoId){
 
         return comentarioService.findByVotacionProyecto(votacionProyectoId);
 

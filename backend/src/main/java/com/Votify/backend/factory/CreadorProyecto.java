@@ -1,9 +1,9 @@
 package com.Votify.backend.factory;
 
-import com.Votify.backend.domain.Proyecto;
+import com.Votify.backend.domain.ProyectoMO;
 
 public abstract class CreadorProyecto {
 
-    public abstract Proyecto create(String nombre, String descripcion);
+    public abstract ProyectoMO create(String nombre, String descripcion);
     
 }

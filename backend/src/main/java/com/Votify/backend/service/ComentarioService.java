@@ -7,25 +7,25 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
-import com.Votify.backend.model.Comentario;
+import com.Votify.backend.model.ComentarioMO;
 import com.Votify.backend.repository.ComentarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
-public class ComentarioService extends GenericService<Comentario>{
+public class ComentarioService extends GenericService<ComentarioMO>{
 
     private final ComentarioRepository comentarioRepository;
 
     @Override
-    protected JpaRepository<Comentario, UUID> getRepository(){
+    protected JpaRepository<ComentarioMO, UUID> getRepository(){
 
         return comentarioRepository;
 
     }
 
-    public List<Comentario> findByVotacionProyecto(UUID votacionProyectoId){
+    public List<ComentarioMO> findByVotacionProyecto(UUID votacionProyectoId){
 
         return comentarioRepository.findByVotacionProyecto_Id(votacionProyectoId);
         

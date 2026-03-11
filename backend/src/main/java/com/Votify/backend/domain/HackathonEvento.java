@@ -1,8 +1,8 @@
 package com.Votify.backend.domain;
 
-import com.Votify.backend.model.TipoEvento;
+import com.Votify.backend.model.TipoEventoMO;
 
-public class HackathonEvento extends Evento {
+public class HackathonEvento extends EventoMO {
     
     public HackathonEvento(String nombre, String codigoAccesoPublico) {
 
@@ -11,9 +11,9 @@ public class HackathonEvento extends Evento {
     }
 
     @Override
-    public TipoEvento tipo(){
+    public TipoEventoMO tipo(){
         
-        return TipoEvento.HACKATHON;
+        return TipoEventoMO.HACKATHON;
 
     }
 }

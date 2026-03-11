@@ -8,26 +8,26 @@ import org.springframework.stereotype.Service;
 import com.Votify.backend.factory.CreadorEvento;
 import com.Votify.backend.factory.CreadorFeriaInovacion;
 import com.Votify.backend.factory.CreadorHackathonEvento;
-import com.Votify.backend.model.Evento;
+import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.repository.EventoRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class EventoService extends GenericService<Evento> {
+public class EventoService extends GenericService<EventoMO> {
     
     private final EventoRepository eventoRepository;
 
     @Override
-    protected JpaRepository<Evento, UUID> getRepository(){
+    protected JpaRepository<EventoMO, UUID> getRepository(){
 
         return eventoRepository;
 
     }
 
     //Método para la creación de la factoría de evento
-    public com.Votify.backend.model.Evento crear(String tipo, String nombre, String codigoAccesoPublico) {
+    public EventoMO crear(String tipo, String nombre, String codigoAccesoPublico) {
 
         if (tipo == null) {
             throw new RuntimeException("No se reconoce el tipo de evento deseado.");
@@ -39,9 +39,9 @@ public class EventoService extends GenericService<Evento> {
             default -> throw new RuntimeException("No se reconoce el tipo de evento deseado.");
         };
 
-        com.Votify.backend.domain.Evento eventoDominio = creador.create(nombre, codigoAccesoPublico);
+        EventoMO eventoDominio = creador.create(nombre, codigoAccesoPublico);
 
-        com.Votify.backend.model.Evento entidad = new com.Votify.backend.model.Evento();
+        EventoMO entidad = new model.EventoMO();
         entidad.setNombre(eventoDominio.getNombre());
         entidad.setCodigoAccesoPublico(eventoDominio.getCodigoAccesoPublico());
         entidad.setTipoEvento(eventoDominio.tipo());

@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.Votify.backend.domain.Evento;
+import com.Votify.backend.domain.EventoMO;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,7 +23,7 @@ public class VotacionMO extends ModeloBaseMO {
 
     @ManyToOne
     @JoinColumn(name = "evento_id", nullable = false)
-    private Evento evento;
+    private EventoMO evento;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)

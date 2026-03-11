@@ -5,10 +5,10 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.Votify.backend.model.Votacion;
+import com.Votify.backend.model.VotacionMO;
 
-public interface VotacionRepository extends JpaRepository<Votacion, UUID>{
+public interface VotacionRepository extends JpaRepository<VotacionMO, UUID>{
 
-    List<Votacion> findByEvento_Id(UUID eventoId);
+    List<VotacionMO> findByEvento_Id(UUID eventoId);
     
 }

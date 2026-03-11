@@ -5,10 +5,10 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.Votify.backend.model.Comentario;
+import com.Votify.backend.model.ComentarioMO;
 
-public interface ComentarioRepository extends JpaRepository<Comentario, UUID>{
+public interface ComentarioRepository extends JpaRepository<ComentarioMO, UUID>{
 
-    List<Comentario> findByVotacionProyecto_Id(UUID votacionProyectoId);
+    List<ComentarioMO> findByVotacionProyecto_Id(UUID votacionProyectoId);
     
 }

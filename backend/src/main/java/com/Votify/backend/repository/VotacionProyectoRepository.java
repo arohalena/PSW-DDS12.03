@@ -5,12 +5,12 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.Votify.backend.model.VotacionProyecto;
+import com.Votify.backend.model.VotacionProyectoMO;
 
-public interface VotacionProyectoRepository extends JpaRepository<VotacionProyecto, UUID>{
+public interface VotacionProyectoRepository extends JpaRepository<VotacionProyectoMO, UUID>{
     
-    List<VotacionProyecto> findByVotacion_Id(UUID votacionId);
+    List<VotacionProyectoMO> findByVotacion_Id(UUID votacionId);
 
-    List<VotacionProyecto> findByProyecto_Id(UUID proyectoId);
+    List<VotacionProyectoMO> findByProyecto_Id(UUID proyectoId);
     
 }

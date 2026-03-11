@@ -1,8 +1,8 @@
 package com.Votify.backend.domain;
 
-import com.Votify.backend.model.TipoEvento;
+import com.Votify.backend.model.TipoEventoMO;
 
-public class FeriaInovacionEvento extends Evento {
+public class FeriaInovacionEvento extends EventoMO {
     
     public FeriaInovacionEvento(String nombre, String codigoAccesoPublico){
 
@@ -11,9 +11,9 @@ public class FeriaInovacionEvento extends Evento {
     }
 
     @Override
-    public TipoEvento tipo(){
+    public TipoEventoMO tipo(){
 
-        return TipoEvento.FERIA_INOVACION;
+        return TipoEventoMO.FERIA_INOVACION;
         
     }
 }

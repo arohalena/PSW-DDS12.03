@@ -1,8 +1,8 @@
 package com.Votify.backend.domain;
 
-import com.Votify.backend.model.TipoCategoria;
+import com.Votify.backend.model.TipoCategoriaMO;
 
-public class ProyectoIA extends Proyecto {
+public class ProyectoIA extends ProyectoMO {
 
     public ProyectoIA(String nombre, String descripcion){
 
@@ -11,9 +11,9 @@ public class ProyectoIA extends Proyecto {
     }
 
     @Override
-    public TipoCategoria categoria() {
+    public TipoCategoriaMO categoria() {
 
-        return TipoCategoria.IA;
+        return TipoCategoriaMO.IA;
         
     }
     

@@ -1,20 +1,20 @@
 package com.Votify.backend.domain;
 
-import com.Votify.backend.model.TipoEvento;
+import com.Votify.backend.model.TipoEventoMO;
 
-public abstract class Evento {
+public abstract class EventoMO {
     
     protected String nombre;
     protected String codigoAccesoPublico;
 
-    public Evento(String nombre, String codigoAccesoPublico){
+    public EventoMO(String nombre, String codigoAccesoPublico){
 
         this.nombre = nombre;
         this.codigoAccesoPublico = codigoAccesoPublico;
 
     }
 
-    public abstract TipoEvento tipo();
+    public abstract TipoEventoMO tipo();
 
     public String getNombre() {return nombre;}
     public String getCodigoAccesoPublico() {return codigoAccesoPublico;}

@@ -4,10 +4,10 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.Votify.backend.model.Evento;
+import com.Votify.backend.model.EventoMO;
 
 
-public interface EventoRepository extends JpaRepository<Evento, UUID>{
+public interface EventoRepository extends JpaRepository<EventoMO, UUID>{
 
     boolean existsByCodigoAccesoPublico(String codigoAccesoPublico);
     

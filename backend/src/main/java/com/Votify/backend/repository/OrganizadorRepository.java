@@ -4,9 +4,9 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.Votify.backend.model.Organizador;
+import com.Votify.backend.model.OrganizadorMO;
 
-public interface OrganizadorRepository extends JpaRepository<Organizador, UUID> {
+public interface OrganizadorRepository extends JpaRepository<OrganizadorMO, UUID> {
 
     boolean existsByEmail(String email);
     

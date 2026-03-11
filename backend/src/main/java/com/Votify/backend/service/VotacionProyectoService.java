@@ -6,31 +6,31 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
-import com.Votify.backend.model.VotacionProyecto;
+import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class VotacionProyectoService extends GenericService<VotacionProyecto>{
+public class VotacionProyectoService extends GenericService<VotacionProyectoMO>{
     
     private final VotacionProyectoRepository votacionProyectoRepository;
 
     @Override
-    protected JpaRepository<VotacionProyecto, UUID> getRepository(){
+    protected JpaRepository<VotacionProyectoMO, UUID> getRepository(){
 
         return votacionProyectoRepository;
 
     }
 
-    public List<VotacionProyecto> findByVotacion_Id(UUID votacionId){
+    public List<VotacionProyectoMO> findByVotacion_Id(UUID votacionId){
 
         return votacionProyectoRepository.findByVotacion_Id(votacionId);
 
     }
 
-    public List<VotacionProyecto> findByProyecto_Id(UUID proyectoId){
+    public List<VotacionProyectoMO> findByProyecto_Id(UUID proyectoId){
 
         return votacionProyectoRepository.findByProyecto_Id(proyectoId);
         
