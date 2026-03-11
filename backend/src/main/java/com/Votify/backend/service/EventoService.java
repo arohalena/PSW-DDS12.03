@@ -29,11 +29,7 @@ public class EventoService extends GenericService<EventoMO> {
     }
 
     //Método para la creación de la factoría de evento
-<<<<<<< HEAD
-    public EventoMO crear(String tipo, String nombre, String codigoAccesoPublico) {
-=======
-    public com.Votify.backend.model.Evento crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin) {
->>>>>>> traerCambios
+    public EventoMO crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin) {
 
         if (tipo == null) {
             throw new RuntimeException("No se reconoce el tipo de evento deseado.");
@@ -45,11 +41,7 @@ public class EventoService extends GenericService<EventoMO> {
             default -> throw new RuntimeException("No se reconoce el tipo de evento deseado.");
         };
 
-<<<<<<< HEAD
-        Evento eventoDominio = creador.create(nombre, codigoAccesoPublico);
-=======
-        com.Votify.backend.domain.Evento eventoDominio = creador.create(nombre, descripcion, codigoAccesoPublico, fecha_inicio, fecha_fin);
->>>>>>> traerCambios
+        Evento eventoDominio = creador.create(nombre, descripcion, codigoAccesoPublico, fecha_inicio, fecha_fin);
 
         EventoMO entidad = new EventoMO();
         entidad.setNombre(eventoDominio.getNombre());

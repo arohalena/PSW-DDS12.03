@@ -1,12 +1,7 @@
 package com.Votify.backend.domain;
 
-<<<<<<< HEAD
 import com.Votify.backend.model.TipoEventoMO;
-=======
 import java.time.OffsetDateTime;
-
-import com.Votify.backend.model.TipoEvento;
->>>>>>> traerCambios
 
 public class HackathonEvento extends Evento {
     
