@@ -1,9 +1,9 @@
 package com.Votify.backend.factory;
 
-import com.Votify.backend.domain.EventoMO;
+import com.Votify.backend.domain.Evento;
 
 public abstract class CreadorEvento {
     
-    public abstract EventoMO create(String nombre, String codigoAccesoPublico);
+    public abstract Evento create(String nombre, String codigoAccesoPublico);
 
 }

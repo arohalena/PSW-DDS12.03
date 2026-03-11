@@ -9,6 +9,7 @@ import com.Votify.backend.factory.CreadorEvento;
 import com.Votify.backend.factory.CreadorFeriaInovacion;
 import com.Votify.backend.factory.CreadorHackathonEvento;
 import com.Votify.backend.model.EventoMO;
+import com.Votify.backend.domain.Evento;
 import com.Votify.backend.repository.EventoRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -39,9 +40,9 @@ public class EventoService extends GenericService<EventoMO> {
             default -> throw new RuntimeException("No se reconoce el tipo de evento deseado.");
         };
 
-        EventoMO eventoDominio = creador.create(nombre, codigoAccesoPublico);
+        Evento eventoDominio = creador.create(nombre, codigoAccesoPublico);
 
-        EventoMO entidad = new model.EventoMO();
+        EventoMO entidad = new EventoMO();
         entidad.setNombre(eventoDominio.getNombre());
         entidad.setCodigoAccesoPublico(eventoDominio.getCodigoAccesoPublico());
         entidad.setTipoEvento(eventoDominio.tipo());

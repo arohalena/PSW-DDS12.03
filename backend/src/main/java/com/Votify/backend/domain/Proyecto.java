@@ -3,12 +3,12 @@ package com.Votify.backend.domain;
 import com.Votify.backend.model.TipoCategoriaMO;
 
 
-public abstract class ProyectoMO {
+public abstract class Proyecto {
 
     protected String nombre;
     protected String descripcion;
 
-    public ProyectoMO(String nombre, String descripcion){
+    public Proyecto(String nombre, String descripcion){
 
         this.nombre = nombre;
         this.descripcion =  descripcion;

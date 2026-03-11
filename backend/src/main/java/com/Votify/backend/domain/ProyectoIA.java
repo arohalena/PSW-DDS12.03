@@ -2,7 +2,7 @@ package com.Votify.backend.domain;
 
 import com.Votify.backend.model.TipoCategoriaMO;
 
-public class ProyectoIA extends ProyectoMO {
+public class ProyectoIA extends Proyecto {
 
     public ProyectoIA(String nombre, String descripcion){
 

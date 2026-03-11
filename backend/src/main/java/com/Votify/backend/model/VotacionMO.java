@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.Votify.backend.domain.EventoMO;
+import com.Votify.backend.model.EventoMO;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

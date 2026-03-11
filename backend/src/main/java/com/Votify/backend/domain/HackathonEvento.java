@@ -2,7 +2,7 @@ package com.Votify.backend.domain;
 
 import com.Votify.backend.model.TipoEventoMO;
 
-public class HackathonEvento extends EventoMO {
+public class HackathonEvento extends Evento {
     
     public HackathonEvento(String nombre, String codigoAccesoPublico) {
 
