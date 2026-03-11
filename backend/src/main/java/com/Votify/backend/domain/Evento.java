@@ -8,16 +8,16 @@ public abstract class Evento {
     protected String nombre;
     protected String codigoAccesoPublico;
     protected String descripcion;
-    protected OffsetDateTime fecha_fin;
     protected OffsetDateTime fecha_inicio;
+    protected OffsetDateTime fecha_fin;
 
-    public Evento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_fin, OffsetDateTime fecha_inicio){
+    public Evento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin){
 
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.codigoAccesoPublico = codigoAccesoPublico;
-        this.fecha_fin = fecha_fin;
         this.fecha_inicio = fecha_inicio;
+        this.fecha_fin = fecha_fin;
 
     }
 
@@ -26,7 +26,8 @@ public abstract class Evento {
     public String getNombre() {return nombre;}
     public String getCodigoAccesoPublico() {return codigoAccesoPublico;}
     public String getDescripcion() {return descripcion;}
-    public OffsetDateTime getFechaFin() {return fecha_fin;}
     public OffsetDateTime getFechaInicio() {return fecha_inicio;}
+    public OffsetDateTime getFechaFin() {return fecha_fin;}
+
 
 }
