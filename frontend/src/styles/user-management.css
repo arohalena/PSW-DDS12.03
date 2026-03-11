@@ -1,10 +1,8 @@
 .users-page {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 32px 20px 48px;
+  width: 100%;
 }
 
-.page-header {
+.users-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -12,14 +10,14 @@
   margin-bottom: 24px;
 }
 
-.page-header h1 {
+.users-header h1 {
   margin: 0;
   font-size: 2rem;
   color: #1f2a44;
 }
 
-.page-header p {
-  margin: 6px 0 0;
+.users-header p {
+  margin: 4px 0 0;
   color: #6b7280;
 }
 
@@ -30,17 +28,11 @@
   padding: 12px 18px;
   font-weight: 600;
   cursor: pointer;
-  transition: 0.2s ease;
 }
 
 .primary-btn {
   background: #6c63ff;
   color: white;
-  box-shadow: 0 10px 24px rgba(108, 99, 255, 0.18);
-}
-
-.primary-btn:hover {
-  transform: translateY(-1px);
 }
 
 .secondary-btn {
@@ -50,9 +42,9 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .stat-card,
@@ -62,39 +54,49 @@
 .feedback-card {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  border-radius: 16px;
 }
 
 .stat-card {
   padding: 18px 20px;
-  min-height: 108px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 
 .stat-title {
+  display: block;
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .stat-value {
+  display: block;
   margin-top: 8px;
   font-size: 2rem;
-  color: #1f2a44;
+  color: #111827;
+}
+
+.accent-blue {
+  color: #2563eb;
+}
+
+.accent-green {
+  color: #16a34a;
+}
+
+.accent-purple {
+  color: #9333ea;
 }
 
 .filters-bar {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 16px;
-  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
 }
 
 .search-input,
 .role-select,
+.placeholder-input,
 .modal-form input,
 .modal-form select {
   width: 100%;
@@ -104,22 +106,6 @@
   font-size: 0.95rem;
   outline: none;
   background: #fff;
-}
-
-.search-input:focus,
-.role-select:focus,
-.modal-form input:focus,
-.modal-form select:focus {
-  border-color: #6c63ff;
-  box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.12);
-}
-
-.search-input {
-  flex: 1;
-}
-
-.role-select {
-  max-width: 220px;
 }
 
 .table-card {
@@ -132,7 +118,7 @@
 }
 
 .users-table thead {
-  background: #f9fafb;
+  background: #fafbfc;
 }
 
 .users-table th,
@@ -144,10 +130,10 @@
 }
 
 .users-table th {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   text-transform: uppercase;
   color: #6b7280;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 .user-cell {
@@ -157,11 +143,11 @@
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #4f46e5;
+  background: #eef2f7;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,18 +170,18 @@
   align-items: center;
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   font-weight: 600;
 }
 
 .role-organizador {
   background: #f3e8ff;
-  color: #8b5cf6;
+  color: #9333ea;
 }
 
 .role-jurado {
-  background: #e0e7ff;
-  color: #4f46e5;
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 .role-participante {
@@ -209,13 +195,37 @@
 }
 
 .role-espectador {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #e5e7eb;
+  color: #4b5563;
 }
 
 .status-pill.active {
   background: #dcfce7;
   color: #15803d;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.table-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.edit-btn {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.delete-btn {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .empty-row {
@@ -224,31 +234,38 @@
   padding: 24px;
 }
 
+.table-footer {
+  padding: 14px 16px;
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
 .roles-info {
-  margin-top: 22px;
-  padding: 20px;
-  background: #eef4ff;
+  margin-top: 18px;
+  padding: 18px;
+  background: #eef5ff;
 }
 
 .roles-info h3 {
-  margin-top: 0;
+  margin: 0 0 12px;
   color: #3453b3;
 }
 
 .roles-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
-  gap: 10px 24px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 22px;
+  color: #3453b3;
 }
 
 .feedback-card {
-  padding: 18px 20px;
+  padding: 16px;
 }
 
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -261,21 +278,19 @@
   max-width: 520px;
   background: white;
   border-radius: 20px;
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
   padding: 24px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.2);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
   margin-bottom: 18px;
 }
 
 .modal-header h2 {
   margin: 0;
-  color: #1f2a44;
 }
 
 .ghost-close {
@@ -283,7 +298,6 @@
   background: transparent;
   font-size: 1.8rem;
   cursor: pointer;
-  color: #6b7280;
 }
 
 .modal-form {
@@ -296,8 +310,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #374151;
   font-weight: 600;
+  color: #374151;
 }
 
 .permissions-box {
@@ -332,34 +346,4 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 6px;
-}
-
-@media (max-width: 900px) {
-  .stats-grid,
-  .roles-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .page-header,
-  .filters-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .role-select {
-    max-width: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .stats-grid,
-  .roles-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .users-table th:nth-child(3),
-  .users-table td:nth-child(3) {
-    display: none;
-  }
 }

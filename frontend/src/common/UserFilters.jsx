@@ -21,6 +21,8 @@ function UserFilters({ search, setSearch, selectedRole, setSelectedRole }) {
         <option value="PUBLICO">Público</option>
         <option value="ESPECTADOR">Espectador</option>
       </select>
+
+      <input className="placeholder-input" disabled />
     </section>
   );
 }

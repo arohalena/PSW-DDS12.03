@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Service
 public class UsuarioService  extends GenericService<Usuario>{
+
     private final UsuarioRepository usuarioRepository;
 
     @Override
@@ -20,6 +21,16 @@ public class UsuarioService  extends GenericService<Usuario>{
 
         return usuarioRepository;
 
+    }
+
+    public Usuario update(UUID id, Usuario usuarioActualizado) {
+        Usuario existente = findById(id);
+
+        existente.setNombre(usuarioActualizado.getNombre());
+        existente.setEmail(usuarioActualizado.getEmail());
+        existente.setRol(usuarioActualizado.getRol());
+
+        return usuarioRepository.save(existente);
     }
 }
 
