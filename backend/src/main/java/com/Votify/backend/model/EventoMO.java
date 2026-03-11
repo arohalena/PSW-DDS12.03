@@ -1,5 +1,7 @@
 package com.Votify.backend.model;
 
+import java.time.OffsetDateTime;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -24,5 +26,14 @@ public class EventoMO extends ModeloBaseMO {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
     private TipoEventoMO tipoEvento;
+
+    @Column(nullable = false)
+    private OffsetDateTime fecha_fin;
+
+    @Column(nullable = false)
+    private OffsetDateTime fecha_inicio;
+
+    @Column(nullable = false)
+    private String descripcion;
 
 }

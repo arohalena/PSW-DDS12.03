@@ -1,13 +1,16 @@
 package com.Votify.backend.controller;
 
-import java.util.Map;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+<<<<<<< HEAD
 import com.Votify.backend.model.EventoMO;
+=======
+import com.Votify.backend.dto.CrearEventoPeticion;
+import com.Votify.backend.model.Evento;
+>>>>>>> traerCambios
 import com.Votify.backend.service.EventoService;
 import com.Votify.backend.service.GenericService;
 
@@ -28,13 +31,21 @@ public class EventoController extends GenericController<EventoMO>{
     }
 
     @PostMapping("/crear")
+<<<<<<< HEAD
     public com.Votify.backend.model.EventoMO crear(@RequestBody Map<String, String> body){
+=======
+    public com.Votify.backend.model.Evento crear(@RequestBody CrearEventoPeticion body){
+>>>>>>> traerCambios
 
         return eventoService.crear(
 
-            body.get("tipo"),
-            body.get("nombre"),
-            body.get("codigoAccesoPublico")
+            body.tipo(),
+            body.nombre(),
+            body.descripcion(),
+            body.codigoAccesoPublico(),
+            body.fecha_inicio(),
+            body.fecha_fin()
+
         );
     }
 
