@@ -1,55 +1,41 @@
 package com.Votify.backend.controller;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.Votify.backend.model.Evento;
 import com.Votify.backend.service.EventoService;
+import com.Votify.backend.service.GenericService;
 
 import lombok.RequiredArgsConstructor;
 
-
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/eventos")
-public class EventoController {
+@RequiredArgsConstructor
+public class EventoController extends GenericController<Evento>{
     
     private final EventoService eventoService;
 
-    @GetMapping
-    public List<Evento> getAll(){
+    @Override
+    protected GenericService<Evento> getService(){
 
-        return eventoService.findAll();
-
-    }
-
-    @GetMapping("/{id}")
-    public Evento getById(@PathVariable UUID id){
-
-        return eventoService.findById(id);
-
-    }
-
-    @PostMapping
-    public Evento create(@RequestHeader Evento evento){
-
-        return eventoService.save(evento);
-
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable UUID id){
-
-        eventoService.delete(id);
+        return eventoService;
         
     }
-    
+
+    @PostMapping("/crear")
+    public com.Votify.backend.model.Evento crear(@RequestBody Map<String, String> body){
+
+        return eventoService.crear(
+
+            body.get("tipo"),
+            body.get("nombre"),
+            body.get("codigoAccesoPublico")
+        );
+    }
+
 }
