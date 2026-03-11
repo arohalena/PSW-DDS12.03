@@ -10,7 +10,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "organizador")
-public class Organizador extends ModeloBase {
+public class OrganizadorMO extends ModeloBaseMO {
 
     @Column(nullable = false)
     private String nombre;

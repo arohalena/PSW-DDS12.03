@@ -15,11 +15,11 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "proyecto")
-public class Proyecto extends ModeloBase {
+public class ProyectoMO extends ModeloBaseMO {
 
     @ManyToOne
     @JoinColumn(name = "evento_id", nullable = false)
-    private Evento evento;
+    private EventoMO evento;
 
     @Column(nullable = false)
     private String nombre;
@@ -29,6 +29,6 @@ public class Proyecto extends ModeloBase {
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "tipo_proyecto", nullable = false)
-    private TipoCategoria tipoCategoria;
+    private TipoCategoriaMO tipoCategoria;
     
 }

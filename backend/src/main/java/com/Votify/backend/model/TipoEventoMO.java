@@ -1,6 +1,6 @@
 package com.Votify.backend.model;
 
-public enum TipoEvento {
+public enum TipoEventoMO {
 
     HACKATHON,
     FERIA_INOVACION

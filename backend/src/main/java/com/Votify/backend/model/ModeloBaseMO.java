@@ -14,7 +14,7 @@ import lombok.Data;
 
 @Data
 @MappedSuperclass
-public class ModeloBase {
+public class ModeloBaseMO {
     
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

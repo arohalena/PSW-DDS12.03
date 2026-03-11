@@ -12,14 +12,14 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "comentario")
-public class Comentario extends ModeloBase {
+public class ComentarioMO extends ModeloBaseMO {
 
     @Column(name = "anon_token_hash", nullable = false)
     private String anonTokenHash;
 
     @ManyToOne
     @JoinColumn(name = "votacion_proyecto_id", nullable = false)
-    private VotacionProyecto votacionProyecto;
+    private VotacionProyectoMO votacionProyecto;
 
     @Column(nullable = false)
     private String texto;

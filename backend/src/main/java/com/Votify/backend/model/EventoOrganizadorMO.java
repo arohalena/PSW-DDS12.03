@@ -11,14 +11,14 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "evento_organizador")
-public class EventoOrganizador extends ModeloBase {
+public class EventoOrganizadorMO extends ModeloBaseMO {
 
     @ManyToOne
     @JoinColumn(name = "evento_id", nullable = false)
-    private Evento evento;
+    private EventoMO evento;
 
     @ManyToOne
     @JoinColumn(name = "organizador_id", nullable = false)
-    private Organizador organizador;
+    private OrganizadorMO organizador;
     
 }

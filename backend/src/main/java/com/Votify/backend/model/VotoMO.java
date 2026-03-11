@@ -12,11 +12,11 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "voto")
-public class Voto extends ModeloBase {
+public class VotoMO extends ModeloBaseMO {
 
     @ManyToOne
     @JoinColumn(name = "votacion_proyecto_id", nullable = false)
-    private VotacionProyecto votacionProyecto;
+    private VotacionProyectoMO votacionProyecto;
 
     @Column(name = "anon_token_hash", nullable = false)
     private String anonTokenHash;

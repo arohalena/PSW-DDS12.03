@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "evento")
-public class Evento extends ModeloBase {
+public class EventoMO extends ModeloBaseMO {
 
     @Column(nullable = false)
     private String nombre;
@@ -23,6 +23,6 @@ public class Evento extends ModeloBase {
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
-    private TipoEvento tipoEvento;
+    private TipoEventoMO tipoEvento;
 
 }

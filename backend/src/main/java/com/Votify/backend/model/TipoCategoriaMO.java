@@ -1,6 +1,6 @@
 package com.Votify.backend.model;
 
-public enum TipoCategoria {
+public enum TipoCategoriaMO {
     IA,
     SOSTENIBILIDAD
 }

@@ -1,6 +1,6 @@
 package com.Votify.backend.model;
 
-public enum EstadoVotacion {
+public enum EstadoVotacionMO {
     ABIERTA,
     CERRADA
 }

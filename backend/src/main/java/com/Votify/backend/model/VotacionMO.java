@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.Votify.backend.domain.Evento;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -17,7 +19,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "votacion")
-public class Votacion extends ModeloBase {
+public class VotacionMO extends ModeloBaseMO {
 
     @ManyToOne
     @JoinColumn(name = "evento_id", nullable = false)
@@ -25,7 +27,7 @@ public class Votacion extends ModeloBase {
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
-    private TipoVotacion tipo;
+    private TipoVotacionMO tipo;
 
     @Column(name = "max_selecciones", nullable = false)
     private int maxSelecciones;
@@ -38,6 +40,6 @@ public class Votacion extends ModeloBase {
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
-    private EstadoVotacion estado;
+    private EstadoVotacionMO estado;
     
 }
