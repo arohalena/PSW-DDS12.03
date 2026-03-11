@@ -4,6 +4,6 @@ import com.Votify.backend.domain.Evento;
 
 public abstract class CreadorEvento {
     
-    public abstract Evento create(String nombre, String codigoAccesoPublico);
+    public abstract Evento create(String nombre, String descripcion, String codigoAccesoPublico);
 
 }

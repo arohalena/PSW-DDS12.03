@@ -34,7 +34,8 @@ public class EventoController extends GenericController<Evento>{
 
             body.get("tipo"),
             body.get("nombre"),
-            body.get("codigoAccesoPublico")
+            body.get("codigoAccesoPublico"),
+            body.get("descripcion")
         );
     }
 

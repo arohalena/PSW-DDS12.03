@@ -4,9 +4,9 @@ import com.Votify.backend.model.TipoEvento;
 
 public class FeriaInovacionEvento extends Evento {
     
-    public FeriaInovacionEvento(String nombre, String codigoAccesoPublico){
+    public FeriaInovacionEvento(String nombre, String descripcion, String codigoAccesoPublico){
 
-        super(nombre, codigoAccesoPublico);
+        super(nombre, descripcion, codigoAccesoPublico);
 
     }
 

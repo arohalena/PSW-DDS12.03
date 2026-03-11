@@ -6,9 +6,9 @@ import com.Votify.backend.domain.FeriaInovacionEvento;
 public class CreadorFeriaInovacion extends CreadorEvento {
 
     @Override
-    public Evento create(String nombre, String codigoAccesoPublico){
+    public Evento create(String nombre, String descripcion, String codigoAccesoPublico){
 
-        return new FeriaInovacionEvento(nombre, codigoAccesoPublico);
+        return new FeriaInovacionEvento(nombre, descripcion, codigoAccesoPublico);
 
     }
     
