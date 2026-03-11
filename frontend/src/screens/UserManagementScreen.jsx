@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { createUsuario, getUsuarios } from "../services/usuarioService";
+import {
+  createUsuario,
+  deleteUsuario,
+  getUsuarios,
+  updateUsuario,
+} from "../services/usuarioService";
 import UserStats from "../common/UserStats";
 import UserFilters from "../common/UserFilters";
 import UserTable from "../common/UserTable";
@@ -13,6 +18,7 @@ function UserManagementScreen() {
   const [search, setSearch] = useState("");
   const [selectedRole, setSelectedRole] = useState("TODOS");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [usuarioEnEdicion, setUsuarioEnEdicion] = useState(null);
 
   const loadUsuarios = async () => {
     try {
@@ -44,20 +50,50 @@ function UserManagementScreen() {
     });
   }, [usuarios, search, selectedRole]);
 
-  const handleCreateUser = async (nuevoUsuario) => {
-    await createUsuario(nuevoUsuario);
+  const handleOpenCreate = () => {
+    setUsuarioEnEdicion(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (usuario) => {
+    setUsuarioEnEdicion(usuario);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitUser = async (usuarioData) => {
+    if (usuarioEnEdicion) {
+      await updateUsuario(usuarioEnEdicion.id, usuarioData);
+    } else {
+      await createUsuario({
+        ...usuarioData,
+        password: "1234",
+      });
+    }
+
     await loadUsuarios();
+  };
+
+  const handleDeleteUser = async (usuario) => {
+    const confirmacion = window.confirm(`¿Seguro que quieres borrar a ${usuario.nombre}?`);
+    if (!confirmacion) return;
+
+    try {
+      await deleteUsuario(usuario.id);
+      await loadUsuarios();
+    } catch (err) {
+      alert(err.message || "No se pudo borrar el usuario");
+    }
   };
 
   return (
     <main className="users-page">
-      <header className="page-header">
+      <header className="users-header">
         <div>
           <h1>Gestión de Usuarios</h1>
           <p>Administra roles y permisos de los participantes</p>
         </div>
 
-        <button className="primary-btn" onClick={() => setIsModalOpen(true)}>
+        <button className="primary-btn" onClick={handleOpenCreate}>
           Añadir Usuario
         </button>
       </header>
@@ -77,22 +113,26 @@ function UserManagementScreen() {
             setSelectedRole={setSelectedRole}
           />
 
-          <UserTable usuarios={filteredUsuarios} />
+          <UserTable
+            usuarios={filteredUsuarios}
+            onEdit={handleOpenEdit}
+            onDelete={handleDeleteUser}
+          />
 
           <section className="roles-info">
             <h3>Descripción de Roles</h3>
             <div className="roles-grid">
               <p>
-                <strong>Organizador:</strong> Gestión completa del evento, usuarios y configuración.
+                <strong>Organizador:</strong> Gestión completa del evento, usuarios y configuración
               </p>
               <p>
-                <strong>Jurado:</strong> Puede evaluar proyectos y emitir votos.
+                <strong>Jurado:</strong> Puede evaluar proyectos y emitir votos
               </p>
               <p>
-                <strong>Participante:</strong> Puede ver su proyecto y recibir feedback.
+                <strong>Participante:</strong> Puede ver su proyecto y recibir feedback
               </p>
               <p>
-                <strong>Espectador:</strong> Solo puede visualizar información pública.
+                <strong>Espectador:</strong> Solo puede visualizar información pública
               </p>
             </div>
           </section>
@@ -101,8 +141,12 @@ function UserManagementScreen() {
 
       <UserModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreate={handleCreateUser}
+        onClose={() => {
+          setIsModalOpen(false);
+          setUsuarioEnEdicion(null);
+        }}
+        onSubmit={handleSubmitUser}
+        initialData={usuarioEnEdicion}
       />
     </main>
   );

@@ -26,3 +26,31 @@ export async function createUsuario(usuario) {
 
   return response.json();
 }
+
+export async function updateUsuario(id, usuario) {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(usuario),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo editar el usuario");
+  }
+
+  return response.json();
+}
+
+export async function deleteUsuario(id) {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo borrar el usuario");
+  }
+}

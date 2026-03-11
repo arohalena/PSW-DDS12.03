@@ -1,11 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-function UserModal({ isOpen, onClose, onCreate }) {
+function UserModal({ isOpen, onClose, onSubmit, initialData }) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [rol, setRol] = useState("PARTICIPANTE");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const isEditMode = Boolean(initialData);
+
+  useEffect(() => {
+    if (initialData) {
+      setNombre(initialData.nombre || "");
+      setEmail(initialData.email || "");
+      setRol(initialData.rol || "PARTICIPANTE");
+    } else {
+      setNombre("");
+      setEmail("");
+      setRol("PARTICIPANTE");
+    }
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -19,23 +32,15 @@ function UserModal({ isOpen, onClose, onCreate }) {
     }
 
     try {
-      setLoading(true);
-
-      await onCreate({
+      await onSubmit({
         nombre: nombre.trim(),
         email: email.trim(),
-        password: "1234",
         rol,
       });
 
-      setNombre("");
-      setEmail("");
-      setRol("PARTICIPANTE");
       onClose();
     } catch (err) {
-      setError(err.message || "No se pudo crear el usuario");
-    } finally {
-      setLoading(false);
+      setError(err.message || "No se pudo guardar el usuario");
     }
   };
 
@@ -43,7 +48,7 @@ function UserModal({ isOpen, onClose, onCreate }) {
     <div className="modal-overlay">
       <div className="modal-card">
         <div className="modal-header">
-          <h2>Añadir Nuevo Usuario</h2>
+          <h2>{isEditMode ? "Editar Usuario" : "Añadir Nuevo Usuario"}</h2>
           <button className="ghost-close" onClick={onClose}>
             ×
           </button>
@@ -51,7 +56,7 @@ function UserModal({ isOpen, onClose, onCreate }) {
 
         <form className="modal-form" onSubmit={handleSubmit}>
           <label>
-            Nombre completo *
+            Nombre Completo *
             <input
               type="text"
               placeholder="Ej: Juan Pérez"
@@ -71,7 +76,7 @@ function UserModal({ isOpen, onClose, onCreate }) {
           </label>
 
           <label>
-            Asignar rol *
+            Asignar Rol *
             <select value={rol} onChange={(e) => setRol(e.target.value)}>
               <option value="ORGANIZADOR">Organizador</option>
               <option value="JURADO">Jurado</option>
@@ -82,18 +87,20 @@ function UserModal({ isOpen, onClose, onCreate }) {
           </label>
 
           <div className="permissions-box">
-            <strong>Permisos adicionales</strong>
+            <strong>Permisos Adicionales</strong>
+
             <label className="checkbox-line">
               <input type="checkbox" disabled />
               Puede editar proyectos
             </label>
+
             <label className="checkbox-line">
               <input type="checkbox" disabled />
               Puede ver resultados anticipados
             </label>
 
             <p className="helper-text">
-              Estos permisos son visuales por ahora. En tu backend actual solo se persiste el rol.
+              Por ahora el sistema persiste solo nombre, email y rol.
             </p>
           </div>
 
@@ -104,8 +111,8 @@ function UserModal({ isOpen, onClose, onCreate }) {
               Cancelar
             </button>
 
-            <button type="submit" className="primary-btn" disabled={loading}>
-              {loading ? "Guardando..." : "Añadir Usuario"}
+            <button type="submit" className="primary-btn">
+              {isEditMode ? "Guardar Cambios" : "Añadir Usuario"}
             </button>
           </div>
         </form>
