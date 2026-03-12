@@ -32,6 +32,7 @@ public class UsuarioService  extends GenericService<Usuario>{
 
         return usuarioRepository.save(existente);
     }
+    
 }
 
    

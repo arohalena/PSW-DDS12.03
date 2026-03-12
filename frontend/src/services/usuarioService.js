@@ -1,4 +1,15 @@
+import { getUsuarioLogueado } from "./sessionService";
+
 const API_URL = "http://localhost:8080/api/usuarios";
+
+function buildHeaders() {
+  const usuario = getUsuarioLogueado();
+
+  return {
+    "Content-Type": "application/json",
+    "X-User-Role": usuario?.rol || "",
+  };
+}
 
 export async function getUsuarios() {
   const response = await fetch(API_URL);
@@ -13,9 +24,7 @@ export async function getUsuarios() {
 export async function createUsuario(usuario) {
   const response = await fetch(API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildHeaders(),
     body: JSON.stringify(usuario),
   });
 
@@ -30,9 +39,7 @@ export async function createUsuario(usuario) {
 export async function updateUsuario(id, usuario) {
   const response = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildHeaders(),
     body: JSON.stringify(usuario),
   });
 
@@ -47,6 +54,9 @@ export async function updateUsuario(id, usuario) {
 export async function deleteUsuario(id) {
   const response = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
+    headers: {
+      "X-User-Role": getUsuarioLogueado()?.rol || "",
+    },
   });
 
   if (!response.ok) {
