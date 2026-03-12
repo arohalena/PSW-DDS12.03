@@ -5,6 +5,7 @@ import {
   getUsuarios,
   updateUsuario,
 } from "../services/usuarioService";
+import { esOrganizador } from "../services/sessionService";
 import UserStats from "../common/UserStats";
 import UserFilters from "../common/UserFilters";
 import UserTable from "../common/UserTable";
@@ -19,6 +20,8 @@ function UserManagementScreen() {
   const [selectedRole, setSelectedRole] = useState("TODOS");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioEnEdicion, setUsuarioEnEdicion] = useState(null);
+
+  const puedeGestionarUsuarios = esOrganizador();
 
   const loadUsuarios = async () => {
     try {
@@ -51,16 +54,20 @@ function UserManagementScreen() {
   }, [usuarios, search, selectedRole]);
 
   const handleOpenCreate = () => {
+    if (!puedeGestionarUsuarios) return;
     setUsuarioEnEdicion(null);
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (usuario) => {
+    if (!puedeGestionarUsuarios) return;
     setUsuarioEnEdicion(usuario);
     setIsModalOpen(true);
   };
 
   const handleSubmitUser = async (usuarioData) => {
+    if (!puedeGestionarUsuarios) return;
+
     if (usuarioEnEdicion) {
       await updateUsuario(usuarioEnEdicion.id, usuarioData);
     } else {
@@ -74,6 +81,8 @@ function UserManagementScreen() {
   };
 
   const handleDeleteUser = async (usuario) => {
+    if (!puedeGestionarUsuarios) return;
+
     const confirmacion = window.confirm(`¿Seguro que quieres borrar a ${usuario.nombre}?`);
     if (!confirmacion) return;
 
@@ -93,10 +102,18 @@ function UserManagementScreen() {
           <p>Administra roles y permisos de los participantes</p>
         </div>
 
-        <button className="primary-btn" onClick={handleOpenCreate}>
-          Añadir Usuario
-        </button>
+        {puedeGestionarUsuarios && (
+          <button className="primary-btn" onClick={handleOpenCreate}>
+            Añadir Usuario
+          </button>
+        )}
       </header>
+
+      {!puedeGestionarUsuarios && (
+        <div className="feedback-card warning-box">
+          Solo los organizadores pueden crear, editar o eliminar usuarios.
+        </div>
+      )}
 
       {loading ? (
         <div className="feedback-card">Cargando usuarios...</div>
@@ -117,6 +134,7 @@ function UserManagementScreen() {
             usuarios={filteredUsuarios}
             onEdit={handleOpenEdit}
             onDelete={handleDeleteUser}
+            canManage={puedeGestionarUsuarios}
           />
 
           <section className="roles-info">

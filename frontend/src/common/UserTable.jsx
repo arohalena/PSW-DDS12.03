@@ -24,7 +24,7 @@ function getInitials(nombre = "") {
     .join("");
 }
 
-function UserTable({ usuarios, onEdit, onDelete }) {
+function UserTable({ usuarios, onEdit, onDelete, canManage }) {
   return (
     <section className="table-card">
       <table className="users-table">
@@ -33,14 +33,14 @@ function UserTable({ usuarios, onEdit, onDelete }) {
             <th>Usuario</th>
             <th>Rol</th>
             <th>Estado</th>
-            <th>Acciones</th>
+            {canManage && <th>Acciones</th>}
           </tr>
         </thead>
 
         <tbody>
           {usuarios.length === 0 ? (
             <tr>
-              <td colSpan="4" className="empty-row">
+              <td colSpan={canManage ? 4 : 3} className="empty-row">
                 No hay usuarios para mostrar.
               </td>
             </tr>
@@ -67,16 +67,18 @@ function UserTable({ usuarios, onEdit, onDelete }) {
                   <span className="status-pill active">Activo</span>
                 </td>
 
-                <td>
-                  <div className="actions-cell">
-                    <button className="table-btn edit-btn" onClick={() => onEdit(usuario)}>
-                      Editar
-                    </button>
-                    <button className="table-btn delete-btn" onClick={() => onDelete(usuario)}>
-                      Borrar
-                    </button>
-                  </div>
-                </td>
+                {canManage && (
+                  <td>
+                    <div className="actions-cell">
+                      <button className="table-btn edit-btn" onClick={() => onEdit(usuario)}>
+                        Editar
+                      </button>
+                      <button className="table-btn delete-btn" onClick={() => onDelete(usuario)}>
+                        Borrar
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))
           )}

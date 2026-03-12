@@ -347,3 +347,11 @@
   justify-content: flex-end;
   gap: 12px;
 }
+
+.warning-box {
+  background: #fff7ed;
+  color: #c2410c;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
