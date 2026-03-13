@@ -1,6 +1,6 @@
 package com.Votify.backend.model;
 
-public enum Rol {
+public enum RolMO {
     ORGANIZADOR,
     JURADO,
     PARTICIPANTE,

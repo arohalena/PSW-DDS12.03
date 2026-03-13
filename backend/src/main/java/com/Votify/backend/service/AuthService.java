@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import com.Votify.backend.dto.AuthLoginRequest;
 import com.Votify.backend.dto.AuthRegisterRequest;
 import com.Votify.backend.dto.AuthResponse;
-import com.Votify.backend.model.Rol;
-import com.Votify.backend.model.Usuario;
+import com.Votify.backend.model.RolMO;
+import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,13 +21,13 @@ public class AuthService {
                 throw new RuntimeException("Ya existe un usuario con ese email.");
             });
 
-            Usuario usuario = new Usuario();
+            UsuarioMO usuario = new UsuarioMO();
             usuario.setNombre(request.getNombre());
             usuario.setEmail(request.getEmail());
             usuario.setPassword(request.getPassword());
-            usuario.setRol(Rol.PUBLICO); // Por defecto lo dejo publico, luego el organizador cambia los roles
+            usuario.setRol(RolMO.PUBLICO); // Por defecto lo dejo publico, luego el organizador cambia los roles
 
-            Usuario guardado = usuarioRepository.save(usuario);
+            UsuarioMO guardado = usuarioRepository.save(usuario);
             return new AuthResponse(
                 guardado.getId(), 
                 guardado.getNombre(), 
@@ -37,7 +37,7 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthLoginRequest request) {
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+        UsuarioMO usuario = usuarioRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Credenciales incorrectas."));
 
         if (!usuario.getPassword().equals(request.getPassword())) {

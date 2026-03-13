@@ -4,9 +4,9 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.Votify.backend.model.Usuario;
+import com.Votify.backend.model.UsuarioMO;
 
-public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
+public interface UsuarioRepository extends JpaRepository<UsuarioMO, UUID> {
 
-    Optional<Usuario> findByEmail(String email);
+    Optional<UsuarioMO> findByEmail(String email);
 }

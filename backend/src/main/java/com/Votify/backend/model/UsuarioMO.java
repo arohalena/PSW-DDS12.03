@@ -12,18 +12,20 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "usuario")
-public class Usuario extends ModeloBase {
+public class UsuarioMO extends ModeloBaseMO {
 
+    @Column(nullable = false)
     private String nombre;
 
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private Rol rol;
+    private RolMO rol;
 
-    public Usuario(){}
+    public UsuarioMO(){}
 
 }
