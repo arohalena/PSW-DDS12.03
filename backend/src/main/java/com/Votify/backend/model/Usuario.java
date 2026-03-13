@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "usuario")
-public class Usuario extends ModeloBase {
+public class Usuario extends ModeloBaseMO {
 
     private String nombre;
 
