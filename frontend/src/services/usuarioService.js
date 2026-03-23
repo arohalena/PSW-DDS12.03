@@ -1,6 +1,6 @@
 import { getUsuarioLogueado } from "./sessionService";
 
-const API_URL = "http://localhost:8080/api/usuarios";
+const API_URL = "http://localhost:8090/api/usuarios";
 
 function buildHeaders() {
   const usuario = getUsuarioLogueado();

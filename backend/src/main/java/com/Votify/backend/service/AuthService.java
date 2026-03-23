@@ -1,6 +1,8 @@
 package com.Votify.backend.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.dto.AuthLoginRequest;
 import com.Votify.backend.dto.AuthRegisterRequest;
@@ -18,7 +20,7 @@ public class AuthService {
 
     public AuthResponse register(AuthRegisterRequest request){
             usuarioRepository.findByEmail(request.getEmail()).ifPresent(usuario ->{
-                throw new RuntimeException("Ya existe un usuario con ese email.");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Ya existe un usuario con ese email.");
             });
 
             UsuarioMO usuario = new UsuarioMO();
@@ -38,10 +40,10 @@ public class AuthService {
 
     public AuthResponse login(AuthLoginRequest request) {
         UsuarioMO usuario = usuarioRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("Credenciales incorrectas."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas."));
 
         if (!usuario.getPassword().equals(request.getPassword())) {
-            throw new RuntimeException("Credenciales incorrectas.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Credenciales incorrectas.");
         }
 
         return new AuthResponse(
