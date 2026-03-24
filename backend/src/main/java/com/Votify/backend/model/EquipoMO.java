@@ -1,7 +1,5 @@
 package com.Votify.backend.model;
 
-import java.util.List;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -22,9 +20,5 @@ public class EquipoMO extends ModeloBaseMO {
 
     @Column(nullable = false)
     private String nombre;
-
-    @Column
-    private List<CompetidorMO> competidores;
-
 
 }
