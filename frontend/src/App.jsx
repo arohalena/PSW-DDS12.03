@@ -6,6 +6,8 @@ import CreateEventScreen from "./screens/CreateEventScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import UserManagementScreen from "./screens/UserManagementScreen";
+import CompetitorsScreen from "./screens/CompetitorsScreen";
+import TeamsScreen from "./screens/TeamsScreen";
 
 function PrivateRoute({ children }) {
   const usuario = localStorage.getItem("usuarioLogueado");
@@ -48,6 +50,28 @@ function App() {
             <PrivateRoute>
               <AppLayout>
                 <UserManagementScreen />
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/competidores"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <CompetitorsScreen />
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/equipos"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <TeamsScreen />
               </AppLayout>
             </PrivateRoute>
           }

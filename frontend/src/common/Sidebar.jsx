@@ -3,6 +3,8 @@ import { NavLink } from "react-router-dom";
 const items = [
   { label: "Dashboard", to: "/", disabled: true },
   { label: "Eventos", to: "/eventos" },
+  { label: "Equipos", to: "/equipos" },
+  { label: "Competidores", to: "/competidores" },
   { label: "Proyectos", to: "/", disabled: true },
   { label: "Asignación", to: "/", disabled: true },
   { label: "Criterios", to: "/", disabled: true },
@@ -11,7 +13,6 @@ const items = [
   { label: "Resultados", to: "/", disabled: true },
   { label: "Mi Proyecto", to: "/", disabled: true },
 ];
-
 
 function Sidebar() {
   return (
