@@ -1,11 +1,7 @@
 package com.Votify.backend.model;
 
-import java.util.List;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,9 +20,5 @@ public class CompetidorMO extends ModeloBaseMO {
 
     @Column(nullable = false)
     private String password;
-
-	@OneToMany
-    @JoinColumn(name = "equipo_id", nullable = false)
-    private List<EquipoMO> equipos;
 
 }
