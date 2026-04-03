@@ -1,16 +1,20 @@
-function Sidebar() {
-  const items = [
-    "Dashboard",
-    "Eventos",
-    "Proyectos",
-    "Asignación",
-    "Criterios",
-    "Votación",
-    "Usuarios",
-    "Resultados",
-    "Mi Proyecto",
-  ];
+import { NavLink } from "react-router-dom";
 
+const items = [
+  { label: "Dashboard", to: "/", disabled: true },
+  { label: "Eventos", to: "/eventos" },
+  { label: "Equipos", to: "/equipos" },
+  { label: "Competidores", to: "/competidores" },
+  { label: "Proyectos", to: "/", disabled: true },
+  { label: "Asignación", to: "/", disabled: true },
+  { label: "Criterios", to: "/", disabled: true },
+  { label: "Votación", to: "/", disabled: true },
+  { label: "Usuarios", to: "/usuarios" },
+  { label: "Resultados", to: "/", disabled: true },
+  { label: "Mi Proyecto", to: "/", disabled: true },
+];
+
+function Sidebar() {
   return (
     <aside className="sidebar">
       <div>
@@ -20,19 +24,34 @@ function Sidebar() {
         </div>
 
         <nav className="sidebar-nav">
-          {items.map((item) => (
-            <button
-              key={item}
-              className={`sidebar-link ${item === "Usuarios" ? "active" : ""}`}
-            >
-              {item}
-            </button>
-          ))}
+          {items.map((item) => {
+            if (item.disabled) {
+              return (
+                <button key={item.label} className="sidebar-link" disabled>
+                  {item.label}
+                </button>
+              );
+            }
+
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={({ isActive }) =>
+                  `sidebar-link ${isActive ? "active" : ""}`
+                }
+              >
+                {item.label}
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
 
       <div className="sidebar-footer">
-        <button className="sidebar-link">Configuración</button>
+        <button className="sidebar-link" disabled>
+          Configuración
+        </button>
       </div>
     </aside>
   );
