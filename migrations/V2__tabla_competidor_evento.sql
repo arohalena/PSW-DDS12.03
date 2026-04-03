@@ -1,3 +1,11 @@
+ALTER TABLE evento ADD CONSTRAINT evento_pkey PRIMARY KEY (id);
+ALTER TABLE comentario ADD CONSTRAINT comentario_pkey PRIMARY KEY (id);
+ALTER TABLE evento_organizador ADD CONSTRAINT evento_organizador_pkey PRIMARY KEY (id);
+ALTER TABLE organizador ADD CONSTRAINT organizador_pkey PRIMARY KEY (id);
+ALTER TABLE votacion ADD CONSTRAINT votacion_pkey PRIMARY KEY (id);
+ALTER TABLE votacion_proyecto ADD CONSTRAINT votacion_proyecto_pkey PRIMARY KEY (id);
+ALTER TABLE voto ADD CONSTRAINT voto_pkey PRIMARY KEY (id);
+
 CREATE TABLE competidor_evento (
 
     id UUID DEFAULT gen_random_uuid() NOT NULL,
