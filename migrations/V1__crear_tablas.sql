@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict yTLe8ofrXhEDCNwQF0TrEl1vAawc3JmLGmlhbTpF90fDxqXPeTYt9qNKYCwHehR
-
 -- Dumped from database version 16.13 (Debian 16.13-1.pgdg13+1)
 -- Dumped by pg_dump version 18.3
 
@@ -27,9 +25,6 @@ SET row_security = off;
 --
 
 -- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
 
 --
 -- TOC entry 3553 (class 0 OID 0)
@@ -68,8 +63,6 @@ CREATE TYPE public.estado_votacion AS ENUM (
 );
 
 
-ALTER TYPE public.estado_votacion OWNER TO postgres;
-
 --
 -- TOC entry 891 (class 1247 OID 24622)
 -- Name: estadovotacion; Type: TYPE; Schema: public; Owner: postgres
@@ -81,8 +74,6 @@ CREATE TYPE public.estadovotacion AS ENUM (
 );
 
 
-ALTER TYPE public.estadovotacion OWNER TO postgres;
-
 --
 -- TOC entry 894 (class 1247 OID 24628)
 -- Name: tipo_votacion; Type: TYPE; Schema: public; Owner: postgres
@@ -92,8 +83,6 @@ CREATE TYPE public.tipo_votacion AS ENUM (
     'POPULAR'
 );
 
-
-ALTER TYPE public.tipo_votacion OWNER TO postgres;
 
 --
 -- TOC entry 897 (class 1247 OID 24632)
@@ -105,9 +94,6 @@ CREATE TYPE public.tipoevento AS ENUM (
     'HACKATHON'
 );
 
-
-ALTER TYPE public.tipoevento OWNER TO postgres;
-
 --
 -- TOC entry 900 (class 1247 OID 24638)
 -- Name: tipovotacion; Type: TYPE; Schema: public; Owner: postgres
@@ -116,9 +102,6 @@ ALTER TYPE public.tipoevento OWNER TO postgres;
 CREATE TYPE public.tipovotacion AS ENUM (
     'POPULAR'
 );
-
-
-ALTER TYPE public.tipovotacion OWNER TO postgres;
 
 --
 -- TOC entry 3362 (class 2605 OID 24641)
@@ -203,8 +186,6 @@ CREATE FUNCTION public.validar_max_selecciones() RETURNS trigger
     $$;
 
 
-ALTER FUNCTION public.validar_max_selecciones() OWNER TO postgres;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -223,8 +204,6 @@ CREATE TABLE public.comentario (
 );
 
 
-ALTER TABLE public.comentario OWNER TO postgres;
-
 --
 -- TOC entry 226 (class 1259 OID 24736)
 -- Name: competidor; Type: TABLE; Schema: public; Owner: postgres
@@ -239,9 +218,6 @@ CREATE TABLE public.competidor (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-
-ALTER TABLE public.competidor OWNER TO postgres;
-
 --
 -- TOC entry 225 (class 1259 OID 24722)
 -- Name: equipo; Type: TABLE; Schema: public; Owner: postgres
@@ -254,8 +230,6 @@ CREATE TABLE public.equipo (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-
-ALTER TABLE public.equipo OWNER TO postgres;
 
 --
 -- TOC entry 217 (class 1259 OID 24655)
@@ -276,8 +250,6 @@ CREATE TABLE public.evento (
 );
 
 
-ALTER TABLE public.evento OWNER TO postgres;
-
 --
 -- TOC entry 218 (class 1259 OID 24663)
 -- Name: evento_organizador; Type: TABLE; Schema: public; Owner: postgres
@@ -291,8 +263,6 @@ CREATE TABLE public.evento_organizador (
 );
 
 
-ALTER TABLE public.evento_organizador OWNER TO postgres;
-
 --
 -- TOC entry 219 (class 1259 OID 24668)
 -- Name: organizador; Type: TABLE; Schema: public; Owner: postgres
@@ -305,8 +275,6 @@ CREATE TABLE public.organizador (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-
-ALTER TABLE public.organizador OWNER TO postgres;
 
 --
 -- TOC entry 220 (class 1259 OID 24675)
@@ -323,8 +291,6 @@ CREATE TABLE public.proyecto (
     CONSTRAINT proyecto_tipo_proyecto_chk CHECK (((tipo_proyecto)::text = ANY (ARRAY[('IA'::character varying)::text, ('SOSTENIBILIDAD'::character varying)::text])))
 );
 
-
-ALTER TABLE public.proyecto OWNER TO postgres;
 
 --
 -- TOC entry 221 (class 1259 OID 24683)
@@ -345,7 +311,6 @@ CREATE TABLE public.votacion (
 );
 
 
-ALTER TABLE public.votacion OWNER TO postgres;
 
 --
 -- TOC entry 222 (class 1259 OID 24692)
@@ -360,7 +325,6 @@ CREATE TABLE public.votacion_proyecto (
 );
 
 
-ALTER TABLE public.votacion_proyecto OWNER TO postgres;
 
 --
 -- TOC entry 223 (class 1259 OID 24697)
@@ -375,7 +339,6 @@ CREATE TABLE public.voto (
 );
 
 
-ALTER TABLE public.voto OWNER TO postgres;
 
 --
 -- TOC entry 224 (class 1259 OID 24704)
@@ -397,7 +360,6 @@ CREATE VIEW public.ranking_votacion AS
   ORDER BY v.id, (count(vo.id)) DESC;
 
 
-ALTER VIEW public.ranking_votacion OWNER TO postgres;
 
 --
 -- TOC entry 3397 (class 2606 OID 24748)
@@ -468,5 +430,4 @@ ALTER TABLE ONLY public.equipo
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yTLe8ofrXhEDCNwQF0TrEl1vAawc3JmLGmlhbTpF90fDxqXPeTYt9qNKYCwHehR
 
