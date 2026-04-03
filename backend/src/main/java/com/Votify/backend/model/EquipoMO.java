@@ -22,7 +22,10 @@ public class EquipoMO extends ModeloBaseMO {
     @Column(nullable = false)
     private String nombre;
 
+<<<<<<< HEAD
     @ManyToOne
     @JoinColumn(name = "evento_id", nullable = false)
     private EventoMO evento;
+=======
+>>>>>>> main
 }
