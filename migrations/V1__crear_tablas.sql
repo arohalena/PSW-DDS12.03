@@ -10,7 +10,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
+-- SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -213,8 +213,8 @@ CREATE TABLE public.competidor (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     nombre text NOT NULL,
     email text NOT NULL,
-    contrasenya text NOT NULL,
-    equipo_id uuid,
+    password text NOT NULL,
+    -- equipo_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
@@ -367,7 +367,7 @@ CREATE VIEW public.ranking_votacion AS
 --
 
 ALTER TABLE ONLY public.competidor
-    ADD CONSTRAINT competidor_contrasenya_key UNIQUE (contrasenya);
+    ADD CONSTRAINT competidor_password_key UNIQUE (password);
 
 
 --
@@ -411,8 +411,8 @@ ALTER TABLE ONLY public.proyecto
 -- Name: competidor competidor_equipo_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.competidor
-    ADD CONSTRAINT competidor_equipo_id_fkey FOREIGN KEY (equipo_id) REFERENCES public.equipo(id) ON DELETE SET NULL;
+--ALTER TABLE ONLY public.competidor
+    --ADD CONSTRAINT competidor_equipo_id_fkey FOREIGN KEY (equipo_id) REFERENCES public.equipo(id) ON DELETE SET NULL;
 
 
 --
