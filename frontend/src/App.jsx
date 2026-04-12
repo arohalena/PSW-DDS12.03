@@ -5,7 +5,9 @@ import EventsListScreen from "./screens/EventsListScreen";
 import CreateEventScreen from "./screens/CreateEventScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
-import UserManagementScreen from "./screens/UserManagementScreen";  
+import UserManagementScreen from "./screens/UserManagementScreen";
+import ProjectsScreen from "./screens/AplicacionProyectos/ProjectsScreen"; 
+import CreateProject from "./screens/AplicacionProyectos/CreateProject";       
 import CompetitorsScreen from "./screens/CompetitorsScreen";
 import TeamsScreen from "./screens/TeamsScreen";
 import ProjectsScreen from "./screens/ProjectsScreen";
@@ -47,7 +49,26 @@ function App() {
           }
         />
 
-        
+        <Route 
+          path="/evento/:eventoId/proyectos" 
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ProjectsScreen />
+              </AppLayout>
+            </PrivateRoute>
+          } 
+        />
+        <Route
+          path="evento/:eventoId/nuevo-proyecto"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <CreateProject />
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/usuarios"
           element={
