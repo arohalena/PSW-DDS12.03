@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Search, Filter, MoreVertical } from "lucide-react";
 import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
+import { Plus, Search, Filter, MoreVertical } from "lucide-react";
+import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
 import { getEventos } from "../services/eventoService";
 import { getUsuarios } from "../services/usuarioService";
 import {createEquipo} from "../services/equipoService";
@@ -17,38 +19,18 @@ function ProjectsScreen() {
   const [eventoSeleccionado, setEventoSeleccionado] = useState("");
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
 
   const puedeGestionar = esOrganizador();
-  const desdeEvento = Boolean(eventoId);
   const idEfectivo = eventoId || eventoSeleccionado;
 
   useEffect(() => {
     if (!eventoId) {
       getEventos().then(setEventos).catch(() => setEventos([]));
-    }
-  }, [eventoId]);
-
-  useEffect(() => {
-    if (!eventoId) {
       getEventos().then(setEventos).catch(() => setEventos([]));
     }
-    const load = async () => {
-      try {
-        setLoading(true);
-        const data = await getProyectosByEvento(idEfectivo);
-        setProyectos(data);
-      } catch (err) {
-        setError("Error al cargar proyectos");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-    }
-    , [eventoId]);
+  }, [eventoId]);
 
   useEffect(() => {
     if (!idEfectivo) { setProyectos([]); return; }
@@ -66,272 +48,107 @@ function ProjectsScreen() {
   }, [proyectos, search]);
 
   return (
-    <div className="projects-container">
-      <header className="page-header">
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem", fontFamily: "sans-serif", color: "#111827" }}>
+      
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <div>
-          <h1>Gestión de Proyectos</h1>
-          <p>{desdeEvento ? "Proyectos del evento" : "Administra proyectos por evento"}</p>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: "600", margin: 0 }}>Gestión de Proyectos</h1>
+          <p style={{ color: "#6b7280", marginTop: "0.25rem" }}>Administra los proyectos participantes del evento</p>
         </div>
-        {!desdeEvento && puedeGestionar && eventoSeleccionado && (
-          <button className="btn-primary" onClick={() => setShowModal(true)}>
-            <Plus size={20} /> Crear Proyecto
+        {(eventoId || eventoSeleccionado) && puedeGestionar && (
+          <button 
+            onClick={() => setShowModal(true)}
+            style={{ backgroundColor: "#6366f1", color: "white", border: "none", padding: "0.6rem 1.2rem", borderRadius: "8px", display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontWeight: "500" }}
+          >
+            <Plus size={18} /> Crear Proyecto
           </button>
         )}
-      </header>
+      </div>
 
-      {!desdeEvento && (
-        <div className="filters-section">
+      {/* Selector de Evento */}
+      {!eventoId && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>Selecciona un evento</label>
           <select 
-            className="select-field" 
             value={eventoSeleccionado} 
             onChange={(e) => setEventoSeleccionado(e.target.value)}
+            style={{ width: "100%", maxWidth: "400px", padding: "0.6rem", borderRadius: "8px", border: "1px solid #d1d5db", outline: "none" }}
           >
-            <option value="">Selecciona un evento</option>
+            <option value="">Seleccionar un evento</option>
             {eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
           </select>
         </div>
       )}
 
-      <div className="filters-section">
-        <div className="search-wrapper">
-          <Search className="search-icon" size={18} />
-          <input
-            type="text"
-            className="input-field"
-            placeholder="Buscar proyectos por nombre o categoría..."
+      {/* Barra de Búsqueda */}
+      <div style={{ backgroundColor: "white", padding: "1rem", borderRadius: "10px", border: "1px solid #e5e7eb", marginBottom: "1.5rem", display: "flex", gap: "1rem" }}>
+        <div style={{ flex: 1, position: "relative" }}>
+          <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+          <input 
+            type="text" 
+            placeholder="Buscar proyectos..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            style={{ width: "100%", padding: "0.6rem 0.6rem 0.6rem 2.5rem", borderRadius: "8px", border: "1px solid #d1d5db", outline: "none" }}
           />
         </div>
+        <button style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 1rem", backgroundColor: "white", border: "1px solid #d1d5db", borderRadius: "8px", cursor: "pointer", color: "#374151" }}>
+          <Filter size={16} /> Filtros
+        </button>
       </div>
 
-      <div className="table-container">
-        <table className="projects-table">
-          <thead>
+      {/* Tabla */}
+      <div style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #e5e7eb", overflow: "hidden shadow-sm" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <thead style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
             <tr>
-              <th>Proyecto</th>
-              <th>Categoría</th>
-              <th>Descripción</th>
-              <th style={{ textAlign: 'right' }}>Acciones</th>
+              <th style={{ padding: "1rem", fontSize: "0.75rem", color: "#6b7280", textTransform: "uppercase" }}>Proyecto</th>
+              <th style={{ padding: "1rem", fontSize: "0.75rem", color: "#6b7280", textTransform: "uppercase" }}>Categoría</th>
+              <th style={{ padding: "1rem", fontSize: "0.75rem", color: "#6b7280", textTransform: "uppercase" }}>Descripción</th>
+              <th style={{ padding: "1rem", fontSize: "0.75rem", color: "#6b7280", textTransform: "uppercase" }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtrados.map((p) => (
-              <tr key={p.id} className="row-hover">
-                <td style={{ fontWeight: 500 }}>{p.nombre}</td>
-                <td><span className="badge">{p.tipoCategoria}</span></td>
-                <td style={{ color: '#6b7280' }}>{p.descripcion || "—"}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <MoreVertical size={18} style={{ cursor: 'pointer', color: '#9ca3af' }} />
+              <tr key={p.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                <td style={{ padding: "1rem", fontWeight: "500" }}>{p.nombre}</td>
+                <td style={{ padding: "1rem" }}>
+                  <span style={{ backgroundColor: "#eff6ff", color: "#1d4ed8", padding: "0.25rem 0.6rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "500" }}>
+                    {p.tipoCategoria}
+                  </span>
+                </td>
+                <td style={{ padding: "1rem", color: "#6b7280", fontSize: "0.875rem" }}>{p.descripcion || "—"}</td>
+                <td style={{ padding: "1rem" }}>
+                  <button style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><MoreVertical size={20} /></button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {filtrados.length === 0 && (
+          <div style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>No se encontraron proyectos.</div>
+        )}
       </div>
 
+      {/* Modal simplificado */}
       {showModal && (
-        <CreateProyectoModal
-          eventoId={idEfectivo}
-          onCreado={(n) => { setProyectos([...proyectos, n]); setShowModal(false); }}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-    </div>
-  );
-}
-
-function CreateProyectoModal({ eventoId, onCreado, onClose }) {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    nombreEquipo: "",
-    descripcion: "",
-    tipoCategoria: "",
-  });
-
-  const [miembros, setMiembros] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [usuariosSugeridos, setUsuariosSugeridos] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchTerm.trim().length > 1) {
-        setIsSearching(true);
-        try {
-          const data = await getUsuarios(); 
-          const filtrados = data.filter(u => 
-            u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            u.email.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-          setUsuariosSugeridos(filtrados);
-        } catch (error) {
-          console.error("Error buscando usuarios", error);
-        }
-      } else {
-        setUsuariosSugeridos([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
-
-  const addMiembro = (usuario) => {
-    if (!miembros.find(m => m.id === usuario.id)) {
-      setMiembros([...miembros, usuario]);
-    }
-    setSearchTerm("");
-    setUsuariosSugeridos([]);
-  };
-
-  const removeMiembro = (id) => {
-    setMiembros(miembros.filter(m => m.id !== id));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      const nuevoProyecto = await createProyecto({
-        nombre: formData.nombre,
-        descripcion: formData.descripcion,
-        tipoCategoria: formData.tipoCategoria,
-        evento: { id: eventoId }
-      });
-
-      const equipo = await createEquipo({
-        nombre: formData.nombreEquipo,
-        eventoId: eventoId,
-        proyectoId: nuevoProyecto.id
-      });
-
-      for (const miembro of miembros) {
-        await assignCompetidor({
-          competidorId: miembro.id,
-          eventoId: eventoId,
-          equipoId: equipo.id
-        });
-      }
-
-      onCreado(nuevoProyecto);
-      onClose();
-
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Crear Nuevo Proyecto</h2>
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zUnit: 100 }}>
+          <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "12px", width: "100%", maxWidth: "500px" }}>
+            <h2 style={{ marginBottom: "1.5rem" }}>Nuevo Proyecto</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+               <input placeholder="Nombre" style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #ddd" }} />
+               <select style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #ddd" }}>
+                  {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+               </select>
+               <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1rem" }}>
+                  <button onClick={() => setShowModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ddd", borderRadius: "6px", background: "white" }}>Cancelar</button>
+                  <button style={{ padding: "0.5rem 1rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "6px" }}>Guardar</button>
+               </div>
+            </div>
+          </div>
         </div>
-        
-          <form onSubmit={handleSubmit}><div className="modal-body">
-            <div className="form-group">
-              <label>Nombre del Proyecto *</label>
-              <input 
-                className="input-field" 
-                placeholder="Ej: AI Health Monitor"
-                required 
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Nombre del Equipo *</label>
-              <input 
-                className="input-field" 
-                placeholder="Ej: Tech Innovators"
-                required 
-                name="nombreEquipo"
-                value={formData.nombreEquipo}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Descripción</label>
-              <textarea 
-                className="textarea-field" 
-                placeholder="Describe el proyecto..."
-                rows="3"
-                name="descripcion"
-                value={formData.descripcion}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Miembros del Equipo *</label>
-              <div className="user-search-container">
-                <input 
-                  className="input-field" 
-                  placeholder="Buscar usuario por nombre o correo..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoComplete="off"
-                />
-                
-                {usuariosSugeridos.length > 0 && (
-                  <div className="user-results-dropdown">
-                    {usuariosSugeridos.map((u) => (
-                      <div 
-                        key={u.id} 
-                        className="user-result-item" 
-                        onClick={() => addMiembro(u)}
-                      >
-                        <span className="user-result-name">{u.nombre}</span>
-                        <span className="user-result-email">{u.email}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {searchTerm.length > 1 && usuariosSugeridos.length === 0 && (
-                  <div className="user-results-dropdown">
-                    <div className="no-results">No se encontraron usuarios</div>
-                  </div>
-                )}
-              </div>
-
-              <div className="tags-container">
-                {miembros.map((m) => (
-                  <span key={m.id} className="tag">
-                    {m.nombre} 
-                    <button type="button" onClick={() => removeMiembro(m.id)}>×</button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Categoría *</label>
-              <select className="select-field" required 
-                name="tipoCategoria"                value={formData.tipoCategoria}
-                onChange={handleChange}>
-                <option value="">Seleccionar categoría</option>
-                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary">Crear Proyecto</button>
-          </div>
-        </form>
-      </div>
+      )}
     </div>
   );
 }
