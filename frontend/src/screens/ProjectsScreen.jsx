@@ -14,6 +14,7 @@ function ProjectsScreen() {
   const [eventoSeleccionado, setEventoSeleccionado] = useState("");
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
 
@@ -64,7 +65,7 @@ function ProjectsScreen() {
             <Plus size={20} /> Crear Proyecto
           </button>
         )}
-      </div>
+      </header>
 
       {!desdeEvento && (
         <div className="filters-section">
