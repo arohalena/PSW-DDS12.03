@@ -39,7 +39,7 @@ public class VotacionController extends GenericController<VotacionMO>{
     @PostMapping
     public VotacionMO create(@RequestBody VotacionMO votacion){
 
-        return votacionService.save(votacion);
+        return votacionService.crear(votacion);
 
     }
 

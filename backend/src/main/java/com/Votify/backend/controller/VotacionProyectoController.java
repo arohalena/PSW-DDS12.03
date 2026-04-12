@@ -47,7 +47,7 @@ public class VotacionProyectoController extends GenericController<VotacionProyec
     @PostMapping
     public VotacionProyectoMO create(@RequestBody VotacionProyectoMO votacionProyecto){
 
-        return votacionProyectoService.save(votacionProyecto);
+        return votacionProyectoService.crear(votacionProyecto);
 
     }
     
