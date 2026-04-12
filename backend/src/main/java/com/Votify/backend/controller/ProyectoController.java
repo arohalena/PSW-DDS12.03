@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
+
+import com.Votify.backend.dto.CargaProyectosRestResponse;
 import com.Votify.backend.model.ProyectoMO;
+import com.Votify.backend.service.CargaProyectosService;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.ProyectoService;
 
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/proyectos")
@@ -22,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class ProyectoController extends GenericController<ProyectoMO>{
 
     private final ProyectoService proyectoService;
+    private final CargaProyectosService cargaProyectosService;
 
     @Override
     protected GenericService<ProyectoMO> getService(){
@@ -38,10 +42,20 @@ public class ProyectoController extends GenericController<ProyectoMO>{
     }
 
     @PostMapping("/crear")
-    public com.Votify.backend.model.ProyectoMO crear(@RequestBody ProyectoMO proyecto){
+    public ProyectoMO crear(@RequestBody ProyectoMO proyecto){
 
         return proyectoService.crear(proyecto);
     }
 
+    @GetMapping("/evento/{eventoId}/cargaProyectos")
+    public CargaProyectosRestResponse cargaProyectos(@PathVariable UUID eventoId) {
+        try {
+			CargaProyectosRestResponse response = cargaProyectosService.cargaProyectos(eventoId);
+			System.out.println("Respuesta de proyectos: " + response);
+			return response;
+		} catch (Exception e) {
+			return new CargaProyectosRestResponse("Error cargando los proyectos: " + e.getMessage(), null);
+		}
+    }
     
 }
