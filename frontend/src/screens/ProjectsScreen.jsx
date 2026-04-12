@@ -14,7 +14,6 @@ function ProjectsScreen() {
   const [eventoSeleccionado, setEventoSeleccionado] = useState("");
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
 
@@ -29,9 +28,8 @@ function ProjectsScreen() {
   }, [eventoId]);
 
   useEffect(() => {
-    if (!idEfectivo) {
-      setProyectos([]);
-      return;
+    if (!eventoId) {
+      getEventos().then(setEventos).catch(() => setEventos([]));
     }
     const load = async () => {
       try {
@@ -66,7 +64,7 @@ function ProjectsScreen() {
             <Plus size={20} /> Crear Proyecto
           </button>
         )}
-      </header>
+      </div>
 
       {!desdeEvento && (
         <div className="filters-section">
