@@ -4,6 +4,7 @@ import { Calendar, FolderKanban, Plus, Search, Users } from "lucide-react";
 import { getEventos } from "../services/eventoService";
 import { esOrganizador } from "../services/sessionService";
 import "../styles/events.css";
+import { getProyectosByEvento } from "../services/proyectoService";
 
 function formatDate(dateValue) {
   if (!dateValue) return "Sin fecha";
@@ -48,6 +49,7 @@ function EventsListScreen() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("TODOS");
+  const [proyectosPorEvento, setProyectosPorEvento] = useState({});
 
   const puedeGestionarEventos = esOrganizador();
 
@@ -58,6 +60,15 @@ function EventsListScreen() {
         setError("");
         const data = await getEventos();
         setEventos(data);
+
+        const counts = {};
+        await Promise.all(
+          data.map(async (evento) => {
+            const proyectos = await getProyectosByEvento(evento.id);
+            counts[evento.id] = proyectos.length;
+          })
+        );
+        setProyectosPorEvento(counts);
       } catch (err) {
         setError(err.message || "No se pudieron cargar los eventos");
       } finally {
@@ -176,7 +187,7 @@ function EventsListScreen() {
                         </div>
                         <div>
                           <span className="event-stat-label">Proyectos</span>
-                          <strong>0</strong>
+                          <strong>{proyectosPorEvento[evento.id] ?? 0}</strong>
                         </div>
                       </div>
                       <div className="event-stat-box">
