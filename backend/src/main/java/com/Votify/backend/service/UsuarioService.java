@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
+import com.Votify.backend.model.RolMO;
 import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.repository.UsuarioRepository;
 
@@ -33,6 +34,20 @@ public class UsuarioService  extends GenericService<UsuarioMO>{
         return usuarioRepository.save(existente);
     }
     
+    public void crearAdminSiNoExiste(String nombre, String email, String password) {
+
+        if(!usuarioRepository.existsByRol(RolMO.ORGANIZADOR)){
+
+            UsuarioMO admin = new UsuarioMO();
+            admin.setNombre(nombre);
+            admin.setEmail(email);
+            admin.setPassword(password);
+            admin.setRol(RolMO.ORGANIZADOR);
+            
+            usuarioRepository.save(admin);
+            
+        }
+    }
 }
 
    
