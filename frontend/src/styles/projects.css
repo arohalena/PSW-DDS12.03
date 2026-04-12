@@ -18,9 +18,12 @@
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /* Header */
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -41,9 +44,12 @@
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /* Buttons */
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
 .btn-primary {
   display: flex;
   align-items: center;
@@ -72,9 +78,12 @@
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /* Filters & Search */
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
 .filters-section {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -108,6 +117,9 @@
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9fd1691 (ajuste css)
 .input-field, .select-field, .textarea-field {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -133,17 +145,23 @@
   min-height: 100px;
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
 .select-field {
   padding-left: 0.75rem;
   max-width: 400px;
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /* Table */
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
 .table-container {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -187,9 +205,12 @@
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /* Modal */
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -204,20 +225,27 @@
 .modal-content {
   background: white;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9fd1691 (ajuste css)
   width: 95%;
   max-width: 550px;
   max-height: 90vh; 
   display: flex;
   flex-direction: column; 
+<<<<<<< HEAD
 =======
   width: 100%;
   max-width: 500px;
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
   border-radius: 0.75rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
+<<<<<<< HEAD
 <<<<<<< HEAD
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
@@ -226,10 +254,16 @@
   padding: 1.5rem;
   border-bottom: 1px solid var(--border-color);
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+>>>>>>> 9fd1691 (ajuste css)
 }
 
 .modal-body {
   padding: 1.5rem;
+<<<<<<< HEAD
 <<<<<<< HEAD
   overflow-y: auto; 
   flex-grow: 1;    
@@ -243,30 +277,49 @@
 .form-group {
   margin-bottom: 1rem;
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+  overflow-y: auto; 
+  flex-grow: 1;    
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+>>>>>>> 9fd1691 (ajuste css)
 }
 
 .form-group label {
   display: block;
   font-size: 0.875rem;
 <<<<<<< HEAD
+<<<<<<< HEAD
   font-weight: 600;
 =======
   font-weight: 500;
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+  font-weight: 600;
+>>>>>>> 9fd1691 (ajuste css)
   margin-bottom: 0.5rem;
 }
 
 .modal-footer {
 <<<<<<< HEAD
+<<<<<<< HEAD
   padding: 1.25rem 1.5rem;
 =======
   padding: 1.5rem;
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+  padding: 1.25rem 1.5rem;
+>>>>>>> 9fd1691 (ajuste css)
   border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9fd1691 (ajuste css)
   flex-shrink: 0; 
 }
 
@@ -302,6 +355,9 @@
 
 .tag button:hover {
   color: #ef4444;
+<<<<<<< HEAD
 =======
 >>>>>>> 9068206 (Extraer estilo de proyectos en css)
+=======
+>>>>>>> 9fd1691 (ajuste css)
 }
