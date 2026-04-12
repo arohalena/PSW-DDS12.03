@@ -153,4 +153,125 @@ function ProjectsScreen() {
   );
 }
 
+<<<<<<< HEAD
+=======
+function CreateProyectoModal({ eventoId, onCreado, onClose }) {
+  const [formData, setFormData] = useState({
+    nombre: "",
+    nombreEquipo: "",
+    descripcion: "",
+    tipoCategoria: "",
+  });
+  
+  const [miembros, setMiembros] = useState(["Ana García"]);
+  const [currentMiembro, setCurrentMiembro] = useState("");
+
+  const handleAddMiembro = (e) => {
+    if (e.key === 'Enter' && currentMiembro.trim() !== '') {
+      e.preventDefault();
+      if (!miembros.includes(currentMiembro.trim())) {
+        setMiembros([...miembros, currentMiembro.trim()]);
+      }
+      setCurrentMiembro("");
+    }
+  };
+
+  const removeMiembro = (indexToRemove) => {
+    setMiembros(miembros.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const dataParaEnviar = {
+      ...formData,
+      miembros,
+      evento: { id: eventoId }
+    };
+    
+    try {
+      const nuevo = await createProyecto(dataParaEnviar);
+      onCreado(nuevo);
+    } catch (err) {
+      alert("Error al crear: " + err.message);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+            Crear Nuevo Proyecto
+          </h2>
+        </div>
+        
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="modal-body">
+            <div className="form-group">
+              <label>Nombre del Proyecto *</label>
+              <input 
+                className="input-field" 
+                placeholder="Ej: AI Health Monitor"
+                required 
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Nombre del Equipo *</label>
+              <input 
+                className="input-field" 
+                placeholder="Ej: Tech Innovators"
+                required 
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Descripción</label>
+              <textarea 
+                className="textarea-field" 
+                placeholder="Describe el proyecto..."
+                rows="3"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Miembros del Equipo</label>
+              <input 
+                className="input-field" 
+                placeholder="Nombre + Enter"
+                onKeyDown={handleAddMiembro}
+              />
+              <div className="tags-container">
+                {miembros.map((m, index) => (
+                  <span key={index} className="tag">
+                    {m} <button type="button" onClick={() => removeMiembro(index)}>×</button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Categoría</label>
+              <select className="select-field" required>
+                <option value="">Seleccionar categoría</option>
+                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-primary">
+              Crear Proyecto
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+>>>>>>> 3bd01e9 (Crear equipo en formulario proyecto)
 export default ProjectsScreen;
