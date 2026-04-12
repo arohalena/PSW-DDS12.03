@@ -30,5 +30,11 @@ public class ComentarioService extends GenericService<ComentarioMO>{
         return comentarioRepository.findByVotacionProyecto_Id(votacionProyectoId);
         
     }
+
+    public List<ComentarioMO> findByProyecto(UUID proyectoId) {
+
+        return comentarioRepository.findByProyecto_Id(proyectoId);
+        
+    }
     
 }

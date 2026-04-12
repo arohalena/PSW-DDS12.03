@@ -21,6 +21,10 @@ public class ComentarioMO extends ModeloBaseMO {
     @JoinColumn(name = "votacion_proyecto_id", nullable = false)
     private VotacionProyectoMO votacionProyecto;
 
+    @ManyToOne
+    @JoinColumn(name = "proyecto_id")
+    private ProyectoMO proyecto;
+
     @Column(nullable = false)
     private String texto;
 

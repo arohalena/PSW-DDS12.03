@@ -10,5 +10,7 @@ import com.Votify.backend.model.ComentarioMO;
 public interface ComentarioRepository extends JpaRepository<ComentarioMO, UUID>{
 
     List<ComentarioMO> findByVotacionProyecto_Id(UUID votacionProyectoId);
+
+    List<ComentarioMO> findByProyecto_Id(UUID proyectoId);
     
 }
