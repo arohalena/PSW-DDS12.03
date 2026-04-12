@@ -17,6 +17,10 @@
   min-height: 100vh;
 }
 
+<<<<<<< HEAD
+=======
+/* Header */
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -36,6 +40,10 @@
   margin: 0;
 }
 
+<<<<<<< HEAD
+=======
+/* Buttons */
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 .btn-primary {
   display: flex;
   align-items: center;
@@ -63,6 +71,10 @@
   color: var(--text-main);
 }
 
+<<<<<<< HEAD
+=======
+/* Filters & Search */
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 .filters-section {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -95,6 +107,7 @@
   outline: none;
 }
 
+<<<<<<< HEAD
 .input-field, .select-field, .textarea-field {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -120,11 +133,17 @@
   min-height: 100px;
 }
 
+=======
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 .select-field {
   padding-left: 0.75rem;
   max-width: 400px;
 }
 
+<<<<<<< HEAD
+=======
+/* Table */
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 .table-container {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -167,6 +186,10 @@
   color: #1e40af;
 }
 
+<<<<<<< HEAD
+=======
+/* Modal */
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -180,44 +203,70 @@
 
 .modal-content {
   background: white;
+<<<<<<< HEAD
   width: 95%;
   max-width: 550px;
   max-height: 90vh; 
   display: flex;
   flex-direction: column; 
+=======
+  width: 100%;
+  max-width: 500px;
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
   border-radius: 0.75rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
+<<<<<<< HEAD
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
+=======
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 }
 
 .modal-body {
   padding: 1.5rem;
+<<<<<<< HEAD
   overflow-y: auto; 
   flex-grow: 1;    
 }
 
 .form-group {
   margin-bottom: 1.25rem;
+=======
+}
+
+.form-group {
+  margin-bottom: 1rem;
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 }
 
 .form-group label {
   display: block;
   font-size: 0.875rem;
+<<<<<<< HEAD
   font-weight: 600;
+=======
+  font-weight: 500;
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
   margin-bottom: 0.5rem;
 }
 
 .modal-footer {
+<<<<<<< HEAD
   padding: 1.25rem 1.5rem;
+=======
+  padding: 1.5rem;
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
   border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+<<<<<<< HEAD
   flex-shrink: 0; 
 }
 
@@ -253,4 +302,6 @@
 
 .tag button:hover {
   color: #ef4444;
+=======
+>>>>>>> 9068206 (Extraer estilo de proyectos en css)
 }
