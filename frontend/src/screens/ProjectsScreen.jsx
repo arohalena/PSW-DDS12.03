@@ -14,17 +14,20 @@ function ProjectsScreen() {
   const [eventoSeleccionado, setEventoSeleccionado] = useState("");
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
 
   const puedeGestionar = esOrganizador();
+<<<<<<< HEAD
   const desdeEvento = Boolean(eventoId);
+=======
+>>>>>>> 7dc782f (front de proyectos modificado)
   const idEfectivo = eventoId || eventoSeleccionado;
 
   useEffect(() => {
     if (!eventoId) {
       getEventos().then(setEventos).catch(() => setEventos([]));
+<<<<<<< HEAD
     }
   }, [eventoId]);
 
@@ -44,6 +47,17 @@ function ProjectsScreen() {
       }
     };
     load();
+=======
+    }
+  }, [eventoId]);
+
+  useEffect(() => {
+    if (!idEfectivo) { setProyectos([]); return; }
+    setLoading(true);
+    getProyectosByEvento(idEfectivo)
+      .then(setProyectos)
+      .finally(() => setLoading(false));
+>>>>>>> 7dc782f (front de proyectos modificado)
   }, [idEfectivo]);
 
   const filtrados = useMemo(() => {
@@ -65,7 +79,7 @@ function ProjectsScreen() {
             <Plus size={20} /> Crear Proyecto
           </button>
         )}
-      </header>
+      </div>
 
       {!desdeEvento && (
         <div className="filters-section">
