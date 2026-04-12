@@ -14,6 +14,7 @@ function ProjectsScreen() {
   const [eventoSeleccionado, setEventoSeleccionado] = useState("");
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
 
@@ -73,7 +74,7 @@ function ProjectsScreen() {
             <Plus size={20} /> Crear Proyecto
           </button>
         )}
-      </div>
+      </header>
 
       {!desdeEvento && (
         <div className="filters-section">
@@ -127,21 +128,11 @@ function ProjectsScreen() {
       </div>
 
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zUnit: 100 }}>
-          <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "12px", width: "100%", maxWidth: "500px" }}>
-            <h2 style={{ marginBottom: "1.5rem" }}>Nuevo Proyecto</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-               <input placeholder="Nombre" style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #ddd" }} />
-               <select style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #ddd" }}>
-                  {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-               </select>
-               <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1rem" }}>
-                  <button onClick={() => setShowModal(false)} style={{ padding: "0.5rem 1rem", border: "1px solid #ddd", borderRadius: "6px", background: "white" }}>Cancelar</button>
-                  <button style={{ padding: "0.5rem 1rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "6px" }}>Guardar</button>
-               </div>
-            </div>
-          </div>
-        </div>
+        <CreateProyectoModal
+          eventoId={idEfectivo}
+          onCreado={(n) => { setProyectos([...proyectos, n]); setShowModal(false); }}
+          onClose={() => setShowModal(false)}
+        />
       )}
     </div>
   );
