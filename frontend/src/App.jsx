@@ -45,26 +45,7 @@ function App() {
           }
         />
 
-        <Route 
-          path="/evento/:eventoId/proyectos" 
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <ProjectsScreen />
-              </AppLayout>
-            </PrivateRoute>
-          } 
-        />
-        <Route
-          path="evento/:eventoId/nuevo-proyecto"
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <CreateProject />
-              </AppLayout>
-            </PrivateRoute>
-          }
-        />
+        
         <Route
           path="/usuarios"
           element={
