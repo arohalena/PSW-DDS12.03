@@ -5,7 +5,7 @@ import EventsListScreen from "./screens/EventsListScreen";
 import CreateEventScreen from "./screens/CreateEventScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
-import UserManagementScreen from "./screens/UserManagementScreen";  
+import UserManagementScreen from "./screens/UserManagementScreen";
 import CompetitorsScreen from "./screens/CompetitorsScreen";
 import TeamsScreen from "./screens/TeamsScreen";
 import ProjectsScreen from "./screens/ProjectsScreen";
@@ -46,7 +46,6 @@ function App() {
           }
         />
 
-        
         <Route
           path="/usuarios"
           element={
