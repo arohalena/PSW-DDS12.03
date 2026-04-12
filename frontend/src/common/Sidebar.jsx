@@ -5,7 +5,7 @@ const items = [
   { label: "Eventos", to: "/eventos" },
   { label: "Equipos", to: "/equipos" },
   { label: "Competidores", to: "/competidores" },
-  { label: "Proyectos", to: "/", disabled: true },
+  { label: "Proyectos", to: "/proyectos" },
   { label: "Asignación", to: "/", disabled: true },
   { label: "Criterios", to: "/", disabled: true },
   { label: "Votación", to: "/", disabled: true },

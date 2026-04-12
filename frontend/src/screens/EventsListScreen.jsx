@@ -194,9 +194,9 @@ function EventsListScreen() {
                       <button className="secondary-btn" disabled>
                         Editar
                       </button>
-                      <button className="secondary-btn" disabled>
+                      <Link className="secondary-btn" to={`/eventos/${evento.id}/proyectos`}>
                         Proyectos
-                      </button>
+                      </Link>
                       <button className="primary-btn" disabled>
                         Ver Resultados
                       </button>
