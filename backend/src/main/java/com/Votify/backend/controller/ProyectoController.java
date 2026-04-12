@@ -10,14 +10,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
-
-<<<<<<< HEAD
-=======
->>>>>>> 2bd2702 (Back para cargar los proyectos existentes por evento)
+import com.Votify.backend.dto.CargaProyectosRestResponse;
 import com.Votify.backend.model.ProyectoMO;
+import com.Votify.backend.service.CargaProyectosService;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.ProyectoService;
+
+import lombok.RequiredArgsConstructor;
 
 
 @RestController
@@ -26,6 +25,7 @@ import com.Votify.backend.service.ProyectoService;
 public class ProyectoController extends GenericController<ProyectoMO>{
 
     private final ProyectoService proyectoService;
+    private final CargaProyectosService cargaProyectosService;
 
     @Override
     protected GenericService<ProyectoMO> getService(){
