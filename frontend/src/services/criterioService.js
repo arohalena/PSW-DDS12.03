@@ -26,7 +26,7 @@ export async function createCriterio(criterio){
 
   });
 
-  if (!response.ok){ç
+  if (!response.ok){
 
     const errorText = await response.text();
 
@@ -50,7 +50,7 @@ export async function updateCriterio(id, criterio){
 
   if (!response.ok){
 
-    const errorText = await response.text();ç
+    const errorText = await response.text();
 
     throw new Error(errorText || "No se pudo actualizar el criterio");
 
@@ -127,5 +127,5 @@ export async function getRanking(eventoId, votacionId){
   }
 
   return response.json();
-  
+
 }
