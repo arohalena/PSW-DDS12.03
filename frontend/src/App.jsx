@@ -46,7 +46,6 @@ function App() {
             </PrivateRoute>
           }
         />
-
         
         <Route
           path="/usuarios"
@@ -83,6 +82,16 @@ function App() {
 
         <Route
           path="/proyectos"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ProjectsScreen />
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/eventos/:eventoId/proyectos"
           element={
             <PrivateRoute>
               <AppLayout>
