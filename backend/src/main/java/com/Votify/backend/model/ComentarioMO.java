@@ -18,7 +18,7 @@ public class ComentarioMO extends ModeloBaseMO {
     private String anonTokenHash;
 
     @ManyToOne
-    @JoinColumn(name = "votacion_proyecto_id", nullable = false)
+    @JoinColumn(name = "votacion_proyecto_id")
     private VotacionProyectoMO votacionProyecto;
 
     @ManyToOne
