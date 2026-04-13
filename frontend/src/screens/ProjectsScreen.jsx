@@ -93,7 +93,7 @@ function ProjectsScreen() {
           <input
             type="text"
             className="input-field"
-            placeholder="Buscar proyectos por nombre o categoría..."
+            placeholder="      Buscar proyectos por nombre o categoría..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -107,6 +107,7 @@ function ProjectsScreen() {
               <th>Proyecto</th>
               <th>Categoría</th>
               <th>Descripción</th>
+              <th>Equipo</th>
               <th style={{ textAlign: 'right' }}>Acciones</th>
             </tr>
           </thead>
@@ -116,6 +117,7 @@ function ProjectsScreen() {
                 <td style={{ fontWeight: 500 }}>{p.nombre}</td>
                 <td><span className="badge">{p.tipoCategoria}</span></td>
                 <td style={{ color: '#6b7280' }}>{p.descripcion || "—"}</td>
+                <td style={{ color: '#6b7280' }}>{p.nombreEquipo}</td>
                 <td style={{ textAlign: 'right' }}>
                   <button
                     className="btn-comment"
@@ -332,8 +334,8 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
 
       const equipo = await createEquipo({
         nombre: formData.nombreEquipo,
-        eventoId: eventoId,
-        proyectoId: nuevoProyecto.id
+        evento: { id: eventoId },
+        proyecto: { id: nuevoProyecto.id }
       });
 
       for (const miembro of miembros) {
@@ -366,17 +368,17 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Crear Nuevo Proyecto</h2>
         </div>
         
-          <form onSubmit={handleSubmit}><div className="modal-body">
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
             <div className="form-group">
               <label>Nombre del Proyecto *</label>
               <input 
-                className="input-field"
-                name="nombre"
+                name="nombre" 
+                className="input-field" 
                 placeholder="Ej: AI Health Monitor"
                 value={formData.nombre}
                 onChange={handleChange}
                 required 
-                name="nombre"
                 value={formData.nombre}
                 onChange={handleChange}
               />
@@ -385,13 +387,12 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
             <div className="form-group">
               <label>Nombre del Equipo *</label>
               <input 
-                className="input-field"
                 name="nombreEquipo"
+                className="input-field" 
                 placeholder="Ej: Tech Innovators"
                 value={formData.nombreEquipo}
                 onChange={handleChange}
                 required 
-                name="nombreEquipo"
                 value={formData.nombreEquipo}
                 onChange={handleChange}
               />
@@ -400,13 +401,12 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
             <div className="form-group">
               <label>Descripción</label>
               <textarea 
-                className="textarea-field"
-                name="descripcion"
+                name="descripcion" 
+                className="textarea-field" 
                 placeholder="Describe el proyecto..."
                 value={formData.descripcion}
                 onChange={handleChange}
                 rows="3"
-                name="descripcion"
                 value={formData.descripcion}
                 onChange={handleChange}
               />
@@ -457,9 +457,13 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
 
             <div className="form-group">
               <label>Categoría *</label>
-              <select className="select-field" required 
-                name="tipoCategoria"                value={formData.tipoCategoria}
-                onChange={handleChange}>
+              <select 
+                name="tipoCategoria" 
+                className="select-field" 
+                required 
+                value={formData.tipoCategoria}
+                onChange={handleChange}
+              >
                 <option value="">Seleccionar categoría</option>
                 {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
