@@ -10,6 +10,10 @@ export async function getEquipos() {
     throw new Error(errorText || "No se pudieron cargar los equipos");
   }
 
+    console.log("GETEQUIPOSSS ")
+
+    console.log(response)
+
   return response.json();
 }
 
@@ -38,11 +42,39 @@ export async function getEventosParaEquipo() {
     throw new Error(errorText || "No se pudieron cargar los eventos");
   }
 
+
+    console.log("GETEVNTOPARAEQUIPO")
+
+    console.log(response)
   return response.json();
 }
 
 export async function getProyectosParaEquipo() {
   const response = await fetch(PROYECTOS_URL);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudieron cargar los proyectos");
+  }
+
+    console.log("GETPROYECTOPARAEQUIPO ")
+    console.log(response)
+  return response.json();
+}
+
+export async function getProyectosParaEquipo() {
+  const response = await fetch(PROYECTOS_URL);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudieron cargar los proyectos");
+  }
+
+  return response.json();
+}
+
+export async function getEventosParaEquipo(eventoId) {
+  const response = await fetch(`${API_URL}/evento/${eventoId}`);
 
   if (!response.ok) {
     const errorText = await response.text();

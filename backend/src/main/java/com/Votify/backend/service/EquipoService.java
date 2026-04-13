@@ -1,6 +1,7 @@
 package com.Votify.backend.service;
 
 import java.util.UUID;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
@@ -55,4 +56,9 @@ public class EquipoService extends GenericService<EquipoMO> {
 
         return equipoRepository.save(nuevo);
     }
+
+    public List<EquipoMO> getEquiposPorEvento(UUID eventoId) {
+        return equipoRepository.findByEventoId(eventoId);
+    }
+
 }
