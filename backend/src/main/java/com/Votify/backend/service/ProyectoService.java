@@ -133,6 +133,15 @@ public class ProyectoService extends GenericService<ProyectoMO> {
                         return competidorRepository.save(nuevo);
                     });
 
+                if (competidor.getUsuario() == null) {
+                    usuarioRepository.findByEmail(emailLimpio)
+                        .ifPresent(u -> {
+                            competidor.setUsuario(u);
+                            competidorRepository.save(competidor);
+                        });
+                }
+
+
                 if (!competidorEventoRepository.existsByCompetidorIdAndEventoId(
                         competidor.getId(), evento.getId())) {
 
