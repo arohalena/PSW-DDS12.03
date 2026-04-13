@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -31,5 +32,6 @@ public class EquipoMO extends ModeloBaseMO {
     private EventoMO evento;
 
     @OneToMany(mappedBy = "equipo")
+    @JsonIgnore
     private List<CompetidorEventoMO> competidores;
 }

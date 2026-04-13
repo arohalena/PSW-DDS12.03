@@ -30,7 +30,6 @@ public class CompetidorEventoMO extends ModeloBaseMO {
     private EventoMO evento;
 
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "equipo_id", nullable = false)
     private EquipoMO equipo;
 }
