@@ -9,6 +9,6 @@ import com.Votify.backend.model.CriterioEvaluacionMO;
 
 public interface CriterioEvaluacionRepository extends JpaRepository<CriterioEvaluacionMO, UUID>{
     
-    List<CriterioEvaluacionMO> findByEvento_IdOrderByAsc(UUID eventoId);
+    List<CriterioEvaluacionMO> findByEvento_IdOrderByOrdenAsc(UUID eventoId);
     
 }
