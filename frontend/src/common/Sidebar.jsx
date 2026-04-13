@@ -7,6 +7,7 @@ const items = [
   { label: "Competidores", to: "/competidores" },
   { label: "Proyectos", to: "/proyectos" },
   { label: "Asignación", to: "/", disabled: true },
+  { label: "Criterios", to: "/criterios" },
   { label: "Votación", to: "/votar" },
   { label: "Usuarios", to: "/usuarios" },
   { label: "Resultados", to: "/", disabled: true },
