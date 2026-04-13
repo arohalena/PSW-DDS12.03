@@ -34,6 +34,15 @@ function ProjectsScreen() {
   }, [eventoId]);
 
   useEffect(() => {
+  if (eventoId) {
+    setEventoSeleccionado(eventoId);
+  }
+  getEventos()
+    .then(setEventos)
+    .catch(() => setEventos([]));
+}, [eventoId]);
+
+  useEffect(() => {
     if (!idEfectivo) {
       setProyectos([]);
       return;
