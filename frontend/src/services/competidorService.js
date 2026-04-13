@@ -30,18 +30,17 @@ export async function createCompetidor(competidor) {
 }
 
 export async function assignCompetidor(datos) {
-  const response = await fetch(COMPETIDOR_EVENTO_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(datos),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo asignar el competidor");
+  try { 
+    await fetch(COMPETIDOR_EVENTO_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datos),
+    });
+  } catch(error) {  
+    throw new Error(error || "No se pudo asignar el competidor");
   }
 
-  return response.json();
+  
 }
