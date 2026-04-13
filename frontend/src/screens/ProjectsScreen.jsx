@@ -183,57 +183,47 @@ function ComentarioModal({ proyecto, onClose }) {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content comentario-modal">
-        {/* Header */}
-        <div className="modal-header comentario-modal-header">
+    <div className="comentario-overlay" onClick={onClose}>
+      <div className="comentario-panel" onClick={(e) => e.stopPropagation()}>
+
+        <div className="comentario-panel-header">
           <div>
-            <h2 className="comentario-modal-title">Comentarios y Feedback</h2>
-            <p className="comentario-modal-subtitle">
-              Proyecto: {proyecto.nombre}
-            </p>
+            <h2>Comentarios y Feedback</h2>
+            <p>Proyecto: {proyecto.nombre}</p>
           </div>
-          <button className="comentario-close-btn" onClick={onClose}>
+          <button className="comentario-close" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        {/* Comentarios existentes */}
-        <div className="modal-body">
+        <div className="comentario-list-section">
           {loading ? (
-            <p className="comentario-empty">Cargando comentarios...</p>
+            <p className="comentario-info-text">Cargando comentarios...</p>
           ) : comentarios.length === 0 ? (
             <div className="comentario-empty-state">
-              <MessageCircle size={40} className="comentario-empty-icon" />
-              <p className="comentario-empty">No hay comentarios aún.</p>
-              <p className="comentario-empty-hint">Sé el primero en dejar tu feedback anónimo.</p>
+              <MessageCircle size={36} strokeWidth={1.5} />
+              <p>No hay comentarios aún</p>
+              <span>Sé el primero en dejar tu feedback</span>
             </div>
           ) : (
-            <div className="comentarios-list">
+            <div className="comentario-items">
               {comentarios.map((c) => (
-                <div key={c.id} className="comentario-item">
-                  <div className="comentario-header">
-                    <div className="comentario-avatar">A</div>
-                    <div className="comentario-meta">
-                      <span className="comentario-autor">Anónimo</span>
-                      <span className="comentario-fecha">
-                        {new Date(c.createdAt).toLocaleDateString('es-ES', {
-                          day: '2-digit', month: 'short', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="comentario-texto">{c.texto}</p>
+                <div key={c.id} className="comentario-bubble">
+                  <p>{c.texto}</p>
+                  <span className="comentario-date">
+                    {new Date(c.createdAt).toLocaleDateString("es-ES", {
+                      day: "2-digit", month: "short", year: "numeric",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Formulario de comentario */}
         <div className="comentario-form-section">
-          <label className="comentario-form-label">
+          <label className="comentario-label">
             Comentarios y Feedback (opcional)
           </label>
           <textarea
@@ -243,24 +233,23 @@ function ComentarioModal({ proyecto, onClose }) {
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
           />
-          <p className="comentario-form-hint">
+          <p className="comentario-hint">
             Tus comentarios serán compartidos con el equipo de forma anónima
           </p>
 
           {enviado && (
-            <div className="comentario-success">
+            <div className="comentario-success-msg">
               Comentario enviado correctamente
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="modal-footer">
-          <button type="button" className="btn-secondary" onClick={onClose}>
+        <div className="comentario-panel-footer">
+          <button type="button" className="comentario-btn-cancel" onClick={onClose}>
             Cancelar
           </button>
           <button
-            className="btn-primary"
+            className="comentario-btn-send"
             disabled={enviando || !texto.trim()}
             onClick={handleEnviar}
           >
