@@ -3,18 +3,25 @@ package com.Votify.backend.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.server.ResponseStatusException;
 
+import com.Votify.backend.dto.ComentarioRequest;
 import com.Votify.backend.model.ComentarioMO;
+import com.Votify.backend.model.CompetidorMO;
+import com.Votify.backend.model.ProyectoMO;
+import com.Votify.backend.model.UsuarioMO;
+import com.Votify.backend.repository.CompetidorEventoRepository;
+import com.Votify.backend.repository.CompetidorRepository;
+import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.service.ComentarioService;
 import com.Votify.backend.service.GenericService;
-import com.Votify.backend.dto.ComentarioRequest;
-import com.Votify.backend.model.ProyectoMO;
 import com.Votify.backend.service.ProyectoService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +34,11 @@ public class ComentarioController extends GenericController<ComentarioMO>{
     private final ComentarioService comentarioService;
     private final ProyectoService proyectoService;
 
+
+    private final UsuarioRepository usuarioRepository;
+    private final CompetidorRepository competidorRepository;
+    private final CompetidorEventoRepository competidorEventoRepository;
+
     @Override
     protected GenericService<ComentarioMO> getService(){
 
@@ -37,8 +49,29 @@ public class ComentarioController extends GenericController<ComentarioMO>{
     @PostMapping
     public ComentarioMO create(@RequestBody ComentarioRequest comentarioR){
 
-        ProyectoMO proyecto = proyectoService.findById(comentarioR.getProyectoId());
+        UsuarioMO usuario = usuarioRepository.findById(comentarioR.getUsuarioId())
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "El usuario no se ha encontrado."
+            ));
 
+        ProyectoMO proyecto = proyectoService.findById(comentarioR.getProyectoId());
+        UUID eventoId = proyecto.getEvento().getId();
+
+        CompetidorMO competidor = competidorRepository.findByEmail(usuario.getEmail())
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.FORBIDDEN, "No eres competidor registrado en ningún evento."
+            ));
+        
+        boolean vinculado = competidorEventoRepository.existsByCompetidorIdAndEventoId(competidor.getId(), eventoId);
+
+        if(!vinculado){
+            
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN, "No estás vinculado al evento de este proyecto."
+            );
+
+        }
+        
         ComentarioMO comentario = new ComentarioMO();
 
         comentario.setProyecto(proyecto);
