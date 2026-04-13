@@ -129,12 +129,11 @@ function ProjectsScreen() {
                 <td style={{ color: '#6b7280' }}>{p.nombreEquipo}</td>
                 <td style={{ textAlign: 'right' }}>
                   <button
-                    className="btn-comment"
-                    title="Dejar comentario"
+                    className="btn-comment-pill"
                     onClick={() => setComentarioProyecto(p)}
                   >
-                    <MessageCircle size={16} />
-                    <span>Comentar</span>
+                    <MessageCircle size={15} />
+                    Comentar
                   </button>
                 </td>
               </tr>
@@ -193,80 +192,84 @@ function ComentarioModal({ proyecto, onClose }) {
   };
 
   return (
-    <div className="comentario-overlay" onClick={onClose}>
-      <div className="comentario-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="comment-overlay" onClick={onClose}>
+      <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
 
-        <div className="comentario-panel-header">
+        {/* Header */}
+        <div className="comment-header">
           <div>
             <h2>Comentarios y Feedback</h2>
             <p>Proyecto: {proyecto.nombre}</p>
           </div>
-          <button className="comentario-close" onClick={onClose}>
+          <button className="comment-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        <div className="comentario-list-section">
+        {/* Lista de comentarios */}
+        <div className="comment-list">
           {loading ? (
-            <p className="comentario-info-text">Cargando comentarios...</p>
+            <p className="comment-loading">Cargando comentarios...</p>
           ) : comentarios.length === 0 ? (
-            <div className="comentario-empty-state">
-              <MessageCircle size={36} strokeWidth={1.5} />
+            <div className="comment-empty">
+              <MessageCircle size={40} strokeWidth={1.5} />
               <p>No hay comentarios aún</p>
               <span>Sé el primero en dejar tu feedback</span>
             </div>
           ) : (
-            <div className="comentario-items">
+            <div className="comment-items">
               {comentarios.map((c) => (
-                <div key={c.id} className="comentario-bubble">
+                <div key={c.id} className="comment-bubble">
+                  <div className="comment-bubble-header">
+                    <div className="comment-avatar">A</div>
+                    <div>
+                      <span className="comment-author">Anónimo</span>
+                      <span className="comment-time">
+                        {new Date(c.createdAt).toLocaleDateString("es-ES", {
+                          day: "2-digit", month: "short", year: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  </div>
                   <p>{c.texto}</p>
-                  <span className="comentario-date">
-                    {new Date(c.createdAt).toLocaleDateString("es-ES", {
-                      day: "2-digit", month: "short", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
-                    })}
-                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="comentario-form-section">
-          <label className="comentario-label">
-            Comentarios y Feedback (opcional)
-          </label>
-          <textarea
-            className="comentario-textarea"
-            rows={4}
-            placeholder="Comparte tus observaciones, sugerencias o comentarios sobre el proyecto..."
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-          />
-          <p className="comentario-hint">
-            Tus comentarios serán compartidos con el equipo de forma anónima
-          </p>
-
+        {/* Escribir comentario */}
+        <div className="comment-compose">
           {enviado && (
-            <div className="comentario-success-msg">
+            <div className="comment-success">
               Comentario enviado correctamente
             </div>
           )}
+          <textarea
+            rows={3}
+            placeholder="Escribe tu comentario..."
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+          />
+          <p className="comment-compose-hint">
+            Tus comentarios serán compartidos con el equipo de forma anónima
+          </p>
+          <div className="comment-compose-actions">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancelar
+            </button>
+            <button
+              className="btn-primary"
+              disabled={enviando || !texto.trim()}
+              onClick={handleEnviar}
+            >
+              <Send size={16} />
+              {enviando ? "Enviando..." : "Enviar"}
+            </button>
+          </div>
         </div>
 
-        <div className="comentario-panel-footer">
-          <button type="button" className="comentario-btn-cancel" onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className="comentario-btn-send"
-            disabled={enviando || !texto.trim()}
-            onClick={handleEnviar}
-          >
-            <Send size={16} />
-            {enviando ? "Enviando..." : "Enviar Comentario"}
-          </button>
-        </div>
       </div>
     </div>
   );
