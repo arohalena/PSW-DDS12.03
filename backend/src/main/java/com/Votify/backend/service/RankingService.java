@@ -26,7 +26,7 @@ public class RankingService {
 
     public List<Map<String, Object>> calcularRanking(UUID eventoId, UUID votacionId) {
 
-        List<CriterioEvaluacionMO> criterios = criterioRepository.findByEvento_IdOrderByAsc(eventoId);
+        List<CriterioEvaluacionMO> criterios = criterioRepository.findByEvento_IdOrderByOrdenAsc(eventoId);
         List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
 
         List<Map<String, Object>> ranking = new ArrayList<>();

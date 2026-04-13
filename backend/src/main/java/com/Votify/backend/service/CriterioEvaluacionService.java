@@ -31,7 +31,7 @@ public class CriterioEvaluacionService extends GenericService<CriterioEvaluacion
 
     public List<CriterioEvaluacionMO> findByEventoId(UUID eventoId) {
 
-        return criterioRepository.findByEvento_IdOrderByAsc(eventoId);
+        return criterioRepository.findByEvento_IdOrderByOrdenAsc(eventoId);
 
     }
 
