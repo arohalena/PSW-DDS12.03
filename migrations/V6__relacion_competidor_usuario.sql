@@ -1,0 +1,1 @@
+ALTER TABLE public.competidor ADD COLUMN usuario_id uuid UNIQUE REFERENCES public.usuario(id) ON DELETE SET NULL;
