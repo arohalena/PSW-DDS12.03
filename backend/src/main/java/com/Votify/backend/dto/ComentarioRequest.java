@@ -8,6 +8,7 @@ import lombok.Data;
 public class ComentarioRequest {
     
     private UUID proyectoId;
+    private UUID usuarioId;
     private String texto;
 
 }

@@ -17,11 +17,14 @@ export async function getComentariosByProyecto(proyectoId) {
 
 export async function crearComentario(proyectoId, texto){
 
+    const usuario = JSON.parse(localStorage.getItem("usuarioLogueado"));
+
+
     const response = await fetch(API_URL, {
         
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({proyectoId, texto}),
+        body: JSON.stringify({proyectoId, usuarioId: usuario?.id, texto}),
 
     });
 
@@ -33,5 +36,5 @@ export async function crearComentario(proyectoId, texto){
     }
 
     return response.json();
-    
+
 }
