@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
-import { getProyectosByEvento, createProyectoConEquipo } from "../services/proyectoService";
+import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
 import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
 import { getUsuarios } from "../services/usuarioService";
@@ -107,7 +107,7 @@ function ProjectsScreen() {
               <th>Categoría</th>
               <th>Descripción</th>
               <th>Equipo</th>
-              <th style={{ textAlign: 'right' }}>Acciones</th>
+              <th style={{ textAlign: 'right' }}>Comentarios</th>
             </tr>
           </thead>
           <tbody>
