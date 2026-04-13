@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.Votify.backend.dto.CargaProyectosRestResponse;
 import com.Votify.backend.model.ProyectoMO;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.ProyectoService;
