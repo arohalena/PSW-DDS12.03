@@ -4,7 +4,7 @@ import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
 import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
 import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
-import { getUsuarios } from "../services/usuarioService";
+import { getCompetidores } from "../services/competidorService";
 import {createEquipo} from "../services/equipoService";
 import {assignCompetidor} from "../services/competidorService";
 import { esOrganizador } from "../services/sessionService";
@@ -292,7 +292,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
 
   const [miembros, setMiembros] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [usuariosSugeridos, setUsuariosSugeridos] = useState([]);
+  const [competidoresSugeridos, setCompetidoresSugeridos] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
@@ -300,29 +300,29 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
       if (searchTerm.trim().length > 1) {
         setIsSearching(true);
         try {
-          const data = await getUsuarios(); 
+          const data = await getCompetidores(); 
           const filtrados = data.filter(u => 
             u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
             u.email.toLowerCase().includes(searchTerm.toLowerCase())
           );
-          setUsuariosSugeridos(filtrados);
+          setCompetidoresSugeridos(filtrados);
         } catch (error) {
-          console.error("Error buscando usuarios", error);
+          console.error("Error buscando competidores", error);
         }
       } else {
-        setUsuariosSugeridos([]);
+        setCompetidoresSugeridos([]);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  const addMiembro = (usuario) => {
-    if (!miembros.find(m => m.id === usuario.id)) {
-      setMiembros([...miembros, usuario]);
+  const addMiembro = (competidor) => {
+    if (!miembros.find(m => m.id === competidor.id)) {
+      setMiembros([...miembros, competidor]);
     }
     setSearchTerm("");
-    setUsuariosSugeridos([]);
+    setCompetidoresSugeridos([]);
   };
 
   const removeMiembro = (id) => {
@@ -419,15 +419,15 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
               <div className="user-search-container">
                 <input 
                   className="input-field" 
-                  placeholder="Buscar usuario por nombre o correo..."
+                  placeholder="Buscar competidor por nombre o correo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   autoComplete="off"
                 />
                 
-                {usuariosSugeridos.length > 0 && (
+                {competidoresSugeridos.length > 0 && (
                   <div className="user-results-dropdown">
-                    {usuariosSugeridos.map((u) => (
+                    {competidoresSugeridos.map((u) => (
                       <div 
                         key={u.id} 
                         className="user-result-item" 
@@ -440,9 +440,9 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                   </div>
                 )}
                 
-                {searchTerm.length > 1 && usuariosSugeridos.length === 0 && (
+                {searchTerm.length > 1 && competidoresSugeridos.length === 0 && (
                   <div className="user-results-dropdown">
-                    <div className="no-results">No se encontraron usuarios</div>
+                    <div className="no-results">No se encontraron competidores</div>
                   </div>
                 )}
               </div>
