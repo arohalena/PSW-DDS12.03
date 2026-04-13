@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.Votify.backend.dto.EmitirEvaluacionRequest;
+import com.Votify.backend.dto.EmitirVotoSimpleRequest;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.VotoService;
@@ -20,44 +22,42 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/votos")
-public class VotoController extends GenericController<VotoMO>{
-    
+public class VotoController extends GenericController<VotoMO> {
+
     private final VotoService votoService;
 
     @Override
     protected GenericService<VotoMO> getService() {
-
         return votoService;
-
     }
 
     @GetMapping("/votacion-proyecto/{votacionProyectoId}")
-    public List<VotoMO> findByVotacionProyecto_Id(@PathVariable UUID votacionProyectoId){
-
+    public List<VotoMO> findByVotacionProyecto_Id(@PathVariable UUID votacionProyectoId) {
         return votoService.findByVotacionProyecto_Id(votacionProyectoId);
-
     }
 
     @GetMapping("/votacion-proyecto/{votacionProyectoId}/count")
     public long countByVotacionProyecto(@PathVariable UUID votacionProyectoId) {
         return votoService.contarVotosPorVotacionProyecto(votacionProyectoId);
     }
-    
+
     @GetMapping("/votacion-proyecto/{votacionProyectoId}/ya-votado")
     public boolean yaHaVotado(@PathVariable UUID votacionProyectoId, @RequestParam String token) {
         return votoService.yaHaVotado(votacionProyectoId, token);
     }
 
     @GetMapping("/votacion/{votacionId}/ha-alcanzado-maximo")
-    public boolean haAlcanzadoMaximo( @PathVariable UUID votacionId, @RequestParam String token) {
+    public boolean haAlcanzadoMaximo(@PathVariable UUID votacionId, @RequestParam String token) {
         return votoService.haAlcanzadoMaximo(votacionId, token);
     }
 
-    @PostMapping
-    public VotoMO create(@RequestBody VotoMO voto){
-
-        return votoService.votar(voto);
-
+    @PostMapping("/simple")
+    public VotoMO votarSimple(@RequestBody EmitirVotoSimpleRequest request) {
+        return votoService.votarSimple(request);
     }
 
+    @PostMapping("/multicriterio")
+    public VotoMO votarMulticriterio(@RequestBody EmitirEvaluacionRequest request) {
+        return votoService.votarMulticriterio(request);
+    }
 }

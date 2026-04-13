@@ -48,26 +48,6 @@ export async function asignarProyectoAVotacion(votacionId, proyectoId) {
   return response.json();
 }
 
-export async function votarProyecto(votacionProyectoId, anonTokenHash) {
-  const response = await fetch(VOTOS_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      votacionProyecto: { id: votacionProyectoId },
-      anonTokenHash,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo registrar el voto");
-  }
-
-  return response.json();
-}
-
 export async function getConteoVotos(votacionProyectoId) {
   const response = await fetch(`${VOTOS_URL}/votacion-proyecto/${votacionProyectoId}/count`);
   if (!response.ok) {
@@ -106,5 +86,52 @@ export async function haAlcanzadoMaximoVotacion(votacionId, token) {
 export async function getAsignacionesCompetidorEvento(eventoId) {
   const response = await fetch(`${COMPETIDOR_EVENTO_URL}/evento/${eventoId}`);
   if (!response.ok) throw new Error("No se pudieron cargar los miembros del equipo");
+  return response.json();
+}
+
+export async function getCriteriosByVotacion(votacionId) {
+  const response = await fetch(`${VOTACIONES_URL}/${votacionId}/criterios`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudieron cargar los criterios");
+  }
+  return response.json();
+}
+
+export async function votarProyectoSimple(votacionProyectoId, anonTokenHash, comentario) {
+  const response = await fetch(`${VOTOS_URL}/simple`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      votacionProyectoId,
+      anonTokenHash,
+      comentario,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo registrar el voto");
+  }
+
+  return response.json();
+}
+
+export async function votarProyectoMulticriterio(payload) {
+  const response = await fetch(`${VOTOS_URL}/multicriterio`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo registrar la evaluación");
+  }
+
   return response.json();
 }

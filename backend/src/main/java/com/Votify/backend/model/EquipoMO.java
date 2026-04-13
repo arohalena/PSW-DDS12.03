@@ -14,6 +14,8 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
