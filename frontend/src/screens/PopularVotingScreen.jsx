@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Users, Plus } from "lucide-react";
+import { CalendarDays, Users, Plus, Trash2, SlidersHorizontal, Vote } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getEventos } from "../services/eventoService";
 import { getProyectosByEvento } from "../services/proyectoService";
@@ -15,6 +15,12 @@ import {
 } from "../services/votacionService";
 import "../styles/voting.css";
 
+const CRITERIO_INICIAL = {
+  nombre: "",
+  descripcion: "",
+  peso: "",
+};
+
 function PopularVotingScreen() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,7 +30,11 @@ function PopularVotingScreen() {
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
-  const [votacionPopular, setVotacionPopular] = useState(null);
+
+  const [votacionPopularSimple, setVotacionPopularSimple] = useState(null);
+  const [votacionPopularMulticriterio, setVotacionPopularMulticriterio] = useState(null);
+  const [votacionActiva, setVotacionActiva] = useState(null);
+
   const [votacionProyectos, setVotacionProyectos] = useState([]);
   const [voteCounts, setVoteCounts] = useState({});
 
@@ -34,6 +44,10 @@ function PopularVotingScreen() {
   const [assigningProjectId, setAssigningProjectId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(location.state?.successMessage || "");
+
+  const [tipoCreacion, setTipoCreacion] = useState("SIMPLE");
+  const [criterios, setCriterios] = useState([]);
+  const [nuevoCriterio, setNuevoCriterio] = useState(CRITERIO_INICIAL);
 
   const puedeGestionar = esOrganizador();
 
@@ -73,13 +87,23 @@ function PopularVotingScreen() {
           getVotacionesByEvento(eventoId),
         ]);
 
-        const votacion = votacionesData.find((v) => v.tipo === "POPULAR") || null;
+        const votacionSimple =
+          votacionesData.find(
+            (v) => v.tipo === "POPULAR" && v.modalidad === "SIMPLE"
+          ) || null;
+
+        const votacionMulticriterio =
+          votacionesData.find(
+            (v) => v.tipo === "POPULAR" && v.modalidad === "MULTICRITERIO"
+          ) || null;
+
+        const activa = votacionMulticriterio || votacionSimple || null;
 
         let votacionProyectosData = [];
         let counts = {};
 
-        if (votacion) {
-          votacionProyectosData = await getVotacionProyectosByVotacion(votacion.id);
+        if (activa) {
+          votacionProyectosData = await getVotacionProyectosByVotacion(activa.id);
           const countEntries = await Promise.all(
             votacionProyectosData.map(async (vp) => [vp.id, await getConteoVotos(vp.id)])
           );
@@ -89,9 +113,19 @@ function PopularVotingScreen() {
         setProyectos(proyectosData);
         setEquipos(equiposData.filter((e) => e.evento?.id === eventoId));
         setAsignaciones(asignacionesData);
-        setVotacionPopular(votacion);
+        setVotacionPopularSimple(votacionSimple);
+        setVotacionPopularMulticriterio(votacionMulticriterio);
+        setVotacionActiva(activa);
         setVotacionProyectos(votacionProyectosData);
         setVoteCounts(counts);
+
+        if (!votacionSimple && !votacionMulticriterio) {
+          setTipoCreacion("SIMPLE");
+        } else if (votacionMulticriterio) {
+          setTipoCreacion("MULTICRITERIO");
+        } else {
+          setTipoCreacion("SIMPLE");
+        }
       } catch (err) {
         setError(err.message || "No se pudo cargar la votación");
       } finally {
@@ -107,6 +141,12 @@ function PopularVotingScreen() {
       window.history.replaceState({}, document.title);
     }
   }, []);
+
+  const totalPeso = useMemo(() => {
+    return criterios.reduce((acc, criterio) => acc + Number(criterio.peso || 0), 0);
+  }, [criterios]);
+
+  const puedeCrearMulticriterio = criterios.length > 0 && totalPeso === 100;
 
   const proyectosEnriquecidos = useMemo(() => {
     return proyectos.map((proyecto) => {
@@ -129,7 +169,54 @@ function PopularVotingScreen() {
 
   const eventoSeleccionado = eventos.find((evento) => evento.id === eventoId) || null;
 
-  const handleCrearVotacion = async () => {
+  const limpiarFormularioCriterio = () => {
+    setNuevoCriterio(CRITERIO_INICIAL);
+  };
+
+  const handleAgregarCriterio = () => {
+    const nombre = nuevoCriterio.nombre.trim();
+    const descripcion = nuevoCriterio.descripcion.trim();
+    const peso = Number(nuevoCriterio.peso);
+
+    if (!nombre) {
+      setError("El criterio debe tener nombre.");
+      return;
+    }
+
+    if (!peso || peso <= 0 || peso > 100) {
+      setError("El peso del criterio debe ser un número entre 1 y 100.");
+      return;
+    }
+
+    setError("");
+    setCriterios((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        nombre,
+        descripcion,
+        peso,
+      },
+    ]);
+    limpiarFormularioCriterio();
+  };
+
+  const handleEliminarCriterio = (criterioId) => {
+    setCriterios((prev) => prev.filter((criterio) => criterio.id !== criterioId));
+  };
+
+  const recargarDatosEvento = async (nuevaVotacion) => {
+    const votacionProyectosData = await getVotacionProyectosByVotacion(nuevaVotacion.id);
+    const countEntries = await Promise.all(
+      votacionProyectosData.map(async (vp) => [vp.id, await getConteoVotos(vp.id)])
+    );
+
+    setVotacionActiva(nuevaVotacion);
+    setVotacionProyectos(votacionProyectosData);
+    setVoteCounts(Object.fromEntries(countEntries));
+  };
+
+  const handleCrearVotacionSimple = async () => {
     try {
       setCreatingVoting(true);
       setError("");
@@ -140,32 +227,76 @@ function PopularVotingScreen() {
       fin.setDate(fin.getDate() + 7);
 
       const nueva = await createVotacion({
-        evento: { id: eventoId },
+        eventoId,
         tipo: "POPULAR",
+        modalidad: "SIMPLE",
         maxSelecciones: 3,
         inicio: ahora.toISOString(),
         fin: fin.toISOString(),
         estado: "ABIERTA",
       });
 
-      setVotacionPopular(nueva);
-      setSuccess("Votación popular creada correctamente.");
+      setVotacionPopularSimple(nueva);
+      setVotacionPopularMulticriterio(null);
+      await recargarDatosEvento(nueva);
+      setSuccess("Votación popular simple creada correctamente.");
     } catch (err) {
-      setError(err.message || "No se pudo crear la votación popular");
+      setError(err.message || "No se pudo crear la votación popular simple");
+    } finally {
+      setCreatingVoting(false);
+    }
+  };
+
+  const handleCrearVotacionMulticriterio = async () => {
+    if (!puedeCrearMulticriterio) {
+      setError("La votación multicriterio requiere al menos un criterio y los pesos deben sumar 100%.");
+      return;
+    }
+
+    try {
+      setCreatingVoting(true);
+      setError("");
+      setSuccess("");
+
+      const ahora = new Date();
+      const fin = new Date(ahora);
+      fin.setDate(fin.getDate() + 7);
+
+      const nueva = await createVotacion({
+        eventoId,
+        tipo: "POPULAR",
+        modalidad: "MULTICRITERIO",
+        maxSelecciones: 1,
+        inicio: ahora.toISOString(),
+        fin: fin.toISOString(),
+        estado: "ABIERTA",
+        criterios: criterios.map((criterio) => ({
+          nombre: criterio.nombre,
+          descripcion: criterio.descripcion,
+          peso: Number(criterio.peso),
+        })),
+      });
+
+      setVotacionPopularSimple(null);
+      setVotacionPopularMulticriterio(nueva);
+      await recargarDatosEvento(nueva);
+      setSuccess("Votación popular multicriterio creada correctamente.");
+    } catch (err) {
+      setError(err.message || "No se pudo crear la votación popular multicriterio");
     } finally {
       setCreatingVoting(false);
     }
   };
 
   const handleAsignarProyecto = async (proyectoId) => {
-    if (!votacionPopular) return;
+    if (!votacionActiva) return;
 
     try {
       setAssigningProjectId(proyectoId);
       setError("");
       setSuccess("");
 
-      const asignado = await asignarProyectoAVotacion(votacionPopular.id, proyectoId);
+      const asignado = await asignarProyectoAVotacion(votacionActiva.id, proyectoId);
       setVotacionProyectos((prev) => [...prev, asignado]);
       setSuccess("Proyecto asignado a la votación correctamente.");
     } catch (err) {
@@ -175,8 +306,32 @@ function PopularVotingScreen() {
     }
   };
 
+  const renderResumenVotacion = () => {
+    if (votacionPopularMulticriterio) {
+      return (
+        <div className="feedback-card success-box">
+          Existe una votación <strong>POPULAR MULTICRITERIO</strong> para este evento.
+        </div>
+      );
+    }
+
+    if (votacionPopularSimple) {
+      return (
+        <div className="feedback-card success-box">
+          Existe una votación <strong>POPULAR SIMPLE</strong> para este evento.
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   if (loading) {
-    return <main className="voting-panel-page"><div className="feedback-card">Cargando votación...</div></main>;
+    return (
+      <main className="voting-panel-page">
+        <div className="feedback-card">Cargando votación...</div>
+      </main>
+    );
   }
 
   return (
@@ -184,7 +339,9 @@ function PopularVotingScreen() {
       <header className="voting-panel-header">
         <div>
           <h1>Votación de Proyectos</h1>
-          <p>Selecciona un evento y accede al detalle de cada proyecto para votar.</p>
+          <p>
+            Selecciona un evento y crea una votación popular simple o multicriterio.
+          </p>
         </div>
       </header>
 
@@ -197,6 +354,8 @@ function PopularVotingScreen() {
               setEventoId(e.target.value);
               setSuccess("");
               setError("");
+              setCriterios([]);
+              limpiarFormularioCriterio();
             }}
           >
             {eventos.map((evento) => (
@@ -220,15 +379,177 @@ function PopularVotingScreen() {
         </section>
       )}
 
-      {!votacionPopular && puedeGestionar && (
-        <div className="feedback-card warning-box">
-          Este evento todavía no tiene votación popular.
-          <div style={{ marginTop: "0.75rem" }}>
-            <button className="primary-btn" onClick={handleCrearVotacion} disabled={creatingVoting}>
-              {creatingVoting ? "Creando..." : "Crear votación popular"}
+      {renderResumenVotacion()}
+
+      {!votacionActiva && puedeGestionar && (
+        <section className="detail-main-card">
+          <h2>Crear votación popular</h2>
+          <p>Elige si la votación popular del evento será simple o multicriterio.</p>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+              marginTop: "1rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <button
+              type="button"
+              className={`secondary-btn ${tipoCreacion === "SIMPLE" ? "active" : ""}`}
+              onClick={() => {
+                setTipoCreacion("SIMPLE");
+                setError("");
+                setSuccess("");
+              }}
+            >
+              <Vote size={16} />
+              Crear votación simple
+            </button>
+
+            <button
+              type="button"
+              className={`secondary-btn ${tipoCreacion === "MULTICRITERIO" ? "active" : ""}`}
+              onClick={() => {
+                setTipoCreacion("MULTICRITERIO");
+                setError("");
+                setSuccess("");
+              }}
+            >
+              <SlidersHorizontal size={16} />
+              Crear votación multicriterio
             </button>
           </div>
-        </div>
+
+          {tipoCreacion === "SIMPLE" && (
+            <div className="feedback-card warning-box">
+              La votación popular simple permitirá votar proyectos con un comentario obligatorio,
+              sin puntuaciones por criterio.
+              <div style={{ marginTop: "0.75rem" }}>
+                <button
+                  className="primary-btn"
+                  onClick={handleCrearVotacionSimple}
+                  disabled={creatingVoting}
+                >
+                  {creatingVoting ? "Creando..." : "Crear votación popular simple"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tipoCreacion === "MULTICRITERIO" && (
+            <div style={{ display: "grid", gap: "1rem" }}>
+              <div className="feedback-card warning-box">
+                Define los criterios de evaluación. El peso total debe sumar 100%.
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gap: "0.75rem",
+                  gridTemplateColumns: "2fr 2fr 1fr auto",
+                  alignItems: "end",
+                }}
+              >
+                <label className="voting-selector-field">
+                  <span>Nombre del criterio</span>
+                  <input
+                    type="text"
+                    value={nuevoCriterio.nombre}
+                    onChange={(e) =>
+                      setNuevoCriterio((prev) => ({ ...prev, nombre: e.target.value }))
+                    }
+                    placeholder="Ej. Innovación"
+                  />
+                </label>
+
+                <label className="voting-selector-field">
+                  <span>Descripción</span>
+                  <input
+                    type="text"
+                    value={nuevoCriterio.descripcion}
+                    onChange={(e) =>
+                      setNuevoCriterio((prev) => ({ ...prev, descripcion: e.target.value }))
+                    }
+                    placeholder="Qué se evalúa en este criterio"
+                  />
+                </label>
+
+                <label className="voting-selector-field">
+                  <span>Peso (%)</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={nuevoCriterio.peso}
+                    onChange={(e) =>
+                      setNuevoCriterio((prev) => ({ ...prev, peso: e.target.value }))
+                    }
+                    placeholder="25"
+                  />
+                </label>
+
+                <button type="button" className="primary-btn" onClick={handleAgregarCriterio}>
+                  <Plus size={16} />
+                  Añadir
+                </button>
+              </div>
+
+              <div className="vote-count-box">
+                <strong>Peso total:</strong> {totalPeso}%
+              </div>
+
+              {criterios.length > 0 ? (
+                <div className="voting-project-list">
+                  {criterios.map((criterio, index) => (
+                    <div key={criterio.id} className="voting-project-card">
+                      <div className="project-card-content">
+                        <div className="project-title-row">
+                          <strong>
+                            {index + 1}. {criterio.nombre}
+                          </strong>
+                          <span className="project-tag">{criterio.peso}%</span>
+                        </div>
+
+                        <p>{criterio.descripcion || "Sin descripción disponible."}</p>
+
+                        <div className="assign-button-row">
+                          <button
+                            type="button"
+                            className="secondary-btn"
+                            onClick={() => handleEliminarCriterio(criterio.id)}
+                          >
+                            <Trash2 size={16} />
+                            Eliminar criterio
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="feedback-card">Todavía no has añadido criterios.</div>
+              )}
+
+              {totalPeso !== 100 && (
+                <div className="feedback-card error-box">
+                  La suma de los pesos debe ser exactamente 100%.
+                </div>
+              )}
+
+              <div>
+                <button
+                  className="primary-btn"
+                  onClick={handleCrearVotacionMulticriterio}
+                  disabled={creatingVoting || !puedeCrearMulticriterio}
+                >
+                  {creatingVoting ? "Creando..." : "Crear votación popular multicriterio"}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
       )}
 
       {error && <div className="feedback-card error-box">{error}</div>}
@@ -273,7 +594,7 @@ function PopularVotingScreen() {
                   </div>
                 </button>
 
-                {puedeGestionar && votacionPopular && !proyecto.votacionProyectoId && (
+                {puedeGestionar && votacionActiva && !proyecto.votacionProyectoId && (
                   <div className="assign-button-row">
                     <button
                       className="secondary-btn"

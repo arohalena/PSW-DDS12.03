@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Users, Vote } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Star, Users, Vote } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getProyectosByEvento } from "../services/proyectoService";
 import { getEquipos } from "../services/equipoService";
@@ -7,10 +7,12 @@ import { getVotingToken } from "../services/sessionService";
 import {
   getAsignacionesCompetidorEvento,
   getConteoVotos,
+  getCriteriosByVotacion,
   getVotacionProyectosByVotacion,
   getVotacionesByEvento,
   haAlcanzadoMaximoVotacion,
-  votarProyecto,
+  votarProyectoMulticriterio,
+  votarProyectoSimple,
   yaHaVotadoProyecto,
 } from "../services/votacionService";
 import "../styles/voting-detail.css";
@@ -23,11 +25,17 @@ function ProjectVotingDetailScreen() {
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
+
   const [votacionPopular, setVotacionPopular] = useState(null);
   const [votacionProyectos, setVotacionProyectos] = useState([]);
+  const [criterios, setCriterios] = useState([]);
+
   const [voteCount, setVoteCount] = useState(0);
   const [yaVotado, setYaVotado] = useState(false);
   const [haAlcanzadoMaximo, setHaAlcanzadoMaximo] = useState(false);
+
+  const [comentario, setComentario] = useState("");
+  const [ratings, setRatings] = useState({});
 
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
@@ -48,9 +56,13 @@ function ProjectVotingDetailScreen() {
             getVotacionesByEvento(eventoId),
           ]);
 
-        const votacion = votacionesData.find((v) => v.tipo === "POPULAR") || null;
+        const votacion =
+          votacionesData.find(
+            (v) => v.tipo === "POPULAR" && (v.modalidad === "SIMPLE" || v.modalidad === "MULTICRITERIO")
+          ) || null;
 
         let votacionProyectosData = [];
+        let criteriosData = [];
         let count = 0;
         let voted = false;
         let maximo = false;
@@ -65,6 +77,10 @@ function ProjectVotingDetailScreen() {
           }
 
           maximo = await haAlcanzadoMaximoVotacion(votacion.id, getVotingToken());
+
+          if (votacion.modalidad === "MULTICRITERIO") {
+            criteriosData = await getCriteriosByVotacion(votacion.id);
+          }
         }
 
         setProyectos(proyectosData);
@@ -72,6 +88,7 @@ function ProjectVotingDetailScreen() {
         setAsignaciones(asignacionesData);
         setVotacionPopular(votacion);
         setVotacionProyectos(votacionProyectosData);
+        setCriterios(criteriosData);
         setVoteCount(count);
         setYaVotado(voted);
         setHaAlcanzadoMaximo(maximo);
@@ -103,8 +120,53 @@ function ProjectVotingDetailScreen() {
     };
   }, [proyectos, equipos, asignaciones, votacionProyectos, proyectoId]);
 
-  const handleVote = async () => {
-    if (!proyecto?.votacionProyectoId || yaVotado || haAlcanzadoMaximo) return;
+  const esMulticriterio = votacionPopular?.modalidad === "MULTICRITERIO";
+  const esSimple = votacionPopular?.modalidad === "SIMPLE";
+
+  const allRated =
+    criterios.length > 0 && criterios.every((criterio) => Number(ratings[criterio.id] || 0) > 0);
+
+  const canSubmitSimple =
+    !!proyecto?.votacionProyectoId &&
+    !!votacionPopular &&
+    esSimple &&
+    !yaVotado &&
+    !haAlcanzadoMaximo &&
+    comentario.trim().length > 0;
+
+  const canSubmitMulti =
+    !!proyecto?.votacionProyectoId &&
+    !!votacionPopular &&
+    esMulticriterio &&
+    !yaVotado &&
+    !haAlcanzadoMaximo &&
+    comentario.trim().length > 0 &&
+    allRated;
+
+  const gestionarError = (message) => {
+    if (message.includes("máximo")) {
+      setError("Ya has alcanzado el número máximo de votos permitidos.");
+      setHaAlcanzadoMaximo(true);
+    } else if (message.includes("Ya habías votado este proyecto")) {
+      setError("Ya habías votado este proyecto.");
+      setYaVotado(true);
+    } else if (message.includes("comentario es obligatorio")) {
+      setError("Debes escribir un comentario antes de enviar tu voto.");
+    } else if (message.includes("no está abierta")) {
+      setError("La votación no está abierta.");
+    } else if (message.includes("todavía no ha comenzado")) {
+      setError("La votación todavía no ha comenzado.");
+    } else if (message.includes("ya ha finalizado")) {
+      setError("La votación ya ha finalizado.");
+    } else if (message.includes("Debes puntuar todos los criterios")) {
+      setError("Debes puntuar todos los criterios antes de enviar la evaluación.");
+    } else {
+      setError(message || "No se pudo registrar el voto.");
+    }
+  };
+
+  const handleVoteSimple = async () => {
+    if (!canSubmitSimple) return;
 
     try {
       setVoting(true);
@@ -112,7 +174,8 @@ function ProjectVotingDetailScreen() {
       setSuccess("");
 
       const token = getVotingToken();
-      await votarProyecto(proyecto.votacionProyectoId, token);
+
+      await votarProyectoSimple(proyecto.votacionProyectoId, token, comentario.trim());
 
       navigate("/votar", {
         state: {
@@ -121,23 +184,40 @@ function ProjectVotingDetailScreen() {
         },
       });
     } catch (err) {
-      const message = err.message || "";
+      gestionarError(err.message || "");
+    } finally {
+      setVoting(false);
+    }
+  };
 
-      if (message.includes("máximo")) {
-        setError("Ya has alcanzado el número máximo de votos permitidos.");
-        setHaAlcanzadoMaximo(true);
-      } else if (message.includes("Ya habías votado este proyecto")) {
-        setError("Ya habías votado este proyecto.");
-        setYaVotado(true);
-      } else if (message.includes("no está abierta")) {
-        setError("La votación no está abierta.");
-      } else if (message.includes("todavía no ha comenzado")) {
-        setError("La votación todavía no ha comenzado.");
-      } else if (message.includes("ya ha finalizado")) {
-        setError("La votación ya ha finalizado.");
-      } else {
-        setError(message || "No se pudo registrar el voto.");
-      }
+  const handleVoteMulticriterio = async () => {
+    if (!canSubmitMulti) return;
+
+    try {
+      setVoting(true);
+      setError("");
+      setSuccess("");
+
+      const token = getVotingToken();
+
+      await votarProyectoMulticriterio({
+        votacionProyectoId: proyecto.votacionProyectoId,
+        anonTokenHash: token,
+        comentario: comentario.trim(),
+        puntuaciones: criterios.map((criterio) => ({
+          criterioId: criterio.id,
+          puntuacion: Number(ratings[criterio.id]),
+        })),
+      });
+
+      navigate("/votar", {
+        state: {
+          successMessage: "Evaluación enviada correctamente.",
+          eventoId,
+        },
+      });
+    } catch (err) {
+      gestionarError(err.message || "");
     } finally {
       setVoting(false);
     }
@@ -176,7 +256,11 @@ function ProjectVotingDetailScreen() {
       <header className="detail-page-header">
         <div>
           <h1>Evaluación de Proyecto</h1>
-          <p>Evalúa el proyecto según los criterios establecidos</p>
+          <p>
+            {esMulticriterio
+              ? "Evalúa el proyecto según los criterios establecidos."
+              : "Emite tu voto para este proyecto y añade un comentario obligatorio."}
+          </p>
         </div>
         <span className="project-tag">{proyecto.tipoCategoria}</span>
       </header>
@@ -202,8 +286,15 @@ function ProjectVotingDetailScreen() {
       </section>
 
       <section className="detail-main-card">
-        <h3>Votación Popular</h3>
-        <p>Pulsa el botón para registrar tu voto a este proyecto.</p>
+        <h3>
+          {esMulticriterio ? "Votación Popular Multicriterio" : "Votación Popular Simple"}
+        </h3>
+
+        {esMulticriterio ? (
+          <p>Valora este proyecto en cada criterio y deja un comentario obligatorio.</p>
+        ) : (
+          <p>Registra tu voto simple para este proyecto y añade un comentario obligatorio.</p>
+        )}
 
         <div className="vote-count-box">
           <strong>Votos actuales:</strong> {voteCount}
@@ -224,40 +315,140 @@ function ProjectVotingDetailScreen() {
         {error && <div className="feedback-card error-box">{error}</div>}
         {success && <div className="feedback-card success-box">{success}</div>}
 
+        {esMulticriterio && criterios.length > 0 && (
+          <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
+            {criterios.map((criterio) => (
+              <div key={criterio.id} className="voting-project-card">
+                <div className="project-card-content">
+                  <div className="project-title-row">
+                    <strong>{criterio.nombre}</strong>
+                    <span className="project-tag">{criterio.peso}%</span>
+                  </div>
+
+                  <p>{criterio.descripcion || "Sin descripción disponible."}</p>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      marginTop: "0.5rem",
+                    }}
+                  >
+                    {[1, 2, 3, 4, 5].map((valor) => {
+                      const activa = Number(ratings[criterio.id] || 0) >= valor;
+
+                      return (
+                        <button
+                          key={valor}
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() =>
+                            setRatings((prev) => ({ ...prev, [criterio.id]: valor }))
+                          }
+                          disabled={yaVotado || haAlcanzadoMaximo || voting}
+                          style={{
+                            opacity: activa ? 1 : 0.6,
+                            minWidth: "48px",
+                          }}
+                        >
+                          <Star size={16} />
+                          {valor}
+                        </button>
+                      );
+                    })}
+
+                    <span>
+                      {ratings[criterio.id]
+                        ? `Puntuación: ${ratings[criterio.id]}/5`
+                        : "Sin puntuar"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {esMulticriterio && criterios.length === 0 && (
+          <div className="feedback-card warning-box">
+            Esta votación multicriterio no tiene criterios configurados.
+          </div>
+        )}
+
+        <div style={{ marginTop: "1rem" }}>
+          <label className="voting-selector-field">
+            <span>Comentario obligatorio</span>
+            <textarea
+              rows={5}
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              placeholder="Escribe tu valoración del proyecto"
+            />
+          </label>
+        </div>
+
         <div className="vote-action-row">
-          <button
-            className="primary-btn"
-            onClick={handleVote}
-            disabled={
-              voting ||
-              !proyecto.votacionProyectoId ||
-              !votacionPopular ||
-              yaVotado ||
-              haAlcanzadoMaximo
-            }
-          >
-            {voting ? (
-              <>
-                <CheckCircle2 size={18} />
-                Registrando voto...
-              </>
-            ) : yaVotado ? (
-              <>
-                <CheckCircle2 size={18} />
-                Ya votado
-              </>
-            ) : haAlcanzadoMaximo ? (
-              <>
-                <CheckCircle2 size={18} />
-                Máximo alcanzado
-              </>
-            ) : (
-              <>
-                <Vote size={18} />
-                Votar proyecto
-              </>
-            )}
-          </button>
+          {esSimple && (
+            <button
+              className="primary-btn"
+              onClick={handleVoteSimple}
+              disabled={voting || !canSubmitSimple}
+            >
+              {voting ? (
+                <>
+                  <CheckCircle2 size={18} />
+                  Registrando voto...
+                </>
+              ) : yaVotado ? (
+                <>
+                  <CheckCircle2 size={18} />
+                  Ya votado
+                </>
+              ) : haAlcanzadoMaximo ? (
+                <>
+                  <CheckCircle2 size={18} />
+                  Máximo alcanzado
+                </>
+              ) : (
+                <>
+                  <Vote size={18} />
+                  Votar proyecto
+                </>
+              )}
+            </button>
+          )}
+
+          {esMulticriterio && (
+            <button
+              className="primary-btn"
+              onClick={handleVoteMulticriterio}
+              disabled={voting || !canSubmitMulti}
+            >
+              {voting ? (
+                <>
+                  <CheckCircle2 size={18} />
+                  Enviando evaluación...
+                </>
+              ) : yaVotado ? (
+                <>
+                  <CheckCircle2 size={18} />
+                  Ya votado
+                </>
+              ) : haAlcanzadoMaximo ? (
+                <>
+                  <CheckCircle2 size={18} />
+                  Máximo alcanzado
+                </>
+              ) : (
+                <>
+                  <Vote size={18} />
+                  Enviar evaluación
+                </>
+              )}
+            </button>
+          )}
         </div>
       </section>
     </main>

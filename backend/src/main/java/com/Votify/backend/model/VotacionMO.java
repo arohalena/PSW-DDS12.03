@@ -27,6 +27,10 @@ public class VotacionMO extends ModeloBaseMO {
     @Column(nullable = false)
     private TipoVotacionMO tipo;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    private ModalidadVotacionMO modalidad;
+
     @Column(name = "max_selecciones", nullable = false)
     private int maxSelecciones;
 
