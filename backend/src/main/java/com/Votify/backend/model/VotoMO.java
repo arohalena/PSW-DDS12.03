@@ -20,5 +20,5 @@ public class VotoMO extends ModeloBaseMO {
 
     @Column(name = "anon_token_hash", nullable = false)
     private String anonTokenHash;
-
+    
 }

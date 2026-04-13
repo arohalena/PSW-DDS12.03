@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Users, Vote, Plus } from "lucide-react";
+import { CalendarDays, Users, Plus } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getEventos } from "../services/eventoService";
 import { getProyectosByEvento } from "../services/proyectoService";
 import { getEquipos } from "../services/equipoService";
@@ -7,33 +8,32 @@ import { esOrganizador } from "../services/sessionService";
 import {
   asignarProyectoAVotacion,
   createVotacion,
-  getAnonVotingToken,
   getAsignacionesCompetidorEvento,
   getConteoVotos,
   getVotacionProyectosByVotacion,
   getVotacionesByEvento,
-  votarProyecto,
 } from "../services/votacionService";
 import "../styles/voting.css";
 
 function PopularVotingScreen() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [eventos, setEventos] = useState([]);
-  const [eventoId, setEventoId] = useState("");
+  const [eventoId, setEventoId] = useState(location.state?.eventoId || "");
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [votacionPopular, setVotacionPopular] = useState(null);
   const [votacionProyectos, setVotacionProyectos] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
   const [voteCounts, setVoteCounts] = useState({});
 
   const [loading, setLoading] = useState(true);
   const [loadingEvento, setLoadingEvento] = useState(false);
-  const [voting, setVoting] = useState(false);
   const [creatingVoting, setCreatingVoting] = useState(false);
   const [assigningProjectId, setAssigningProjectId] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState(location.state?.successMessage || "");
 
   const puedeGestionar = esOrganizador();
 
@@ -44,13 +44,17 @@ function PopularVotingScreen() {
         setError("");
         const data = await getEventos();
         setEventos(data);
-        if (data.length > 0) setEventoId(data[0].id);
+
+        if (!eventoId && data.length > 0) {
+          setEventoId(data[0].id);
+        }
       } catch (err) {
         setError(err.message || "No se pudieron cargar los eventos");
       } finally {
         setLoading(false);
       }
     };
+
     loadEventos();
   }, []);
 
@@ -61,8 +65,6 @@ function PopularVotingScreen() {
       try {
         setLoadingEvento(true);
         setError("");
-        setSuccess("");
-        setSelectedProject(null);
 
         const [proyectosData, equiposData, asignacionesData, votacionesData] = await Promise.all([
           getProyectosByEvento(eventoId),
@@ -100,6 +102,12 @@ function PopularVotingScreen() {
     loadData();
   }, [eventoId]);
 
+  useEffect(() => {
+    if (location.state?.successMessage || location.state?.eventoId) {
+      window.history.replaceState({}, document.title);
+    }
+  }, []);
+
   const proyectosEnriquecidos = useMemo(() => {
     return proyectos.map((proyecto) => {
       const equipo = equipos.find((eq) => eq.proyecto?.id === proyecto.id) || null;
@@ -134,7 +142,7 @@ function PopularVotingScreen() {
       const nueva = await createVotacion({
         evento: { id: eventoId },
         tipo: "POPULAR",
-        maxSelecciones: 1,
+        maxSelecciones: 3,
         inicio: ahora.toISOString(),
         fin: fin.toISOString(),
         estado: "ABIERTA",
@@ -167,31 +175,6 @@ function PopularVotingScreen() {
     }
   };
 
-  const handleVote = async () => {
-    if (!selectedProject?.votacionProyectoId) return;
-
-    try {
-      setVoting(true);
-      setError("");
-      setSuccess("");
-
-      const token = getAnonVotingToken();
-      await votarProyecto(selectedProject.votacionProyectoId, token);
-
-      const newCount = await getConteoVotos(selectedProject.votacionProyectoId);
-      setVoteCounts((prev) => ({
-        ...prev,
-        [selectedProject.votacionProyectoId]: newCount,
-      }));
-
-      setSuccess("Tu voto se ha registrado correctamente.");
-    } catch (err) {
-      setError(err.message || "No se pudo registrar el voto");
-    } finally {
-      setVoting(false);
-    }
-  };
-
   if (loading) {
     return <main className="voting-panel-page"><div className="feedback-card">Cargando votación...</div></main>;
   }
@@ -201,14 +184,21 @@ function PopularVotingScreen() {
       <header className="voting-panel-header">
         <div>
           <h1>Votación de Proyectos</h1>
-          <p>Selecciona un evento y gestiona la votación popular.</p>
+          <p>Selecciona un evento y accede al detalle de cada proyecto para votar.</p>
         </div>
       </header>
 
       <section className="voting-event-selector-card">
         <label className="voting-selector-field">
           <span>Evento</span>
-          <select value={eventoId} onChange={(e) => setEventoId(e.target.value)}>
+          <select
+            value={eventoId}
+            onChange={(e) => {
+              setEventoId(e.target.value);
+              setSuccess("");
+              setError("");
+            }}
+          >
             {eventos.map((evento) => (
               <option key={evento.id} value={evento.id}>
                 {evento.nombre}
@@ -247,124 +237,58 @@ function PopularVotingScreen() {
       {loadingEvento ? (
         <div className="feedback-card">Cargando proyectos...</div>
       ) : (
-        <>
-          <section className="voting-projects-section">
-            <h2>Proyectos del evento</h2>
+        <section className="voting-projects-section">
+          <h2>Proyectos del evento</h2>
 
-            <div className="voting-project-list">
-              {proyectosEnriquecidos.map((proyecto) => (
-                <div key={proyecto.id} className={`voting-project-card ${selectedProject?.id === proyecto.id ? "selected" : ""}`}>
-                  <button className="project-card-button" onClick={() => setSelectedProject(proyecto)}>
-                    <div className="project-card-content">
-                      <div className="project-title-row">
-                        <strong>{proyecto.nombre}</strong>
-                        <span className="project-tag">{proyecto.tipoCategoria}</span>
-                        {proyecto.votacionProyectoId ? (
-                          <span className="project-status-badge ready">Votable</span>
-                        ) : (
-                          <span className="project-status-badge disabled">No asignado</span>
-                        )}
-                      </div>
-
-                      <p>{proyecto.descripcion || "Sin descripción disponible."}</p>
-
-                      <div className="project-meta-row">
-                        <Users size={14} />
-                        <span>
-                          {proyecto.equipo?.nombre || "Sin equipo"} · {proyecto.miembros.length} integrantes
-                        </span>
-                      </div>
-
-                      {proyecto.votacionProyectoId && (
-                        <div className="vote-counter">Votos: {proyecto.totalVotos}</div>
+          <div className="voting-project-list">
+            {proyectosEnriquecidos.map((proyecto) => (
+              <div key={proyecto.id} className="voting-project-card">
+                <button
+                  className="project-card-button"
+                  onClick={() => navigate(`/votar/${eventoId}/proyecto/${proyecto.id}`)}
+                >
+                  <div className="project-card-content">
+                    <div className="project-title-row">
+                      <strong>{proyecto.nombre}</strong>
+                      <span className="project-tag">{proyecto.tipoCategoria}</span>
+                      {proyecto.votacionProyectoId ? (
+                        <span className="project-status-badge ready">Votable</span>
+                      ) : (
+                        <span className="project-status-badge disabled">No asignado</span>
                       )}
                     </div>
-                  </button>
 
-                  {puedeGestionar && votacionPopular && !proyecto.votacionProyectoId && (
-                    <div className="assign-button-row">
-                      <button
-                        className="secondary-btn"
-                        onClick={() => handleAsignarProyecto(proyecto.id)}
-                        disabled={assigningProjectId === proyecto.id}
-                      >
-                        <Plus size={16} />
-                        {assigningProjectId === proyecto.id ? "Asignando..." : "Asignar a votación"}
-                      </button>
+                    <p>{proyecto.descripcion || "Sin descripción disponible."}</p>
+
+                    <div className="project-meta-row">
+                      <Users size={14} />
+                      <span>
+                        {proyecto.equipo?.nombre || "Sin equipo"} · {proyecto.miembros.length} integrantes
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
 
-          {selectedProject && (
-            <section className="voting-project-detail-section">
-              <div className="project-detail-card">
-                <div className="project-detail-header">
-                  <div>
-                    <h2>{selectedProject.nombre}</h2>
-                    <p>{selectedProject.descripcion || "Sin descripción disponible."}</p>
-                  </div>
-                </div>
-
-                <div className="project-detail-grid">
-                  <div className="detail-card">
-                    <span className="detail-label">Evento</span>
-                    <strong>{eventoSeleccionado?.nombre}</strong>
-                  </div>
-                  <div className="detail-card">
-                    <span className="detail-label">Categoría</span>
-                    <strong>{selectedProject.tipoCategoria}</strong>
-                  </div>
-                  <div className="detail-card">
-                    <span className="detail-label">Equipo</span>
-                    <strong>{selectedProject.equipo?.nombre || "Sin equipo asignado"}</strong>
-                  </div>
-                  <div className="detail-card">
-                    <span className="detail-label">Votos actuales</span>
-                    <strong>{selectedProject.totalVotos}</strong>
-                  </div>
-                </div>
-
-                <div className="team-members-card">
-                  <h3>Miembros del equipo</h3>
-                  {selectedProject.miembros.length === 0 ? (
-                    <p>No hay miembros asignados.</p>
-                  ) : (
-                    <ul>
-                      {selectedProject.miembros.map((miembro) => (
-                        <li key={miembro.id}>
-                          <strong>{miembro.nombre}</strong> — {miembro.email}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className="vote-button-row">
-                  <button
-                    className="primary-btn"
-                    onClick={handleVote}
-                    disabled={voting || !selectedProject.votacionProyectoId || !votacionPopular}
-                  >
-                    {voting ? (
-                      <>
-                        <CheckCircle2 size={18} />
-                        Registrando voto...
-                      </>
-                    ) : (
-                      <>
-                        <Vote size={18} />
-                        Votar este proyecto
-                      </>
+                    {proyecto.votacionProyectoId && (
+                      <div className="vote-counter">Votos: {proyecto.totalVotos}</div>
                     )}
-                  </button>
-                </div>
+                  </div>
+                </button>
+
+                {puedeGestionar && votacionPopular && !proyecto.votacionProyectoId && (
+                  <div className="assign-button-row">
+                    <button
+                      className="secondary-btn"
+                      onClick={() => handleAsignarProyecto(proyecto.id)}
+                      disabled={assigningProjectId === proyecto.id}
+                    >
+                      <Plus size={16} />
+                      {assigningProjectId === proyecto.id ? "Asignando..." : "Asignar a votación"}
+                    </button>
+                  </div>
+                )}
               </div>
-            </section>
-          )}
-        </>
+            ))}
+          </div>
+        </section>
       )}
     </main>
   );

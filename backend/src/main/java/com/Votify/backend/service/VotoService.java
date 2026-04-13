@@ -20,60 +20,57 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
-public class VotoService extends GenericService<VotoMO>{
-    
+public class VotoService extends GenericService<VotoMO> {
+
     private final VotoRepository votoRepository;
     private final VotacionProyectoRepository votacionProyectoRepository;
 
     @Override
-    protected JpaRepository<VotoMO, UUID> getRepository(){
-
+    protected JpaRepository<VotoMO, UUID> getRepository() {
         return votoRepository;
-
     }
 
-    public List<VotoMO> findByVotacionProyecto_Id(UUID votacionProyectoId){
-
+    public List<VotoMO> findByVotacionProyecto_Id(UUID votacionProyectoId) {
         return votoRepository.findByVotacionProyecto_Id(votacionProyectoId);
-        
-    }
-    
-    public long contarVotosPorVotacionProyecto(UUID votacionProyectoId) {
-        return votoRepository.countByVotacionProyecto_Id(votacionProyectoId);
     }
 
-    public VotoMO votar(VotoMO voto){
-        if(voto.getVotacionProyecto() == null || voto.getVotacionProyecto().getId() == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La opción de votación es obligatoria");
+    public VotoMO votar(VotoMO voto) {
+        if (voto.getVotacionProyecto() == null || voto.getVotacionProyecto().getId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La opción de votación es obligatoria.");
         }
 
-        if(voto.getAnonTokenHash() == null || voto.getAnonTokenHash().isBlank()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token del votante es obligatorio");
+        if (voto.getAnonTokenHash() == null || voto.getAnonTokenHash().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token del votante es obligatorio.");
         }
 
         VotacionProyectoMO votacionProyecto = votacionProyectoRepository.findById(voto.getVotacionProyecto().getId())
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la opción de votación"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se ha encontrado la opción de votación."));
 
-        VotacionMO votacion =votacionProyecto.getVotacion();
+        VotacionMO votacion = votacionProyecto.getVotacion();
 
-        if(votacion.getEstado() != EstadoVotacionMO.ABIERTA){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no está abierta");
+        if (votacion.getEstado() != EstadoVotacionMO.ABIERTA) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no está abierta.");
         }
 
         OffsetDateTime ahora = OffsetDateTime.now();
 
-        if(votacion.getInicio() != null && ahora.isBefore(votacion.getInicio())){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación todavía no ha comenzado");
+        if (votacion.getInicio() != null && ahora.isBefore(votacion.getInicio())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación todavía no ha comenzado.");
         }
 
-        if(votacion.getFin() != null && ahora.isAfter(votacion.getFin())){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación ya ha finalizado");
+        if (votacion.getFin() != null && ahora.isAfter(votacion.getFin())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación ya ha finalizado.");
         }
 
-        long votosEmitidos = votoRepository.countByVotacionProyecto_Votacion_IdAndAnonTokenHash(votacion.getId(), voto.getAnonTokenHash());
+        long votosEmitidos = votoRepository.countByVotacionProyecto_Votacion_IdAndAnonTokenHash(
+                votacion.getId(),
+                voto.getAnonTokenHash()
+        );
 
-        if(votosEmitidos >= votacion.getMaxSelecciones()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya has alcanzado el número máximo de votos permitidos en esta votación");
+        if (votosEmitidos >= votacion.getMaxSelecciones()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ya has alcanzado el número máximo de votos permitidos en esta votación.");
         }
 
         if (votoRepository.existsByVotacionProyecto_IdAndAnonTokenHash(
@@ -81,14 +78,46 @@ public class VotoService extends GenericService<VotoMO>{
                 voto.getAnonTokenHash()
         )) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "No puedes votar dos veces al mismo proyecto en esta votación.");
+                    "Ya habías votado este proyecto.");
         }
 
         VotoMO nuevo = new VotoMO();
         nuevo.setVotacionProyecto(votacionProyecto);
         nuevo.setAnonTokenHash(voto.getAnonTokenHash());
-        
+
         return votoRepository.save(nuevo);
     }
 
-}   
+    public long contarVotosPorVotacionProyecto(UUID votacionProyectoId) {
+        return votoRepository.countByVotacionProyecto_Id(votacionProyectoId);
+    }
+
+    public boolean yaHaVotado(UUID votacionProyectoId, String anonTokenHash) {
+        if (anonTokenHash == null || anonTokenHash.isBlank()) {
+            return false;
+        }
+        return votoRepository.existsByVotacionProyecto_IdAndAnonTokenHash(votacionProyectoId, anonTokenHash);
+    }
+
+    public boolean haAlcanzadoMaximo(UUID votacionId, String anonTokenHash) {
+        if (anonTokenHash == null || anonTokenHash.isBlank()) {
+            return false;
+        }
+
+        VotacionProyectoMO cualquierRelacion = votacionProyectoRepository
+                .findByVotacion_Id(votacionId)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la votación."));
+
+        VotacionMO votacion = cualquierRelacion.getVotacion();
+
+        long votosEmitidos = votoRepository.countByVotacionProyecto_Votacion_IdAndAnonTokenHash(
+                votacionId,
+                anonTokenHash
+        );
+
+        return votosEmitidos >= votacion.getMaxSelecciones();
+    }
+    
+}

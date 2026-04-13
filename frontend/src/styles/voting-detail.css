@@ -1,0 +1,96 @@
+.voting-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.detail-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.detail-page-header h1 {
+  margin: 0;
+  color: #111827;
+}
+
+.detail-page-header p {
+  margin: 0.35rem 0 0;
+  color: #6b7280;
+}
+
+.detail-main-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.2rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+}
+
+.detail-main-card h2,
+.detail-main-card h3 {
+  margin-top: 0;
+  color: #111827;
+}
+
+.detail-main-card p {
+  color: #4b5563;
+}
+
+.project-meta-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+}
+
+.member-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.member-chip {
+  background: #f3f4f6;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.vote-count-box {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.vote-action-row {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.vote-action-row .primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}

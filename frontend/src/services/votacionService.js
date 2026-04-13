@@ -15,10 +15,12 @@ export async function createVotacion(votacion) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(votacion),
   });
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(errorText || "No se pudo crear la votación");
   }
+
   return response.json();
 }
 
@@ -49,7 +51,9 @@ export async function asignarProyectoAVotacion(votacionId, proyectoId) {
 export async function votarProyecto(votacionProyectoId, anonTokenHash) {
   const response = await fetch(VOTOS_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       votacionProyecto: { id: votacionProyectoId },
       anonTokenHash,
@@ -73,20 +77,34 @@ export async function getConteoVotos(votacionProyectoId) {
   return response.json();
 }
 
+export async function yaHaVotadoProyecto(votacionProyectoId, token) {
+  const response = await fetch(
+    `${VOTOS_URL}/votacion-proyecto/${votacionProyectoId}/ya-votado?token=${encodeURIComponent(token)}`
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo comprobar si ya había votado");
+  }
+
+  return response.json();
+}
+
+export async function haAlcanzadoMaximoVotacion(votacionId, token) {
+  const response = await fetch(
+    `${VOTOS_URL}/votacion/${votacionId}/ha-alcanzado-maximo?token=${encodeURIComponent(token)}`
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo comprobar el máximo de votos");
+  }
+
+  return response.json();
+}
+
 export async function getAsignacionesCompetidorEvento(eventoId) {
   const response = await fetch(`${COMPETIDOR_EVENTO_URL}/evento/${eventoId}`);
   if (!response.ok) throw new Error("No se pudieron cargar los miembros del equipo");
   return response.json();
-}
-
-export function getAnonVotingToken() {
-  const key = "votify_anon_token";
-  let token = localStorage.getItem(key);
-
-  if (!token) {
-    token = crypto.randomUUID();
-    localStorage.setItem(key, token);
-  }
-
-  return token;
 }
