@@ -22,12 +22,14 @@ import com.Votify.backend.model.ComentarioMO;
 import com.Votify.backend.model.CriterioEvaluacionMO;
 import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
+import com.Votify.backend.model.PuntuacionCriterioMO;
 import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoCriterioMO;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.ComentarioRepository;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
+import com.Votify.backend.repository.PuntuacionCriterioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotoCriterioRepository;
 import com.Votify.backend.repository.VotoRepository;
@@ -42,6 +44,7 @@ public class VotoService extends GenericService<VotoMO> {
     private final VotacionProyectoRepository votacionProyectoRepository;
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
     private final VotoCriterioRepository votoCriterioRepository;
+    private final PuntuacionCriterioRepository puntuacionCriterioRepository;
     private final ComentarioRepository comentarioRepository;
 
     @Override
@@ -123,7 +126,7 @@ public class VotoService extends GenericService<VotoMO> {
         validarMaximoYDuplicado(votacion, votacionProyecto, request.getAnonTokenHash());
 
         List<CriterioEvaluacionMO> criterios = criterioEvaluacionRepository
-            .findByVotacion_IdOrderByOrdenVisualAsc(votacion.getId());
+            .findByEvento_IdOrderByOrdenAsc(votacion.getEvento().getId());
 
         if (criterios.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no tiene criterios configurados.");
@@ -159,7 +162,7 @@ public class VotoService extends GenericService<VotoMO> {
             }
 
             BigDecimal parcial = BigDecimal.valueOf(puntuacion)
-                .multiply(criterio.getPeso())
+                .multiply(BigDecimal.valueOf(criterio.getPeso()))
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
             total = total.add(parcial);
@@ -178,6 +181,13 @@ public class VotoService extends GenericService<VotoMO> {
             votoCriterio.setCriterio(criterio);
             votoCriterio.setPuntuacion(puntuacionesMap.get(criterio.getId()));
             votoCriterioRepository.save(votoCriterio);
+
+            PuntuacionCriterioMO puntuacionCriterio = new PuntuacionCriterioMO();
+            puntuacionCriterio.setCriterio(criterio);
+            puntuacionCriterio.setVotacionProyecto(votacionProyecto);
+            puntuacionCriterio.setAnonTokenHash(request.getAnonTokenHash());
+            puntuacionCriterio.setPuntuacion(puntuacionesMap.get(criterio.getId()));
+            puntuacionCriterioRepository.save(puntuacionCriterio);
         }
 
         ComentarioMO comentario = new ComentarioMO();

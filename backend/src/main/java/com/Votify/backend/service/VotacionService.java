@@ -88,11 +88,11 @@ public class VotacionService extends GenericService<VotacionMO> {
             int orden = 1;
             for (CriterioEvaluacionRequest criterioReq : request.getCriterios()) {
                 CriterioEvaluacionMO criterio = new CriterioEvaluacionMO();
-                criterio.setVotacion(guardada);
+                criterio.setEvento(evento);
                 criterio.setNombre(criterioReq.getNombre().trim());
                 criterio.setDescripcion(criterioReq.getDescripcion());
-                criterio.setPeso(criterioReq.getPeso());
-                criterio.setOrdenVisual(orden++);
+                criterio.setPeso(criterioReq.getPeso().intValue());
+                criterio.setOrden(orden++);
                 criterioEvaluacionRepository.save(criterio);
             }
         }
