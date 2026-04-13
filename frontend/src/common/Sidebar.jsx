@@ -11,6 +11,11 @@ const items = [
   { label: "Usuarios", to: "/usuarios" },
   { label: "Resultados", to: "/", disabled: true },
   { label: "Mi Proyecto", to: "/mi-proyecto" },
+  { label: "Criterios", to: "/criterios" },
+  { label: "Votación", to: "/votar" },
+  { label: "Usuarios", to: "/usuarios" },
+  { label: "Resultados", to: "/resultados" },
+  { label: "Mi Proyecto", to: "/", disabled: true },
 ];
 
 function Sidebar() {

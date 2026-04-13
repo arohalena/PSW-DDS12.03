@@ -1,0 +1,81 @@
+.ranking-page {
+  padding: 1.5rem;
+  max-width: 1000px;
+}
+
+.ranking-header h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+.ranking-header p {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.ranking-event-selector {
+  margin-bottom: 1.5rem;
+}
+.ranking-event-selector label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ranking-event-selector select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.ranking-table-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ranking-table th {
+  background: #f9fafb;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+}
+.ranking-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ranking-row.pos-1 { background: #fffbeb; }
+.ranking-row.pos-2 { background: #f8fafc; }
+.ranking-row.pos-3 { background: #fff7ed; }
+
+.ranking-position {
+  text-align: center;
+  width: 50px;
+}
+.gold { color: #f59e0b; }
+.silver { color: #94a3b8; }
+.bronze { color: #d97706; }
+.position-number {
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.ranking-proyecto {
+  font-weight: 600;
+}
+.ranking-score {
+  text-align: center;
+}
+.ranking-total {
+  font-weight: 700;
+  color: #4f46e5;
+  font-size: 1.05rem;
+  text-align: center;
+}
