@@ -279,71 +279,94 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
     descripcion: "",
     tipoCategoria: "",
   });
-  
+
   const [miembros, setMiembros] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
-  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [usuariosSugeridos, setUsuariosSugeridos] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    getUsuarios().then(setUsuarios).catch(() => setUsuarios([]));
-  }, []);
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchTerm.trim().length > 1) {
+        setIsSearching(true);
+        try {
+          const data = await getUsuarios(); 
+          const filtrados = data.filter(u => 
+            u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            u.email.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+          setUsuariosSugeridos(filtrados);
+        } catch (error) {
+          console.error("Error buscando usuarios", error);
+        }
+      } else {
+        setUsuariosSugeridos([]);
+      }
+    }, 300);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const addMiembro = (usuario) => {
+    if (!miembros.find(m => m.id === usuario.id)) {
+      setMiembros([...miembros, usuario]);
+    }
+    setSearchTerm("");
+    setUsuariosSugeridos([]);
   };
 
-  const sugerenciasFiltradas = usuarios.filter((u) => {
-    const yaAgregado = miembros.some((m) => m.email === u.email);
-    if (yaAgregado) return false;
-    const texto = busqueda.toLowerCase();
-    return (
-      u.nombre?.toLowerCase().includes(texto) ||
-      u.email?.toLowerCase().includes(texto)
-    );
-  });
-
-  const agregarMiembro = (usuario) => {
-    setMiembros([...miembros, { nombre: usuario.nombre, email: usuario.email }]);
-    setBusqueda("");
-    setMostrarSugerencias(false);
-  };
-
-  const removeMiembro = (indexToRemove) => {
-    setMiembros(miembros.filter((_, index) => index !== indexToRemove));
+  const removeMiembro = (id) => {
+    setMiembros(miembros.filter(m => m.id !== id));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const dataParaEnviar = {
-      nombre: formData.nombre,
-      descripcion: formData.descripcion,
-      tipoCategoria: formData.tipoCategoria,
-      nombreEquipo: formData.nombreEquipo,
-      miembrosEmails: miembros.map((m) => m.email),
-      eventoId: eventoId,
-    };
-    
+
     try {
-      const nuevo = await createProyectoConEquipo(dataParaEnviar);
-      onCreado(nuevo);
+      const nuevoProyecto = await createProyecto({
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        tipoCategoria: formData.tipoCategoria,
+        evento: { id: eventoId }
+      });
+
+      const equipo = await createEquipo({
+        nombre: formData.nombreEquipo,
+        eventoId: eventoId,
+        proyectoId: nuevoProyecto.id
+      });
+
+      for (const miembro of miembros) {
+        await assignCompetidor({
+          competidorId: miembro.id,
+          eventoId: eventoId,
+          equipoId: equipo.id
+        });
+      }
+
+      onCreado(nuevoProyecto);
+      onClose();
+
     } catch (err) {
-      alert("Error al crear: " + err.message);
+      alert("Error: " + err.message);
     }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-            Crear Nuevo Proyecto
-          </h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Crear Nuevo Proyecto</h2>
         </div>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div className="modal-body">
+          <form onSubmit={handleSubmit}><div className="modal-body">
             <div className="form-group">
               <label>Nombre del Proyecto *</label>
               <input 
@@ -353,6 +376,9 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.nombre}
                 onChange={handleChange}
                 required 
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
               />
             </div>
 
@@ -365,6 +391,9 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.nombreEquipo}
                 onChange={handleChange}
                 required 
+                name="nombreEquipo"
+                value={formData.nombreEquipo}
+                onChange={handleChange}
               />
             </div>
 
@@ -377,56 +406,50 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.descripcion}
                 onChange={handleChange}
                 rows="3"
+                name="descripcion"
+                value={formData.descripcion}
+                onChange={handleChange}
               />
             </div>
 
             <div className="form-group">
-              <label>Miembros del Equipo</label>
-              <div className="autocomplete-wrapper">
-                <Search className="search-icon" size={16} />
+              <label>Miembros del Equipo *</label>
+              <div className="user-search-container">
                 <input 
-                  className="input-field autocomplete-input"
-                  placeholder="Buscar usuario por nombre o email..."
-                  value={busqueda}
-                  onChange={(e) => {
-                    setBusqueda(e.target.value);
-                    setMostrarSugerencias(true);
-                  }}
-                  onFocus={() => setMostrarSugerencias(true)}
+                  className="input-field" 
+                  placeholder="Buscar usuario por nombre o correo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoComplete="off"
                 />
-                {mostrarSugerencias && busqueda.length > 0 && (
-                  <div className="autocomplete-dropdown">
-                    {sugerenciasFiltradas.length === 0 ? (
-                      <div className="autocomplete-empty">
-                        No se encontraron usuarios
+                
+                {usuariosSugeridos.length > 0 && (
+                  <div className="user-results-dropdown">
+                    {usuariosSugeridos.map((u) => (
+                      <div 
+                        key={u.id} 
+                        className="user-result-item" 
+                        onClick={() => addMiembro(u)}
+                      >
+                        <span className="user-result-name">{u.nombre}</span>
+                        <span className="user-result-email">{u.email}</span>
                       </div>
-                    ) : (
-                      sugerenciasFiltradas.map((u) => (
-                        <div
-                          key={u.id}
-                          className="autocomplete-option"
-                          onClick={() => agregarMiembro(u)}
-                        >
-                          <div className="autocomplete-avatar">
-                            {u.nombre?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div className="autocomplete-info">
-                            <span className="autocomplete-name">{u.nombre}</span>
-                            <span className="autocomplete-email">{u.email}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                    ))}
+                  </div>
+                )}
+                
+                {searchTerm.length > 1 && usuariosSugeridos.length === 0 && (
+                  <div className="user-results-dropdown">
+                    <div className="no-results">No se encontraron usuarios</div>
                   </div>
                 )}
               </div>
 
               <div className="tags-container">
-                {miembros.map((m, index) => (
-                  <span key={index} className="tag">
-                    <span className="tag-avatar">{m.nombre.charAt(0).toUpperCase()}</span>
-                    {m.nombre}
-                    <button type="button" onClick={() => removeMiembro(index)}>×</button>
+                {miembros.map((m) => (
+                  <span key={m.id} className="tag">
+                    {m.nombre} 
+                    <button type="button" onClick={() => removeMiembro(m.id)}>×</button>
                   </span>
                 ))}
               </div>
@@ -434,13 +457,9 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
 
             <div className="form-group">
               <label>Categoría *</label>
-              <select
-                className="select-field"
-                name="tipoCategoria"
-                value={formData.tipoCategoria}
-                onChange={handleChange}
-                required
-              >
+              <select className="select-field" required 
+                name="tipoCategoria"                value={formData.tipoCategoria}
+                onChange={handleChange}>
                 <option value="">Seleccionar categoría</option>
                 {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -448,12 +467,8 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-primary">
-              Crear Proyecto
-            </button>
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn-primary">Crear Proyecto</button>
           </div>
         </form>
       </div>

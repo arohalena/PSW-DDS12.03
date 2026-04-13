@@ -29,13 +29,13 @@ export async function createCompetidor(competidor) {
   return response.json();
 }
 
-export async function assignCompetidor(datos) {
-  const response = await fetch(COMPETIDOR_EVENTO_URL, {
+export async function assignCompetidor(competidor) {
+  const response = await fetch("http://localhost:8090/api/competidor-evento", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(datos),
+    body: JSON.stringify(competidor),
   });
 
   if (!response.ok) {
