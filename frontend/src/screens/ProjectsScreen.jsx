@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
-import { getProyectosByEvento, createProyectoConEquipo } from "../services/proyectoService";
+import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
 import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
 import { getUsuarios } from "../services/usuarioService";
 import {createEquipo} from "../services/equipoService";
 import {assignCompetidor} from "../services/competidorService";
 import { esOrganizador } from "../services/sessionService";
-import "../styles/projects.css"; 
-import { getUsuarios } from "../services/usuarioService";
+import "../styles/projects.css";
+
 
 const CATEGORIAS = ["IA", "SOSTENIBILIDAD"];
 
@@ -372,16 +372,15 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
           <div className="modal-body">
             <div className="form-group">
               <label>Nombre del Proyecto *</label>
-              <input 
+                <input 
                 name="nombre" 
                 className="input-field" 
                 placeholder="Ej: AI Health Monitor"
                 value={formData.nombre}
                 onChange={handleChange}
                 required 
-                value={formData.nombre}
-                onChange={handleChange}
               />
+
             </div>
 
             <div className="form-group">
@@ -393,9 +392,8 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.nombreEquipo}
                 onChange={handleChange}
                 required 
-                value={formData.nombreEquipo}
-                onChange={handleChange}
               />
+
             </div>
 
             <div className="form-group">
@@ -407,9 +405,8 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.descripcion}
                 onChange={handleChange}
                 rows="3"
-                value={formData.descripcion}
-                onChange={handleChange}
               />
+
             </div>
 
             <div className="form-group">
