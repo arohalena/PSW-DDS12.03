@@ -120,7 +120,7 @@ public class ProyectoService extends GenericService<ProyectoMO> {
                 String emailLimpio = email.trim().toLowerCase();
                 if (emailLimpio.isEmpty()) continue;
 
-                CompetidorMO competidor = competidorRepository.findByEmail(emailLimpio)
+                CompetidorMO competidor = competidorRepository.findByEmailIgnoreCase(emailLimpio)
                     .orElseGet(() -> {
                         CompetidorMO nuevo = new CompetidorMO();
                         nuevo.setNombre(emailLimpio.split("@")[0]);
