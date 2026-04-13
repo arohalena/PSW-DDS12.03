@@ -1,5 +1,7 @@
 package com.Votify.backend.model;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -21,4 +23,6 @@ public class VotoMO extends ModeloBaseMO {
     @Column(name = "anon_token_hash", nullable = false)
     private String anonTokenHash;
     
+    @Column(name = "puntuacion_total", precision = 6, scale = 2)
+    private BigDecimal puntuacionTotal;
 }
