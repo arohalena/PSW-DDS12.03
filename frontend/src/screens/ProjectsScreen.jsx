@@ -194,7 +194,6 @@ function ComentarioModal({ proyecto, onClose }) {
     <div className="comment-overlay" onClick={onClose}>
       <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
 
-        {/* Header */}
         <div className="comment-header">
           <div>
             <h2>Comentarios y Feedback</h2>
@@ -205,7 +204,6 @@ function ComentarioModal({ proyecto, onClose }) {
           </button>
         </div>
 
-        {/* Lista de comentarios */}
         <div className="comment-list">
           {loading ? (
             <p className="comment-loading">Cargando comentarios...</p>
@@ -238,7 +236,6 @@ function ComentarioModal({ proyecto, onClose }) {
           )}
         </div>
 
-        {/* Escribir comentario */}
         <div className="comment-compose">
           {enviado && (
             <div className="comment-success">
