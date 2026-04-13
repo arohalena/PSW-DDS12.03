@@ -16,10 +16,8 @@ import com.Votify.backend.dto.ComentarioRequest;
 import com.Votify.backend.model.ComentarioMO;
 import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.model.ProyectoMO;
-import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
-import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.service.ComentarioService;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.ProyectoService;
@@ -34,8 +32,6 @@ public class ComentarioController extends GenericController<ComentarioMO>{
     private final ComentarioService comentarioService;
     private final ProyectoService proyectoService;
 
-
-    private final UsuarioRepository usuarioRepository;
     private final CompetidorRepository competidorRepository;
     private final CompetidorEventoRepository competidorEventoRepository;
 
@@ -49,18 +45,14 @@ public class ComentarioController extends GenericController<ComentarioMO>{
     @PostMapping
     public ComentarioMO create(@RequestBody ComentarioRequest comentarioR){
 
-        UsuarioMO usuario = usuarioRepository.findById(comentarioR.getUsuarioId())
+        CompetidorMO competidor = competidorRepository.findByUsuarioId(comentarioR.getUsuarioId())
             .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "El usuario no se ha encontrado."
+                HttpStatus.FORBIDDEN, "No eres un competidor registrado en ningún evento."
             ));
-
+        
         ProyectoMO proyecto = proyectoService.findById(comentarioR.getProyectoId());
+        
         UUID eventoId = proyecto.getEvento().getId();
-
-        CompetidorMO competidor = competidorRepository.findByEmail(usuario.getEmail())
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.FORBIDDEN, "No eres competidor registrado en ningún evento."
-            ));
         
         boolean vinculado = competidorEventoRepository.existsByCompetidorIdAndEventoId(competidor.getId(), eventoId);
 

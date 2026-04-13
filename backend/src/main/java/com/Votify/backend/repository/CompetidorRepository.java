@@ -8,5 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.Votify.backend.model.CompetidorMO;
 
 public interface CompetidorRepository extends JpaRepository<CompetidorMO, UUID> {
+
     Optional<CompetidorMO> findByEmail(String email);
+
+    Optional<CompetidorMO> findByUsuarioId(UUID usuarioId);
+    
 }
