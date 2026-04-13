@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
-import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
+import { getProyectosByEvento, createProyectoConEquipo } from "../services/proyectoService";
 import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
 import { getUsuarios } from "../services/usuarioService";
@@ -320,38 +320,34 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
     setMiembros(miembros.filter(m => m.id !== id));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const [submitting, setSubmitting] = useState(false);
 
-    try {
-      const nuevoProyecto = await createProyecto({
-        nombre: formData.nombre,
-        descripcion: formData.descripcion,
-        tipoCategoria: formData.tipoCategoria,
-        evento: { id: eventoId }
-      });
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (submitting) return;
 
-      const equipo = await createEquipo({
-        nombre: formData.nombreEquipo,
-        evento: { id: eventoId },
-        proyecto: { id: nuevoProyecto.id }
-      });
+      try {
+        setSubmitting(true);
 
-      for (const miembro of miembros) {
-        await assignCompetidor({
-          competidorId: miembro.id,
-          eventoId: eventoId,
-          equipoId: equipo.id
+        const nuevoProyecto = await createProyectoConEquipo({
+          nombre: formData.nombre,
+          descripcion: formData.descripcion,
+          tipoCategoria: formData.tipoCategoria,
+          nombreEquipo: formData.nombreEquipo,
+          miembrosEmails: miembros.map(m => m.email),
+          eventoId: eventoId
         });
+
+        onCreado(nuevoProyecto);
+        onClose();
+
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        setSubmitting(false);
       }
+    };
 
-      onCreado(nuevoProyecto);
-      onClose();
-
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
-  };
 
   const handleChange = (e) => {
     setFormData({
@@ -468,7 +464,10 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary">Crear Proyecto</button>
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? "Creando..." : "Crear Proyecto"}
+            </button>
+
           </div>
         </form>
       </div>
