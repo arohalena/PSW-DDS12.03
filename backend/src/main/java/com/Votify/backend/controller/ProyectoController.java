@@ -10,14 +10,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.Votify.backend.dto.CrearProyectoRequest;
 import com.Votify.backend.model.ProyectoMO;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.ProyectoService;
 
 import lombok.RequiredArgsConstructor;
-
-
-
 
 
 @RestController
@@ -45,5 +43,12 @@ public class ProyectoController extends GenericController<ProyectoMO>{
     public ProyectoMO crear(@RequestBody ProyectoMO proyecto){
 
         return proyectoService.crear(proyecto);
-    }    
+    }
+
+    @PostMapping("/crear-con-equipo")
+    public ProyectoMO crearConEquipo(@RequestBody CrearProyectoRequest req){
+
+        return proyectoService.crearConEquipo(req);
+
+    }
 }

@@ -50,3 +50,25 @@ export async function getProyectos() {
     return response.json();
     
 }
+
+export async function createProyectoConEquipo(data){
+
+    const response = await fetch(`${API_URL}/crear-con-equipo`, {
+        
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+
+    if(!response.ok){
+
+        const errorText = await response.text();
+        throw new Error(errorText || "No se ha podido crear el proyecto.");
+
+    }
+
+    return response.json();
+    
+}
