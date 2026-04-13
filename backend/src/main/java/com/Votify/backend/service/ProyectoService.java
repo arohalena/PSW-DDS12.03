@@ -1,5 +1,6 @@
 package com.Votify.backend.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,20 +11,26 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.domain.Proyecto;
 import com.Votify.backend.dto.CrearProyectoRequest;
+import com.Votify.backend.dto.MiProyectoDashboardResponse;
 import com.Votify.backend.factory.CreadorProyecto;
 import com.Votify.backend.factory.CreadorProyectoIA;
 import com.Votify.backend.factory.CreadorProyectoSostenibilidad;
+import com.Votify.backend.model.ComentarioMO;
 import com.Votify.backend.model.CompetidorEventoMO;
 import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ProyectoMO;
+import com.Votify.backend.model.VotacionProyectoMO;
+import com.Votify.backend.repository.ComentarioRepository;
 import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
 import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.EventoRepository;
 import com.Votify.backend.repository.ProyectoRepository;
 import com.Votify.backend.repository.UsuarioRepository;
+import com.Votify.backend.repository.VotacionProyectoRepository;
+import com.Votify.backend.repository.VotoRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,6 +44,9 @@ public class ProyectoService extends GenericService<ProyectoMO> {
     private final CompetidorRepository competidorRepository;
     private final CompetidorEventoRepository competidorEventoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ComentarioRepository comentarioRepository;
+    private final VotacionProyectoRepository votacionProyectoRepository;
+    private final VotoRepository votoRepository;
 
     @Override
     protected JpaRepository<ProyectoMO, UUID> getRepository(){
@@ -156,5 +166,51 @@ public class ProyectoService extends GenericService<ProyectoMO> {
 
         return proyecto;
     }
+    public MiProyectoDashboardResponse getMiProyectoDashboard(UUID usuarioId) {
+        CompetidorMO competidor = competidorRepository.findByUsuarioId(usuarioId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No se ha encontrado un competidor asociado a este usuario."
+            ));
 
+        List<CompetidorEventoMO> asignaciones = competidorEventoRepository.findByCompetidorId(competidor.getId());
+
+        if (asignaciones == null || asignaciones.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "El competidor no está asignado a ningún equipo."
+            );
+        }
+
+        CompetidorEventoMO asignacion = asignaciones.get(0);
+        EquipoMO equipo = asignacion.getEquipo();
+
+        if (equipo == null || equipo.getProyecto() == null) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No se ha encontrado un proyecto asociado al equipo del competidor."
+            );
+        }
+
+        ProyectoMO proyecto = equipo.getProyecto();
+        EventoMO evento = equipo.getEvento();
+
+        List<ComentarioMO> comentarios = comentarioRepository.findByProyecto_Id(proyecto.getId());
+        List<VotacionProyectoMO> votacionesProyecto = votacionProyectoRepository.findByProyecto_Id(proyecto.getId());
+
+        long totalVotos = 0;
+        for (VotacionProyectoMO votacionProyecto : votacionesProyecto) {
+            totalVotos += votoRepository.countByVotacionProyecto_Id(votacionProyecto.getId());
+        }
+
+        return new MiProyectoDashboardResponse(
+            usuarioId,
+            competidor.getId(),
+            proyecto,
+            equipo,
+            evento,
+            totalVotos,
+            comentarios != null ? comentarios : Collections.emptyList()
+        );
+    }
 }

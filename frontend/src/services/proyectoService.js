@@ -72,3 +72,13 @@ export async function createProyectoConEquipo(data){
     return response.json();
     
 }
+export async function getMiProyectoDashboard(usuarioId) {
+  const response = await fetch(`${API_URL}/usuario/${usuarioId}/dashboard`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo cargar el dashboard del proyecto.");
+  }
+
+  return response.json();
+}

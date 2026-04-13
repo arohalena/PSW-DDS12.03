@@ -11,6 +11,7 @@ import TeamsScreen from "./screens/TeamsScreen";
 import ProjectsScreen from "./screens/ProjectsScreen";
 import PopularVotingScreen from "./screens/PopularVotingScreen";
 import ProjectVotingDetailScreen from "./screens/ProjectVotingDetailScreen";
+import MyProjectDashboardScreen from "./screens/MyProjectDashboardScreen";
 
 function PrivateRoute({ children }) {
   const usuario = localStorage.getItem("usuarioLogueado");
@@ -119,6 +120,16 @@ function App() {
                <ProjectVotingDetailScreen />
             </AppLayout>
            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/mi-proyecto"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <MyProjectDashboardScreen />
+              </AppLayout>
+            </PrivateRoute>
           }
         />
       </Routes>
