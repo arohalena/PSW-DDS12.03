@@ -37,6 +37,10 @@ public class VotoService extends GenericService<VotoMO>{
         return votoRepository.findByVotacionProyecto_Id(votacionProyectoId);
         
     }
+    
+    public long contarVotosPorVotacionProyecto(UUID votacionProyectoId) {
+        return votoRepository.countByVotacionProyecto_Id(votacionProyectoId);
+    }
 
     public VotoMO votar(VotoMO voto){
         if(voto.getVotacionProyecto() == null || voto.getVotacionProyecto().getId() == null){

@@ -19,16 +19,12 @@ function ProjectsScreen() {
   const [showModal, setShowModal] = useState(false);
 
   const puedeGestionar = esOrganizador();
-<<<<<<< HEAD
   const desdeEvento = Boolean(eventoId);
-=======
->>>>>>> 7dc782f (front de proyectos modificado)
   const idEfectivo = eventoId || eventoSeleccionado;
 
   useEffect(() => {
     if (!eventoId) {
       getEventos().then(setEventos).catch(() => setEventos([]));
-<<<<<<< HEAD
     }
   }, [eventoId]);
 
@@ -48,9 +44,8 @@ function ProjectsScreen() {
       }
     };
     load();
-=======
     }
-  }, [eventoId]);
+    , [eventoId]);
 
   useEffect(() => {
     if (!idEfectivo) { setProyectos([]); return; }
@@ -153,8 +148,6 @@ function ProjectsScreen() {
   );
 }
 
-<<<<<<< HEAD
-=======
 function CreateProyectoModal({ eventoId, onCreado, onClose }) {
   const [formData, setFormData] = useState({
     nombre: "",
@@ -273,5 +266,5 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
   );
 }
 
->>>>>>> 3bd01e9 (Crear equipo en formulario proyecto)
+
 export default ProjectsScreen;

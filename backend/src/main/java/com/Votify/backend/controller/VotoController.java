@@ -37,6 +37,11 @@ public class VotoController extends GenericController<VotoMO>{
 
     }
 
+    @GetMapping("/votacion-proyecto/{votacionProyectoId}/count")
+    public long countByVotacionProyecto(@PathVariable UUID votacionProyectoId) {
+        return votoService.contarVotosPorVotacionProyecto(votacionProyectoId);
+    }
+    
     @PostMapping
     public VotoMO create(@RequestBody VotoMO voto){
 
