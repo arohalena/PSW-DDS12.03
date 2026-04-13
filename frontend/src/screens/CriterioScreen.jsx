@@ -116,7 +116,7 @@ function CriteriosScreen() {
       setNuevoNombre("");
       setNuevoPeso("");
       setNuevaDescripcion("");
-      setSuccess("Criterio añadido correctamente");
+      setSuccess("Criterio añadido correctamente");ç
 
     } catch (err){
 
@@ -136,7 +136,7 @@ function CriteriosScreen() {
     } catch (err){
 
       setError(err.message);
-
+      
     }
   };
 
