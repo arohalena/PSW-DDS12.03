@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
-import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
+import { getProyectosByEvento, createProyectoConEquipo } from "../services/proyectoService";
 import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
 import { esOrganizador } from "../services/sessionService";
@@ -276,14 +276,20 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
     tipoCategoria: "",
   });
   
-  const [miembros, setMiembros] = useState(["Ana García"]);
+  const [miembros, setMiembros] = useState([]);
   const [currentMiembro, setCurrentMiembro] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleAddMiembro = (e) => {
     if (e.key === 'Enter' && currentMiembro.trim() !== '') {
       e.preventDefault();
-      if (!miembros.includes(currentMiembro.trim())) {
-        setMiembros([...miembros, currentMiembro.trim()]);
+      const email = currentMiembro.trim().toLowerCase();
+      if (!miembros.includes(email)) {
+        setMiembros([...miembros, email]);
       }
       setCurrentMiembro("");
     }
@@ -296,13 +302,16 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const dataParaEnviar = {
-      ...formData,
-      miembros,
-      evento: { id: eventoId }
+      nombre: formData.nombre,
+      descripcion: formData.descripcion,
+      tipoCategoria: formData.tipoCategoria,
+      nombreEquipo: formData.nombreEquipo,
+      miembrosEmails: miembros,
+      eventoId: eventoId,
     };
     
     try {
-      const nuevo = await createProyecto(dataParaEnviar);
+      const nuevo = await createProyectoConEquipo(dataParaEnviar);
       onCreado(nuevo);
     } catch (err) {
       alert("Error al crear: " + err.message);
@@ -323,8 +332,11 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
             <div className="form-group">
               <label>Nombre del Proyecto *</label>
               <input 
-                className="input-field" 
+                className="input-field"
+                name="nombre"
                 placeholder="Ej: AI Health Monitor"
+                value={formData.nombre}
+                onChange={handleChange}
                 required 
               />
             </div>
@@ -332,8 +344,11 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
             <div className="form-group">
               <label>Nombre del Equipo *</label>
               <input 
-                className="input-field" 
+                className="input-field"
+                name="nombreEquipo"
                 placeholder="Ej: Tech Innovators"
+                value={formData.nombreEquipo}
+                onChange={handleChange}
                 required 
               />
             </div>
@@ -341,17 +356,22 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
             <div className="form-group">
               <label>Descripción</label>
               <textarea 
-                className="textarea-field" 
+                className="textarea-field"
+                name="descripcion"
                 placeholder="Describe el proyecto..."
+                value={formData.descripcion}
+                onChange={handleChange}
                 rows="3"
               />
             </div>
 
             <div className="form-group">
-              <label>Miembros del Equipo</label>
+              <label>Miembros del Equipo (email + Enter)</label>
               <input 
                 className="input-field" 
-                placeholder="Nombre + Enter"
+                placeholder="email@ejemplo.com + Enter"
+                value={currentMiembro}
+                onChange={(e) => setCurrentMiembro(e.target.value)}
                 onKeyDown={handleAddMiembro}
               />
               <div className="tags-container">
@@ -364,8 +384,14 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
             </div>
 
             <div className="form-group">
-              <label>Categoría</label>
-              <select className="select-field" required>
+              <label>Categoría *</label>
+              <select
+                className="select-field"
+                name="tipoCategoria"
+                value={formData.tipoCategoria}
+                onChange={handleChange}
+                required
+              >
                 <option value="">Seleccionar categoría</option>
                 {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
