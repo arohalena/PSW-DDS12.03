@@ -14,9 +14,6 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -36,6 +33,5 @@ public class EquipoMO extends ModeloBaseMO {
     
     @JsonIgnore
     @OneToMany(mappedBy = "equipo")
-    @JsonIgnore
     private List<CompetidorEventoMO> competidores;
 }
