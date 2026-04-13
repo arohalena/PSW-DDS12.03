@@ -51,13 +51,17 @@ public class VotoService extends GenericService<VotoMO>{
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la opción de votación"));
 
         VotacionMO votacion =votacionProyecto.getVotacion();
+
         if(votacion.getEstado() != EstadoVotacionMO.ABIERTA){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no está abierta");
         }
+
         OffsetDateTime ahora = OffsetDateTime.now();
+
         if(votacion.getInicio() != null && ahora.isBefore(votacion.getInicio())){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación todavía no ha comenzado");
         }
+
         if(votacion.getFin() != null && ahora.isAfter(votacion.getFin())){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación ya ha finalizado");
         }
@@ -79,6 +83,7 @@ public class VotoService extends GenericService<VotoMO>{
         VotoMO nuevo = new VotoMO();
         nuevo.setVotacionProyecto(votacionProyecto);
         nuevo.setAnonTokenHash(voto.getAnonTokenHash());
+        
         return votoRepository.save(nuevo);
     }
 

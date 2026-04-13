@@ -213,7 +213,7 @@ CREATE TABLE public.competidor (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     nombre text NOT NULL,
     email text NOT NULL,
-    password text NOT NULL,
+    contrasenya text NOT NULL,
     -- equipo_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -367,7 +367,7 @@ CREATE VIEW public.ranking_votacion AS
 --
 
 ALTER TABLE ONLY public.competidor
-    ADD CONSTRAINT competidor_password_key UNIQUE (password);
+    ADD CONSTRAINT competidor_contrasenya_key UNIQUE (contrasenya);
 
 
 --
