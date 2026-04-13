@@ -1,7 +1,5 @@
 package com.Votify.backend.model;
 
-import java.math.BigDecimal;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -17,18 +15,25 @@ import lombok.EqualsAndHashCode;
 public class CriterioEvaluacionMO extends ModeloBaseMO {
 
     @ManyToOne
-    @JoinColumn(name = "votacion_id", nullable = false)
-    private VotacionMO votacion;
+    @JoinColumn(name = "evento_id", nullable = false)
+    private EventoMO evento;
 
     @Column(nullable = false)
     private String nombre;
 
-    @Column(columnDefinition = "text")
+    @Column
     private String descripcion;
 
-    @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal peso;
+    @Column(nullable = false)
+    private int peso;
 
-    @Column(name = "orden_visual", nullable = false)
-    private Integer ordenVisual;
+    @Column(name = "escala_min", nullable = false)
+    private int escalaMin = 1;
+
+    @Column(name = "escala_max", nullable = false)
+    private int escalaMax = 10;
+
+    @Column(nullable = false)
+    private int orden = 0;
+    
 }
