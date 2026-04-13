@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import { Plus, Search, Filter, MoreVertical } from "lucide-react";
 import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
 import { getEventos } from "../services/eventoService";
+import { getUsuarios } from "../services/usuarioService";
+import {createEquipo} from "../services/equipoService";
+import {assignCompetidor} from "../services/competidorService";
 import { esOrganizador } from "../services/sessionService";
 import "../styles/projects.css"; 
 
@@ -137,57 +140,103 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
     descripcion: "",
     tipoCategoria: "",
   });
-  
-  const [miembros, setMiembros] = useState(["Ana García"]);
-  const [currentMiembro, setCurrentMiembro] = useState("");
 
-  const handleAddMiembro = (e) => {
-    if (e.key === 'Enter' && currentMiembro.trim() !== '') {
-      e.preventDefault();
-      if (!miembros.includes(currentMiembro.trim())) {
-        setMiembros([...miembros, currentMiembro.trim()]);
+  const [miembros, setMiembros] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [usuariosSugeridos, setUsuariosSugeridos] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchTerm.trim().length > 1) {
+        setIsSearching(true);
+        try {
+          const data = await getUsuarios(); 
+          const filtrados = data.filter(u => 
+            u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            u.email.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+          setUsuariosSugeridos(filtrados);
+        } catch (error) {
+          console.error("Error buscando usuarios", error);
+        }
+      } else {
+        setUsuariosSugeridos([]);
       }
-      setCurrentMiembro("");
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const addMiembro = (usuario) => {
+    if (!miembros.find(m => m.id === usuario.id)) {
+      setMiembros([...miembros, usuario]);
     }
+    setSearchTerm("");
+    setUsuariosSugeridos([]);
   };
 
-  const removeMiembro = (indexToRemove) => {
-    setMiembros(miembros.filter((_, index) => index !== indexToRemove));
+  const removeMiembro = (id) => {
+    setMiembros(miembros.filter(m => m.id !== id));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const dataParaEnviar = {
-      ...formData,
-      miembros,
-      evento: { id: eventoId }
-    };
-    
+
     try {
-      const nuevo = await createProyecto(dataParaEnviar);
-      onCreado(nuevo);
+      const nuevoProyecto = await createProyecto({
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        tipoCategoria: formData.tipoCategoria,
+        evento: { id: eventoId }
+      });
+
+      const equipo = await createEquipo({
+        nombre: formData.nombreEquipo,
+        eventoId: eventoId,
+        proyectoId: nuevoProyecto.id
+      });
+
+      for (const miembro of miembros) {
+        await assignCompetidor({
+          competidorId: miembro.id,
+          eventoId: eventoId,
+          equipoId: equipo.id
+        });
+      }
+
+      onCreado(nuevoProyecto);
+      onClose();
+
     } catch (err) {
-      alert("Error al crear: " + err.message);
+      alert("Error: " + err.message);
     }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-            Crear Nuevo Proyecto
-          </h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Crear Nuevo Proyecto</h2>
         </div>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div className="modal-body">
+          <form onSubmit={handleSubmit}><div className="modal-body">
             <div className="form-group">
               <label>Nombre del Proyecto *</label>
               <input 
                 className="input-field" 
                 placeholder="Ej: AI Health Monitor"
                 required 
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
               />
             </div>
 
@@ -197,6 +246,9 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 className="input-field" 
                 placeholder="Ej: Tech Innovators"
                 required 
+                name="nombreEquipo"
+                value={formData.nombreEquipo}
+                onChange={handleChange}
               />
             </div>
 
@@ -206,28 +258,60 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 className="textarea-field" 
                 placeholder="Describe el proyecto..."
                 rows="3"
+                name="descripcion"
+                value={formData.descripcion}
+                onChange={handleChange}
               />
             </div>
 
             <div className="form-group">
-              <label>Miembros del Equipo</label>
-              <input 
-                className="input-field" 
-                placeholder="Nombre + Enter"
-                onKeyDown={handleAddMiembro}
-              />
+              <label>Miembros del Equipo *</label>
+              <div className="user-search-container">
+                <input 
+                  className="input-field" 
+                  placeholder="Buscar usuario por nombre o correo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoComplete="off"
+                />
+                
+                {usuariosSugeridos.length > 0 && (
+                  <div className="user-results-dropdown">
+                    {usuariosSugeridos.map((u) => (
+                      <div 
+                        key={u.id} 
+                        className="user-result-item" 
+                        onClick={() => addMiembro(u)}
+                      >
+                        <span className="user-result-name">{u.nombre}</span>
+                        <span className="user-result-email">{u.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {searchTerm.length > 1 && usuariosSugeridos.length === 0 && (
+                  <div className="user-results-dropdown">
+                    <div className="no-results">No se encontraron usuarios</div>
+                  </div>
+                )}
+              </div>
+
               <div className="tags-container">
-                {miembros.map((m, index) => (
-                  <span key={index} className="tag">
-                    {m} <button type="button" onClick={() => removeMiembro(index)}>×</button>
+                {miembros.map((m) => (
+                  <span key={m.id} className="tag">
+                    {m.nombre} 
+                    <button type="button" onClick={() => removeMiembro(m.id)}>×</button>
                   </span>
                 ))}
               </div>
             </div>
 
             <div className="form-group">
-              <label>Categoría</label>
-              <select className="select-field" required>
+              <label>Categoría *</label>
+              <select className="select-field" required 
+                name="tipoCategoria"                value={formData.tipoCategoria}
+                onChange={handleChange}>
                 <option value="">Seleccionar categoría</option>
                 {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -235,12 +319,8 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-primary">
-              Crear Proyecto
-            </button>
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn-primary">Crear Proyecto</button>
           </div>
         </form>
       </div>
