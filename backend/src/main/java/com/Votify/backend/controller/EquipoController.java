@@ -23,8 +23,8 @@ public class EquipoController extends GenericController<EquipoMO> {
         return equipoService;
     }
 
-    @PostMapping
-    public EquipoMO create(@RequestBody EquipoMO equipo) {
+    @PostMapping("/crear")
+    public EquipoMO crear(@RequestBody EquipoMO equipo) {
         return equipoService.crear(equipo);
     }
 }
