@@ -379,8 +379,6 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.nombre}
                 onChange={handleChange}
                 required 
-                value={formData.nombre}
-                onChange={handleChange}
               />
             </div>
 
@@ -393,8 +391,6 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.nombreEquipo}
                 onChange={handleChange}
                 required 
-                value={formData.nombreEquipo}
-                onChange={handleChange}
               />
             </div>
 
@@ -407,8 +403,6 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 value={formData.descripcion}
                 onChange={handleChange}
                 rows="3"
-                value={formData.descripcion}
-                onChange={handleChange}
               />
             </div>
 
