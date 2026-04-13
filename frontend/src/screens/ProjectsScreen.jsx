@@ -5,7 +5,7 @@ import { getProyectosByEvento, createProyectoConEquipo } from "../services/proye
 import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
 import { getCompetidores } from "../services/competidorService";
-import {createEquipo} from "../services/equipoService";
+import {createEquipo, getEquiposParaEvento} from "../services/equipoService";
 import {assignCompetidor} from "../services/competidorService";
 import { esOrganizador } from "../services/sessionService";
 import "../styles/projects.css";
@@ -17,6 +17,7 @@ function ProjectsScreen() {
   const { eventoId } = useParams();
   const [eventos, setEventos] = useState([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState("");
+  const [equipos, setEquipos] = useState([]); 
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -35,26 +36,31 @@ function ProjectsScreen() {
   }, [eventoId]);
 
   useEffect(() => {
-  if (eventoId) {
-    setEventoSeleccionado(eventoId);
-  }
-  getEventos()
-    .then(setEventos)
-    .catch(() => setEventos([]));
-}, [eventoId]);
+    if (eventoId) {
+      setEventoSeleccionado(eventoId);
+    }
+    getEventos()
+      .then(setEventos)
+      .catch(() => setEventos([]));
+  }, [eventoId]);
 
   useEffect(() => {
     if (!idEfectivo) {
       setProyectos([]);
+      setEquipos([]); 
       return;
     }
     const load = async () => {
       try {
         setLoading(true);
-        const data = await getProyectosByEvento(idEfectivo);
-        setProyectos(data);
+        const [proyectosData, equiposData] = await Promise.all([
+          getProyectosByEvento(idEfectivo),
+          getEquiposParaEvento(idEfectivo)
+        ]);
+        setProyectos(proyectosData);
+        setEquipos(equiposData);
       } catch (err) {
-        setError("Error al cargar proyectos");
+        setError("Error al cargar datos");
       } finally {
         setLoading(false);
       }
@@ -63,11 +69,18 @@ function ProjectsScreen() {
   }, [idEfectivo]);
 
   const filtrados = useMemo(() => {
-    return proyectos.filter((p) =>
+    return proyectos.map(p => {
+      const equipoAsociado = equipos.find(e => e.proyecto?.id === p.id);
+      return {
+        ...p,
+        nombreEquipo: equipoAsociado ? equipoAsociado.nombre : "Sin equipo"
+      };
+    }).filter((p) =>
       p.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-      p.tipoCategoria?.toLowerCase().includes(search.toLowerCase())
+      p.tipoCategoria?.toLowerCase().includes(search.toLowerCase()) ||
+      p.nombreEquipo?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [proyectos, search]);
+  }, [proyectos, equipos, search]);
 
   return (
     <div className="projects-container">

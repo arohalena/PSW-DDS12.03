@@ -62,23 +62,12 @@ export async function getProyectosParaEquipo() {
   return response.json();
 }
 
-export async function getProyectosParaEquipo() {
-  const response = await fetch(PROYECTOS_URL);
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudieron cargar los proyectos");
-  }
-
-  return response.json();
-}
-
-export async function getEventosParaEquipo(eventoId) {
+export async function getEquiposParaEvento(eventoId) {
   const response = await fetch(`${API_URL}/evento/${eventoId}`);
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || "No se pudieron cargar los proyectos");
+    throw new Error(errorText || "No se pudieron cargar los equipos del evento");
   }
 
   return response.json();
