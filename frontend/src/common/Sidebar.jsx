@@ -8,7 +8,7 @@ const items = [
   { label: "Proyectos", to: "/proyectos" },
   { label: "Asignación", to: "/", disabled: true },
   { label: "Criterios", to: "/", disabled: true },
-  { label: "Votación", to: "/", disabled: true },
+  { label: "Votación", to: "/votar" },
   { label: "Usuarios", to: "/usuarios" },
   { label: "Resultados", to: "/", disabled: true },
   { label: "Mi Proyecto", to: "/", disabled: true },

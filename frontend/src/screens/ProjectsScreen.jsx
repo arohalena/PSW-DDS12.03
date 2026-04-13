@@ -8,8 +8,7 @@ import { getUsuarios } from "../services/usuarioService";
 import {createEquipo} from "../services/equipoService";
 import {assignCompetidor} from "../services/competidorService";
 import { esOrganizador } from "../services/sessionService";
-import "../styles/projects.css";
-
+import "../styles/projects.css"; 
 
 const CATEGORIAS = ["IA", "SOSTENIBILIDAD"];
 

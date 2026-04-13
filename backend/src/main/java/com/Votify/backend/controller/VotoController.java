@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.Votify.backend.model.VotoMO;
@@ -30,16 +32,31 @@ public class VotoController extends GenericController<VotoMO>{
     }
 
     @GetMapping("/votacion-proyecto/{votacionProyectoId}")
-    public List<VotoMO> findByVotacionProyecto_Id(UUID votacionProyectoId){
+    public List<VotoMO> findByVotacionProyecto_Id(@PathVariable UUID votacionProyectoId){
 
         return votoService.findByVotacionProyecto_Id(votacionProyectoId);
 
     }
 
+    @GetMapping("/votacion-proyecto/{votacionProyectoId}/count")
+    public long countByVotacionProyecto(@PathVariable UUID votacionProyectoId) {
+        return votoService.contarVotosPorVotacionProyecto(votacionProyectoId);
+    }
+    
+    @GetMapping("/votacion-proyecto/{votacionProyectoId}/ya-votado")
+    public boolean yaHaVotado(@PathVariable UUID votacionProyectoId, @RequestParam String token) {
+        return votoService.yaHaVotado(votacionProyectoId, token);
+    }
+
+    @GetMapping("/votacion/{votacionId}/ha-alcanzado-maximo")
+    public boolean haAlcanzadoMaximo( @PathVariable UUID votacionId, @RequestParam String token) {
+        return votoService.haAlcanzadoMaximo(votacionId, token);
+    }
+
     @PostMapping
     public VotoMO create(@RequestBody VotoMO voto){
 
-        return votoService.save(voto);
+        return votoService.votar(voto);
 
     }
 
