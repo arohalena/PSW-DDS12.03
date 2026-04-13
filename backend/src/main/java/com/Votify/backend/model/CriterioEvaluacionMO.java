@@ -35,4 +35,5 @@ public class CriterioEvaluacionMO extends ModeloBaseMO {
 
     @Column(nullable = false)
     private int orden = 0;
+    
 }
