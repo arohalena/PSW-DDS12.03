@@ -107,7 +107,7 @@ function ProjectsScreen() {
               <th>Categoría</th>
               <th>Descripción</th>
               <th>Equipo</th>
-              <th style={{ textAlign: 'right' }}>Acciones</th>
+              <th style={{ textAlign: 'right' }}>Comentarios</th>
             </tr>
           </thead>
           <tbody>
