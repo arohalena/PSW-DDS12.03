@@ -7,8 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.Votify.backend.model.CriterioEvaluacionMO;
 
-public interface CriterioEvaluacionRepository extends JpaRepository<CriterioEvaluacionMO, UUID>{
-    
+public interface CriterioEvaluacionRepository extends JpaRepository<CriterioEvaluacionMO, UUID> {
     List<CriterioEvaluacionMO> findByEvento_IdOrderByOrdenAsc(UUID eventoId);
-    
 }
