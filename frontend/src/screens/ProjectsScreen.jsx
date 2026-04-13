@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Plus, Search, Filter, MoreVertical } from "lucide-react";
+import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
 import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
+import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
 import { esOrganizador } from "../services/sessionService";
 import "../styles/projects.css"; 
@@ -17,6 +18,7 @@ function ProjectsScreen() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [comentarioProyecto, setComentarioProyecto] = useState(null);
 
   const puedeGestionar = esOrganizador();
   const desdeEvento = Boolean(eventoId);
@@ -111,7 +113,14 @@ function ProjectsScreen() {
                 <td><span className="badge">{p.tipoCategoria}</span></td>
                 <td style={{ color: '#6b7280' }}>{p.descripcion || "—"}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <MoreVertical size={18} style={{ cursor: 'pointer', color: '#9ca3af' }} />
+                  <button
+                    className="btn-comment"
+                    title="Dejar comentario"
+                    onClick={() => setComentarioProyecto(p)}
+                  >
+                    <MessageCircle size={16} />
+                    <span>Comentar</span>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -126,6 +135,135 @@ function ProjectsScreen() {
           onClose={() => setShowModal(false)}
         />
       )}
+
+      {comentarioProyecto && (
+        <ComentarioModal
+          proyecto={comentarioProyecto}
+          onClose={() => setComentarioProyecto(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ComentarioModal({ proyecto, onClose }) {
+  const [texto, setTexto] = useState("");
+  const [comentarios, setComentarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  useEffect(() => {
+    getComentariosByProyecto(proyecto.id)
+      .then(setComentarios)
+      .catch(() => setComentarios([]))
+      .finally(() => setLoading(false));
+  }, [proyecto.id]);
+
+  const handleEnviar = async (e) => {
+    e.preventDefault();
+    if (!texto.trim()) return;
+    try {
+      setEnviando(true);
+      const nuevo = await crearComentario(proyecto.id, texto.trim());
+      setComentarios([...comentarios, nuevo]);
+      setTexto("");
+      setEnviado(true);
+      setTimeout(() => setEnviado(false), 3000);
+    } catch (err) {
+      alert("Error al enviar comentario: " + err.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content comentario-modal">
+        {/* Header */}
+        <div className="modal-header comentario-modal-header">
+          <div>
+            <h2 className="comentario-modal-title">Comentarios y Feedback</h2>
+            <p className="comentario-modal-subtitle">
+              Proyecto: {proyecto.nombre}
+            </p>
+          </div>
+          <button className="comentario-close-btn" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Comentarios existentes */}
+        <div className="modal-body">
+          {loading ? (
+            <p className="comentario-empty">Cargando comentarios...</p>
+          ) : comentarios.length === 0 ? (
+            <div className="comentario-empty-state">
+              <MessageCircle size={40} className="comentario-empty-icon" />
+              <p className="comentario-empty">No hay comentarios aún.</p>
+              <p className="comentario-empty-hint">Sé el primero en dejar tu feedback anónimo.</p>
+            </div>
+          ) : (
+            <div className="comentarios-list">
+              {comentarios.map((c) => (
+                <div key={c.id} className="comentario-item">
+                  <div className="comentario-header">
+                    <div className="comentario-avatar">A</div>
+                    <div className="comentario-meta">
+                      <span className="comentario-autor">Anónimo</span>
+                      <span className="comentario-fecha">
+                        {new Date(c.createdAt).toLocaleDateString('es-ES', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="comentario-texto">{c.texto}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Formulario de comentario */}
+        <div className="comentario-form-section">
+          <label className="comentario-form-label">
+            Comentarios y Feedback (opcional)
+          </label>
+          <textarea
+            className="comentario-textarea"
+            rows={4}
+            placeholder="Comparte tus observaciones, sugerencias o comentarios sobre el proyecto..."
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+          />
+          <p className="comentario-form-hint">
+            Tus comentarios serán compartidos con el equipo de forma anónima
+          </p>
+
+          {enviado && (
+            <div className="comentario-success">
+              Comentario enviado correctamente
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            className="btn-primary"
+            disabled={enviando || !texto.trim()}
+            onClick={handleEnviar}
+          >
+            <Send size={16} />
+            {enviando ? "Enviando..." : "Enviar Comentario"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
