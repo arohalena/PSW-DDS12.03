@@ -70,7 +70,15 @@ public class VotacionService extends GenericService<VotacionMO> {
         }
 
         if (request.getModalidad() == ModalidadVotacionMO.MULTICRITERIO) {
-            validarCriterios(request.getCriterios());
+            // Comprobar si ya existen criterios para este evento (creados desde el sidebar)
+            List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
+                .findByEvento_IdOrderByOrdenAsc(evento.getId());
+
+            if (criteriosExistentes.isEmpty()) {
+                // No hay criterios del sidebar → deben venir en el request
+                validarCriterios(request.getCriterios());
+            }
+            // Si ya existen criterios del sidebar, no pedimos ni creamos nuevos
         }
 
         VotacionMO votacion = new VotacionMO();
@@ -85,15 +93,21 @@ public class VotacionService extends GenericService<VotacionMO> {
         VotacionMO guardada = votacionRepository.save(votacion);
 
         if (request.getModalidad() == ModalidadVotacionMO.MULTICRITERIO) {
-            int orden = 1;
-            for (CriterioEvaluacionRequest criterioReq : request.getCriterios()) {
-                CriterioEvaluacionMO criterio = new CriterioEvaluacionMO();
-                criterio.setEvento(evento);
-                criterio.setNombre(criterioReq.getNombre().trim());
-                criterio.setDescripcion(criterioReq.getDescripcion());
-                criterio.setPeso(criterioReq.getPeso().intValue());
-                criterio.setOrden(orden++);
-                criterioEvaluacionRepository.save(criterio);
+            // Solo crear criterios si NO existen ya para el evento
+            List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
+                .findByEvento_IdOrderByOrdenAsc(evento.getId());
+
+            if (criteriosExistentes.isEmpty() && request.getCriterios() != null) {
+                int orden = 1;
+                for (CriterioEvaluacionRequest criterioReq : request.getCriterios()) {
+                    CriterioEvaluacionMO criterio = new CriterioEvaluacionMO();
+                    criterio.setEvento(evento);
+                    criterio.setNombre(criterioReq.getNombre().trim());
+                    criterio.setDescripcion(criterioReq.getDescripcion());
+                    criterio.setPeso(criterioReq.getPeso().intValue());
+                    criterio.setOrden(orden++);
+                    criterioEvaluacionRepository.save(criterio);
+                }
             }
         }
 

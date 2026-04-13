@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Users, Plus, Trash2, SlidersHorizontal, Vote } from "lucide-react";
+import { CalendarDays, Users, Plus, Trash2, SlidersHorizontal, Vote, CheckCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getEventos } from "../services/eventoService";
 import { getProyectosByEvento } from "../services/proyectoService";
 import { getEquipos } from "../services/equipoService";
 import { esOrganizador } from "../services/sessionService";
+import { getCriteriosByEvento } from "../services/criterioService";
 import {
   asignarProyectoAVotacion,
   createVotacion,
@@ -47,6 +48,7 @@ function PopularVotingScreen() {
 
   const [tipoCreacion, setTipoCreacion] = useState("SIMPLE");
   const [criterios, setCriterios] = useState([]);
+  const [criteriosExistentes, setCriteriosExistentes] = useState([]);
   const [nuevoCriterio, setNuevoCriterio] = useState(CRITERIO_INICIAL);
 
   const puedeGestionar = esOrganizador();
@@ -80,11 +82,12 @@ function PopularVotingScreen() {
         setLoadingEvento(true);
         setError("");
 
-        const [proyectosData, equiposData, asignacionesData, votacionesData] = await Promise.all([
+        const [proyectosData, equiposData, asignacionesData, votacionesData, criteriosData] = await Promise.all([
           getProyectosByEvento(eventoId),
           getEquipos(),
           getAsignacionesCompetidorEvento(eventoId),
           getVotacionesByEvento(eventoId),
+          getCriteriosByEvento(eventoId),
         ]);
 
         const votacionSimple =
@@ -118,6 +121,7 @@ function PopularVotingScreen() {
         setVotacionActiva(activa);
         setVotacionProyectos(votacionProyectosData);
         setVoteCounts(counts);
+        setCriteriosExistentes(criteriosData || []);
 
         if (!votacionSimple && !votacionMulticriterio) {
           setTipoCreacion("SIMPLE");
@@ -142,11 +146,19 @@ function PopularVotingScreen() {
     }
   }, []);
 
+  const tieneCriteriosDelSidebar = criteriosExistentes.length > 0;
+
   const totalPeso = useMemo(() => {
     return criterios.reduce((acc, criterio) => acc + Number(criterio.peso || 0), 0);
   }, [criterios]);
 
-  const puedeCrearMulticriterio = criterios.length > 0 && totalPeso === 100;
+  const totalPesoExistentes = useMemo(() => {
+    return criteriosExistentes.reduce((acc, criterio) => acc + Number(criterio.peso || 0), 0);
+  }, [criteriosExistentes]);
+
+  const puedeCrearMulticriterio = tieneCriteriosDelSidebar
+    ? totalPesoExistentes === 100
+    : criterios.length > 0 && totalPeso === 100;
 
   const proyectosEnriquecidos = useMemo(() => {
     return proyectos.map((proyecto) => {
@@ -262,7 +274,7 @@ function PopularVotingScreen() {
       const fin = new Date(ahora);
       fin.setDate(fin.getDate() + 7);
 
-      const nueva = await createVotacion({
+      const payload = {
         eventoId,
         tipo: "POPULAR",
         modalidad: "MULTICRITERIO",
@@ -270,12 +282,18 @@ function PopularVotingScreen() {
         inicio: ahora.toISOString(),
         fin: fin.toISOString(),
         estado: "ABIERTA",
-        criterios: criterios.map((criterio) => ({
+      };
+
+      // Solo enviar criterios si NO existen del sidebar
+      if (!tieneCriteriosDelSidebar) {
+        payload.criterios = criterios.map((criterio) => ({
           nombre: criterio.nombre,
           descripcion: criterio.descripcion,
           peso: Number(criterio.peso),
-        })),
-      });
+        }));
+      }
+
+      const nueva = await createVotacion(payload);
 
       setVotacionPopularSimple(null);
       setVotacionPopularMulticriterio(nueva);
@@ -355,6 +373,7 @@ function PopularVotingScreen() {
               setSuccess("");
               setError("");
               setCriterios([]);
+              setCriteriosExistentes([]);
               limpiarFormularioCriterio();
             }}
           >
@@ -440,113 +459,164 @@ function PopularVotingScreen() {
 
           {tipoCreacion === "MULTICRITERIO" && (
             <div style={{ display: "grid", gap: "1rem" }}>
-              <div className="feedback-card warning-box">
-                Define los criterios de evaluación. El peso total debe sumar 100%.
-              </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gap: "0.75rem",
-                  gridTemplateColumns: "2fr 2fr 1fr auto",
-                  alignItems: "end",
-                }}
-              >
-                <label className="voting-selector-field">
-                  <span>Nombre del criterio</span>
-                  <input
-                    type="text"
-                    value={nuevoCriterio.nombre}
-                    onChange={(e) =>
-                      setNuevoCriterio((prev) => ({ ...prev, nombre: e.target.value }))
-                    }
-                    placeholder="Ej. Innovación"
-                  />
-                </label>
+              {tieneCriteriosDelSidebar ? (
+                <>
+                  <div className="feedback-card success-box">
+                    <CheckCircle size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: "0.5rem" }} />
+                    Este evento ya tiene <strong>{criteriosExistentes.length} criterios</strong> configurados
+                    desde el panel de Criterios. Se usarán automáticamente.
+                  </div>
 
-                <label className="voting-selector-field">
-                  <span>Descripción</span>
-                  <input
-                    type="text"
-                    value={nuevoCriterio.descripcion}
-                    onChange={(e) =>
-                      setNuevoCriterio((prev) => ({ ...prev, descripcion: e.target.value }))
-                    }
-                    placeholder="Qué se evalúa en este criterio"
-                  />
-                </label>
-
-                <label className="voting-selector-field">
-                  <span>Peso (%)</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={nuevoCriterio.peso}
-                    onChange={(e) =>
-                      setNuevoCriterio((prev) => ({ ...prev, peso: e.target.value }))
-                    }
-                    placeholder="25"
-                  />
-                </label>
-
-                <button type="button" className="primary-btn" onClick={handleAgregarCriterio}>
-                  <Plus size={16} />
-                  Añadir
-                </button>
-              </div>
-
-              <div className="vote-count-box">
-                <strong>Peso total:</strong> {totalPeso}%
-              </div>
-
-              {criterios.length > 0 ? (
-                <div className="voting-project-list">
-                  {criterios.map((criterio, index) => (
-                    <div key={criterio.id} className="voting-project-card">
-                      <div className="project-card-content">
-                        <div className="project-title-row">
-                          <strong>
-                            {index + 1}. {criterio.nombre}
-                          </strong>
-                          <span className="project-tag">{criterio.peso}%</span>
-                        </div>
-
-                        <p>{criterio.descripcion || "Sin descripción disponible."}</p>
-
-                        <div className="assign-button-row">
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() => handleEliminarCriterio(criterio.id)}
-                          >
-                            <Trash2 size={16} />
-                            Eliminar criterio
-                          </button>
+                  <div className="voting-project-list">
+                    {criteriosExistentes.map((criterio, index) => (
+                      <div key={criterio.id} className="voting-project-card">
+                        <div className="project-card-content">
+                          <div className="project-title-row">
+                            <strong>
+                              {index + 1}. {criterio.nombre}
+                            </strong>
+                            <span className="project-tag">{criterio.peso}%</span>
+                          </div>
+                          <p>{criterio.descripcion || "Sin descripción disponible."}</p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+
+                  <div className="vote-count-box">
+                    <strong>Peso total:</strong> {totalPesoExistentes}%
+                  </div>
+
+                  {totalPesoExistentes !== 100 && (
+                    <div className="feedback-card error-box">
+                      La suma de los pesos de los criterios existentes no es 100%.
+                      Ajústalos desde el panel de <strong>Criterios</strong> en el sidebar antes de crear la votación.
                     </div>
-                  ))}
-                </div>
+                  )}
+
+                  <div>
+                    <button
+                      className="primary-btn"
+                      onClick={handleCrearVotacionMulticriterio}
+                      disabled={creatingVoting || !puedeCrearMulticriterio}
+                    >
+                      {creatingVoting ? "Creando..." : "Crear votación popular multicriterio"}
+                    </button>
+                  </div>
+                </>
               ) : (
-                <div className="feedback-card">Todavía no has añadido criterios.</div>
-              )}
+                <>
+                  <div className="feedback-card warning-box">
+                    No hay criterios configurados para este evento. Defínelos aquí o desde el panel
+                    de <strong>Criterios</strong> en el sidebar. El peso total debe sumar 100%.
+                  </div>
 
-              {totalPeso !== 100 && (
-                <div className="feedback-card error-box">
-                  La suma de los pesos debe ser exactamente 100%.
-                </div>
-              )}
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: "0.75rem",
+                      gridTemplateColumns: "2fr 2fr 1fr auto",
+                      alignItems: "end",
+                    }}
+                  >
+                    <label className="voting-selector-field">
+                      <span>Nombre del criterio</span>
+                      <input
+                        type="text"
+                        value={nuevoCriterio.nombre}
+                        onChange={(e) =>
+                          setNuevoCriterio((prev) => ({ ...prev, nombre: e.target.value }))
+                        }
+                        placeholder="Ej. Innovación"
+                      />
+                    </label>
 
-              <div>
-                <button
-                  className="primary-btn"
-                  onClick={handleCrearVotacionMulticriterio}
-                  disabled={creatingVoting || !puedeCrearMulticriterio}
-                >
-                  {creatingVoting ? "Creando..." : "Crear votación popular multicriterio"}
-                </button>
-              </div>
+                    <label className="voting-selector-field">
+                      <span>Descripción</span>
+                      <input
+                        type="text"
+                        value={nuevoCriterio.descripcion}
+                        onChange={(e) =>
+                          setNuevoCriterio((prev) => ({ ...prev, descripcion: e.target.value }))
+                        }
+                        placeholder="Qué se evalúa en este criterio"
+                      />
+                    </label>
+
+                    <label className="voting-selector-field">
+                      <span>Peso (%)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={nuevoCriterio.peso}
+                        onChange={(e) =>
+                          setNuevoCriterio((prev) => ({ ...prev, peso: e.target.value }))
+                        }
+                        placeholder="25"
+                      />
+                    </label>
+
+                    <button type="button" className="primary-btn" onClick={handleAgregarCriterio}>
+                      <Plus size={16} />
+                      Añadir
+                    </button>
+                  </div>
+
+                  <div className="vote-count-box">
+                    <strong>Peso total:</strong> {totalPeso}%
+                  </div>
+
+                  {criterios.length > 0 ? (
+                    <div className="voting-project-list">
+                      {criterios.map((criterio, index) => (
+                        <div key={criterio.id} className="voting-project-card">
+                          <div className="project-card-content">
+                            <div className="project-title-row">
+                              <strong>
+                                {index + 1}. {criterio.nombre}
+                              </strong>
+                              <span className="project-tag">{criterio.peso}%</span>
+                            </div>
+
+                            <p>{criterio.descripcion || "Sin descripción disponible."}</p>
+
+                            <div className="assign-button-row">
+                              <button
+                                type="button"
+                                className="secondary-btn"
+                                onClick={() => handleEliminarCriterio(criterio.id)}
+                              >
+                                <Trash2 size={16} />
+                                Eliminar criterio
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="feedback-card">Todavía no has añadido criterios.</div>
+                  )}
+
+                  {totalPeso !== 100 && criterios.length > 0 && (
+                    <div className="feedback-card error-box">
+                      La suma de los pesos debe ser exactamente 100%.
+                    </div>
+                  )}
+
+                  <div>
+                    <button
+                      className="primary-btn"
+                      onClick={handleCrearVotacionMulticriterio}
+                      disabled={creatingVoting || !puedeCrearMulticriterio}
+                    >
+                      {creatingVoting ? "Creando..." : "Crear votación popular multicriterio"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </section>
