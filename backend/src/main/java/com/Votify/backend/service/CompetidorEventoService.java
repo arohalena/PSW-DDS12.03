@@ -65,7 +65,7 @@ public class CompetidorEventoService {
         relacion.setEvento(evento);
         relacion.setEquipo(equipo);
 
-        competidorEventoRepository.save(relacion);
+        return;
     }
 
     public List<CompetidorEventoMO> getAsignacionesPorEvento(UUID eventoId) {
