@@ -8,7 +8,8 @@ import { getCompetidores } from "../services/competidorService";
 import {createEquipo} from "../services/equipoService";
 import {assignCompetidor} from "../services/competidorService";
 import { esOrganizador } from "../services/sessionService";
-import "../styles/projects.css"; 
+import "../styles/projects.css";
+
 
 const CATEGORIAS = ["IA", "SOSTENIBILIDAD"];
 
@@ -380,7 +381,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
           <div className="modal-body">
             <div className="form-group">
               <label>Nombre del Proyecto *</label>
-              <input 
+                <input 
                 name="nombre" 
                 className="input-field" 
                 placeholder="Ej: AI Health Monitor"
@@ -388,6 +389,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 onChange={handleChange}
                 required 
               />
+
             </div>
 
             <div className="form-group">
@@ -400,6 +402,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 onChange={handleChange}
                 required 
               />
+
             </div>
 
             <div className="form-group">
@@ -412,6 +415,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 onChange={handleChange}
                 rows="3"
               />
+
             </div>
 
             <div className="form-group">
