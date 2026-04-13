@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.Votify.backend.domain.Proyecto;
 import com.Votify.backend.dto.CrearProyectoRequest;
 import com.Votify.backend.factory.CreadorProyecto;
 import com.Votify.backend.factory.CreadorProyectoIA;
@@ -17,8 +18,6 @@ import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ProyectoMO;
-import com.Votify.backend.model.UsuarioMO;
-import com.Votify.backend.domain.Proyecto;
 import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
 import com.Votify.backend.repository.EquipoRepository;
