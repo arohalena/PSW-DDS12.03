@@ -51,6 +51,11 @@ public class VotoController extends GenericController<VotoMO> {
         return votoService.haAlcanzadoMaximo(votacionId, token);
     }
 
+    @GetMapping("/evento/{eventoId}/votantes")
+    public long contarVotantesPorEvento(@PathVariable UUID eventoId) {
+        return votoService.contarVotantesUnicos(eventoId);
+    }
+
     @PostMapping("/simple")
     public VotoMO votarSimple(@RequestBody EmitirVotoSimpleRequest request) {
         return votoService.votarSimple(request);
