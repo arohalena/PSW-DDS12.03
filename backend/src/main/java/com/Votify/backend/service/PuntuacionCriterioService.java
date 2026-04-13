@@ -76,7 +76,7 @@ public class PuntuacionCriterioService extends GenericService<PuntuacionCriterio
 
         }
 
-        var existente = puntuacionRepository.findByCriterio_IdAndVotacionProyecto_Id(criterio.getId(), vp.getId(), puntuacion.getAnonTokenHash());
+        var existente = puntuacionRepository.findByCriterio_IdAndVotacionProyecto_IdAndAnonTokenHash(criterio.getId(), vp.getId(), puntuacion.getAnonTokenHash());
 
         if (existente.isPresent()) {
 
@@ -97,7 +97,7 @@ public class PuntuacionCriterioService extends GenericService<PuntuacionCriterio
 
     public List<PuntuacionCriterioMO> findByVotacionProyectoId(UUID vpId) {
 
-        return puntuacionRepository.findByProyecto_Id(vpId);
+        return puntuacionRepository.findByVotacionProyecto_Id(vpId);
 
     }
 
