@@ -1,5 +1,7 @@
 package com.Votify.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -28,6 +30,7 @@ public class CompetidorEventoMO extends ModeloBaseMO {
     private EventoMO evento;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "equipo_id", nullable = false)
     private EquipoMO equipo;
 }

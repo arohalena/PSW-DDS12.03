@@ -27,7 +27,7 @@ public class CompetidorEventoService {
     private final EventoRepository eventoRepository;
     private final EquipoRepository equipoRepository;
 
-    public CompetidorEventoMO asignarCompetidorAEquipoEnEvento(UUID competidorId, UUID eventoId, UUID equipoId) {
+    public void asignarCompetidorAEquipoEnEvento(UUID competidorId, UUID eventoId, UUID equipoId) {
         if (competidorEventoRepository.existsByCompetidorIdAndEventoId(competidorId, eventoId)) {
             throw new ResponseStatusException(
                 HttpStatus.CONFLICT,
@@ -65,7 +65,7 @@ public class CompetidorEventoService {
         relacion.setEvento(evento);
         relacion.setEquipo(equipo);
 
-        return competidorEventoRepository.save(relacion);
+        competidorEventoRepository.save(relacion);
     }
 
     public List<CompetidorEventoMO> getAsignacionesPorEvento(UUID eventoId) {
