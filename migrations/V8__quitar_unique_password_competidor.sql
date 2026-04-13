@@ -1,0 +1,1 @@
+ALTER TABLE public.competidor DROP CONSTRAINT competidor_contrasenya_key;
