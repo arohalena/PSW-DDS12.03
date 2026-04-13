@@ -1,4 +1,5 @@
 const API_URL = "http://localhost:8090/api/competidores";
+const COMPETIDOR_EVENTO_URL = "http://localhost:8090/api/competidor-evento/asignar";
 
 export async function getCompetidores() {
   const response = await fetch(API_URL);
@@ -28,13 +29,13 @@ export async function createCompetidor(competidor) {
   return response.json();
 }
 
-export async function assignCompetidor(competidor) {
-  const response = await fetch("http://localhost:8090/api/competidor-evento", {
+export async function assignCompetidor(datos) {
+  const response = await fetch(COMPETIDOR_EVENTO_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(competidor),
+    body: JSON.stringify(datos),
   });
 
   if (!response.ok) {
