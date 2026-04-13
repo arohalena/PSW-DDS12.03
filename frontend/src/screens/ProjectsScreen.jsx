@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
-import { getProyectosByEvento, createProyecto } from "../services/proyectoService";
+import { getProyectosByEvento, createProyectoConEquipo } from "../services/proyectoService";
 import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
 import { getEventos } from "../services/eventoService";
 import { getCompetidores } from "../services/competidorService";
@@ -128,12 +128,11 @@ function ProjectsScreen() {
                 <td style={{ color: '#6b7280' }}>{p.nombreEquipo}</td>
                 <td style={{ textAlign: 'right' }}>
                   <button
-                    className="btn-comment"
-                    title="Dejar comentario"
+                    className="btn-comment-pill"
                     onClick={() => setComentarioProyecto(p)}
                   >
-                    <MessageCircle size={16} />
-                    <span>Comentar</span>
+                    <MessageCircle size={15} />
+                    Comentar
                   </button>
                 </td>
               </tr>
@@ -192,91 +191,81 @@ function ComentarioModal({ proyecto, onClose }) {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content comentario-modal">
-        {/* Header */}
-        <div className="modal-header comentario-modal-header">
+    <div className="comment-overlay" onClick={onClose}>
+      <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
+
+        <div className="comment-header">
           <div>
-            <h2 className="comentario-modal-title">Comentarios y Feedback</h2>
-            <p className="comentario-modal-subtitle">
-              Proyecto: {proyecto.nombre}
-            </p>
+            <h2>Comentarios y Feedback</h2>
+            <p>Proyecto: {proyecto.nombre}</p>
           </div>
-          <button className="comentario-close-btn" onClick={onClose}>
+          <button className="comment-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        {/* Comentarios existentes */}
-        <div className="modal-body">
+        <div className="comment-list">
           {loading ? (
-            <p className="comentario-empty">Cargando comentarios...</p>
+            <p className="comment-loading">Cargando comentarios...</p>
           ) : comentarios.length === 0 ? (
-            <div className="comentario-empty-state">
-              <MessageCircle size={40} className="comentario-empty-icon" />
-              <p className="comentario-empty">No hay comentarios aún.</p>
-              <p className="comentario-empty-hint">Sé el primero en dejar tu feedback anónimo.</p>
+            <div className="comment-empty">
+              <MessageCircle size={40} strokeWidth={1.5} />
+              <p>No hay comentarios aún</p>
+              <span>Sé el primero en dejar tu feedback</span>
             </div>
           ) : (
-            <div className="comentarios-list">
+            <div className="comment-items">
               {comentarios.map((c) => (
-                <div key={c.id} className="comentario-item">
-                  <div className="comentario-header">
-                    <div className="comentario-avatar">A</div>
-                    <div className="comentario-meta">
-                      <span className="comentario-autor">Anónimo</span>
-                      <span className="comentario-fecha">
-                        {new Date(c.createdAt).toLocaleDateString('es-ES', {
-                          day: '2-digit', month: 'short', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit'
+                <div key={c.id} className="comment-bubble">
+                  <div className="comment-bubble-header">
+                    <div className="comment-avatar">A</div>
+                    <div>
+                      <span className="comment-author">Anónimo</span>
+                      <span className="comment-time">
+                        {new Date(c.createdAt).toLocaleDateString("es-ES", {
+                          day: "2-digit", month: "short", year: "numeric",
+                          hour: "2-digit", minute: "2-digit",
                         })}
                       </span>
                     </div>
                   </div>
-                  <p className="comentario-texto">{c.texto}</p>
+                  <p>{c.texto}</p>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Formulario de comentario */}
-        <div className="comentario-form-section">
-          <label className="comentario-form-label">
-            Comentarios y Feedback (opcional)
-          </label>
-          <textarea
-            className="comentario-textarea"
-            rows={4}
-            placeholder="Comparte tus observaciones, sugerencias o comentarios sobre el proyecto..."
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-          />
-          <p className="comentario-form-hint">
-            Tus comentarios serán compartidos con el equipo de forma anónima
-          </p>
-
+        <div className="comment-compose">
           {enviado && (
-            <div className="comentario-success">
+            <div className="comment-success">
               Comentario enviado correctamente
             </div>
           )}
+          <textarea
+            rows={3}
+            placeholder="Escribe tu comentario..."
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+          />
+          <p className="comment-compose-hint">
+            Tus comentarios serán compartidos con el equipo de forma anónima
+          </p>
+          <div className="comment-compose-actions">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancelar
+            </button>
+            <button
+              className="btn-primary"
+              disabled={enviando || !texto.trim()}
+              onClick={handleEnviar}
+            >
+              <Send size={16} />
+              {enviando ? "Enviando..." : "Enviar"}
+            </button>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="modal-footer">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className="btn-primary"
-            disabled={enviando || !texto.trim()}
-            onClick={handleEnviar}
-          >
-            <Send size={16} />
-            {enviando ? "Enviando..." : "Enviar Comentario"}
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -329,38 +318,34 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
     setMiembros(miembros.filter(m => m.id !== id));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const [submitting, setSubmitting] = useState(false);
 
-    try {
-      const nuevoProyecto = await createProyecto({
-        nombre: formData.nombre,
-        descripcion: formData.descripcion,
-        tipoCategoria: formData.tipoCategoria,
-        evento: { id: eventoId }
-      });
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (submitting) return;
 
-      const equipo = await createEquipo({
-        nombre: formData.nombreEquipo,
-        evento: { id: eventoId },
-        proyecto: { id: nuevoProyecto.id }
-      });
+      try {
+        setSubmitting(true);
 
-      for (const miembro of miembros) {
-        await assignCompetidor({
-          competidorId: miembro.id,
-          eventoId: eventoId,
-          equipoId: equipo.id
+        const nuevoProyecto = await createProyectoConEquipo({
+          nombre: formData.nombre,
+          descripcion: formData.descripcion,
+          tipoCategoria: formData.tipoCategoria,
+          nombreEquipo: formData.nombreEquipo,
+          miembrosEmails: miembros.map(m => m.email),
+          eventoId: eventoId
         });
+
+        onCreado(nuevoProyecto);
+        onClose();
+
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        setSubmitting(false);
       }
+    };
 
-      onCreado(nuevoProyecto);
-      onClose();
-
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
-  };
 
   const handleChange = (e) => {
     setFormData({
@@ -380,7 +365,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
           <div className="modal-body">
             <div className="form-group">
               <label>Nombre del Proyecto *</label>
-              <input 
+                <input 
                 name="nombre" 
                 className="input-field" 
                 placeholder="Ej: AI Health Monitor"
@@ -388,6 +373,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 onChange={handleChange}
                 required 
               />
+
             </div>
 
             <div className="form-group">
@@ -400,6 +386,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 onChange={handleChange}
                 required 
               />
+
             </div>
 
             <div className="form-group">
@@ -412,6 +399,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
                 onChange={handleChange}
                 rows="3"
               />
+
             </div>
 
             <div className="form-group">
@@ -474,7 +462,10 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary">Crear Proyecto</button>
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? "Creando..." : "Crear Proyecto"}
+            </button>
+
           </div>
         </form>
       </div>
