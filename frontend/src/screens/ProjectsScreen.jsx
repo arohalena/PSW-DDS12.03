@@ -6,6 +6,7 @@ import { getComentariosByProyecto, crearComentario } from "../services/comentari
 import { getEventos } from "../services/eventoService";
 import { esOrganizador } from "../services/sessionService";
 import "../styles/projects.css"; 
+import { getUsuarios } from "../services/usuarioService";
 
 const CATEGORIAS = ["IA", "SOSTENIBILIDAD"];
 
@@ -277,22 +278,33 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
   });
   
   const [miembros, setMiembros] = useState([]);
-  const [currentMiembro, setCurrentMiembro] = useState("");
+  const [usuarios, setUsuarios] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+
+  useEffect(() => {
+    getUsuarios().then(setUsuarios).catch(() => setUsuarios([]));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddMiembro = (e) => {
-    if (e.key === 'Enter' && currentMiembro.trim() !== '') {
-      e.preventDefault();
-      const email = currentMiembro.trim().toLowerCase();
-      if (!miembros.includes(email)) {
-        setMiembros([...miembros, email]);
-      }
-      setCurrentMiembro("");
-    }
+  const sugerenciasFiltradas = usuarios.filter((u) => {
+    const yaAgregado = miembros.some((m) => m.email === u.email);
+    if (yaAgregado) return false;
+    const texto = busqueda.toLowerCase();
+    return (
+      u.nombre?.toLowerCase().includes(texto) ||
+      u.email?.toLowerCase().includes(texto)
+    );
+  });
+
+  const agregarMiembro = (usuario) => {
+    setMiembros([...miembros, { nombre: usuario.nombre, email: usuario.email }]);
+    setBusqueda("");
+    setMostrarSugerencias(false);
   };
 
   const removeMiembro = (indexToRemove) => {
@@ -306,7 +318,7 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
       descripcion: formData.descripcion,
       tipoCategoria: formData.tipoCategoria,
       nombreEquipo: formData.nombreEquipo,
-      miembrosEmails: miembros,
+      miembrosEmails: miembros.map((m) => m.email),
       eventoId: eventoId,
     };
     
@@ -366,18 +378,52 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
             </div>
 
             <div className="form-group">
-              <label>Miembros del Equipo (email + Enter)</label>
-              <input 
-                className="input-field" 
-                placeholder="email@ejemplo.com + Enter"
-                value={currentMiembro}
-                onChange={(e) => setCurrentMiembro(e.target.value)}
-                onKeyDown={handleAddMiembro}
-              />
+              <label>Miembros del Equipo</label>
+              <div className="autocomplete-wrapper">
+                <Search className="search-icon" size={16} />
+                <input 
+                  className="input-field autocomplete-input"
+                  placeholder="Buscar usuario por nombre o email..."
+                  value={busqueda}
+                  onChange={(e) => {
+                    setBusqueda(e.target.value);
+                    setMostrarSugerencias(true);
+                  }}
+                  onFocus={() => setMostrarSugerencias(true)}
+                />
+                {mostrarSugerencias && busqueda.length > 0 && (
+                  <div className="autocomplete-dropdown">
+                    {sugerenciasFiltradas.length === 0 ? (
+                      <div className="autocomplete-empty">
+                        No se encontraron usuarios
+                      </div>
+                    ) : (
+                      sugerenciasFiltradas.map((u) => (
+                        <div
+                          key={u.id}
+                          className="autocomplete-option"
+                          onClick={() => agregarMiembro(u)}
+                        >
+                          <div className="autocomplete-avatar">
+                            {u.nombre?.charAt(0)?.toUpperCase()}
+                          </div>
+                          <div className="autocomplete-info">
+                            <span className="autocomplete-name">{u.nombre}</span>
+                            <span className="autocomplete-email">{u.email}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="tags-container">
                 {miembros.map((m, index) => (
                   <span key={index} className="tag">
-                    {m} <button type="button" onClick={() => removeMiembro(index)}>×</button>
+                    <span className="tag-avatar">{m.nombre.charAt(0).toUpperCase()}</span>
+                    {m.nombre}
+                    <button type="button" onClick={() => removeMiembro(index)}>×</button>
                   </span>
                 ))}
               </div>
@@ -411,5 +457,6 @@ function CreateProyectoModal({ eventoId, onCreado, onClose }) {
     </div>
   );
 }
+
 
 export default ProjectsScreen;
