@@ -18,7 +18,7 @@ public class CompetidorEventoController {
 
     private final CompetidorEventoService competidorEventoService;
 
-    @PostMapping
+    @PostMapping("/asignar")
     public CompetidorEventoMO asignar(@RequestBody AsignarCompetidorEventoRequest request) {
         return competidorEventoService.asignarCompetidorAEquipoEnEvento(
             request.competidorId(),
