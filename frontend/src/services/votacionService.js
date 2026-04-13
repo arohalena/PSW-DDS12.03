@@ -135,3 +135,11 @@ export async function votarProyectoMulticriterio(payload) {
 
   return response.json();
 }
+
+export async function getVotantesPorEvento(eventoId) {
+  const response = await fetch(`${VOTOS_URL}/evento/${eventoId}/votantes`);
+  if (!response.ok) {
+    return 0;
+  }
+  return response.json();
+}

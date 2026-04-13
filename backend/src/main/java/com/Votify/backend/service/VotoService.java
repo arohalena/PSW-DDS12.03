@@ -263,4 +263,11 @@ public class VotoService extends GenericService<VotoMO> {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya habías votado este proyecto.");
         }
     }
+
+    public long contarVotantesUnicos(UUID eventoId) {
+
+        return votoRepository.countDistinctVotantesByEventoId(eventoId);
+    
+    }
+
 }

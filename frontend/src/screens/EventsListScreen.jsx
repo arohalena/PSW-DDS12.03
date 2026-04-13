@@ -5,6 +5,7 @@ import { getEventos } from "../services/eventoService";
 import { esOrganizador } from "../services/sessionService";
 import "../styles/events.css";
 import { getProyectosByEvento } from "../services/proyectoService";
+import { getVotantesPorEvento } from "../services/votacionService";
 
 function formatDate(dateValue) {
   if (!dateValue) return "Sin fecha";
@@ -50,6 +51,7 @@ function EventsListScreen() {
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("TODOS");
   const [proyectosPorEvento, setProyectosPorEvento] = useState({});
+  const [votantesPorEvento, setVotantesPorEvento] = useState({});
 
   const puedeGestionarEventos = esOrganizador();
 
@@ -62,13 +64,19 @@ function EventsListScreen() {
         setEventos(data);
 
         const counts = {};
+        const voterCounts = {};
         await Promise.all(
           data.map(async (evento) => {
-            const proyectos = await getProyectosByEvento(evento.id);
+            const [proyectos, votantes] = await Promise.all([
+              getProyectosByEvento(evento.id),
+              getVotantesPorEvento(evento.id),
+            ]);
             counts[evento.id] = proyectos.length;
+            voterCounts[evento.id] = votantes;
           })
         );
         setProyectosPorEvento(counts);
+        setVotantesPorEvento(voterCounts);
       } catch (err) {
         setError(err.message || "No se pudieron cargar los eventos");
       } finally {
@@ -196,7 +204,7 @@ function EventsListScreen() {
                         </div>
                         <div>
                           <span className="event-stat-label">Votantes</span>
-                          <strong>0</strong>
+                          <strong>{votantesPorEvento[evento.id] ?? 0}</strong>
                         </div>
                       </div>
                     </div>
