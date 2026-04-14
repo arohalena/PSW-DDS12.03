@@ -17,7 +17,7 @@ function ProjectsScreen() {
   const { eventoId } = useParams();
   const [eventos, setEventos] = useState([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState("");
-  const [equipos, setEquipos] = useState([]); 
+  const [equipos, setEquipos] = useState([]);
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -44,28 +44,31 @@ function ProjectsScreen() {
       .catch(() => setEventos([]));
   }, [eventoId]);
 
+  const cargarDatos = async () => {
+    if (!idEfectivo) return;
+    try {
+      setLoading(true);
+      const [proyectosData, equiposData] = await Promise.all([
+        getProyectosByEvento(idEfectivo),
+        getEquiposParaEvento(idEfectivo)
+      ]);
+      setProyectos(proyectosData);
+      setEquipos(equiposData);
+    } catch (err) {
+      setError("Error al cargar datos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!idEfectivo) {
       setProyectos([]);
-      setEquipos([]); 
+      setEquipos([]);
       return;
     }
-    const load = async () => {
-      try {
-        setLoading(true);
-        const [proyectosData, equiposData] = await Promise.all([
-          getProyectosByEvento(idEfectivo),
-          getEquiposParaEvento(idEfectivo)
-        ]);
-        setProyectos(proyectosData);
-        setEquipos(equiposData);
-      } catch (err) {
-        setError("Error al cargar datos");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+
+    cargarDatos();
   }, [idEfectivo]);
 
   const filtrados = useMemo(() => {
@@ -158,7 +161,10 @@ function ProjectsScreen() {
       {showModal && (
         <CreateProyectoModal
           eventoId={idEfectivo}
-          onCreado={(n) => { setProyectos([...proyectos, n]); setShowModal(false); }}
+          onCreado={async () => {
+            setShowModal(false);
+            await cargarDatos(); 
+          }}
           onClose={() => setShowModal(false)}
         />
       )}
