@@ -143,6 +143,16 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/mi-proyecto"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <MyProjectDashboardScreen />
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
