@@ -5,7 +5,7 @@ import {
   getEventosParaEquipo,
   getProyectosParaEquipo,
 } from "../services/equipoService";
-import { getCompetidores, assignCompetidor }  from "../services/competidorService";
+import { getCompetidores, assignCompetidor, getCompetidoresByEquipo }  from "../services/competidorService";
 import "../styles/temp-management.css";
 
 function TeamsScreen() {
@@ -69,10 +69,19 @@ function TeamsScreen() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const openModal = (equipo) => {
+  const openModal = async (equipo) => {
     setSelectedEquipo(equipo);
-    setMiembrosTemporales(equipo.miembros || []); 
     setShowModal(true);
+
+    try {
+      const miembros = await getCompetidoresByEquipo(equipo.id);
+
+      console.log("Miembros recibidos:", miembros);
+      setMiembrosTemporales(miembros);
+    } catch (error) {
+      console.error("Error cargando miembros", error);
+      setMiembrosTemporales([]);
+    }
   };
 
   const addMiembro = (u) => {
@@ -82,9 +91,9 @@ function TeamsScreen() {
     setSearchTerm("");
   };
 
-  const removeMiembro = (id) => {
-    setMiembrosTemporales(miembrosTemporales.filter(m => m.id !== id));
-  };
+  //const removeMiembro = (id) => {
+    //setMiembrosTemporales(miembrosTemporales.filter(m => m.id !== id));
+  //};
 
   const handleSaveMiembros = async () => {
     try {
@@ -208,7 +217,7 @@ function TeamsScreen() {
                 <h4>Miembros del equipo ({miembrosTemporales.length}):</h4>
                 <div className="tags-container">
                   {miembrosTemporales.length === 0 && <p className="no-data">No hay miembros en este equipo.</p>}
-                  {miembrosTemporales.map((m) => (
+                  {(miembrosTemporales || []).map((m) => (
                     <div key={m.id} className="tag">
                       <div className="tag-info">
                         <span className="tag-email">{m.email}</span>
@@ -216,7 +225,7 @@ function TeamsScreen() {
                       <button 
                         type="button" 
                         className="remove-tag-btn" 
-                        onClick={() => removeMiembro(m.id)}
+                        //onClick={() => removeMiembro(m.id)}
                       >
                         &times;
                       </button>
