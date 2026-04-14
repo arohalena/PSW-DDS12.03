@@ -90,4 +90,11 @@ public class CompetidorEventoService {
 
         competidorEventoRepository.deleteById(id);
     }
+
+    public List<CompetidorMO> getCompetidoresPorEquipo(UUID equipoId) {
+        List<CompetidorEventoMO> asignaciones = competidorEventoRepository.findByEquipoId(equipoId);
+        return asignaciones.stream()
+            .map(CompetidorEventoMO::getCompetidor)
+            .collect(java.util.stream.Collectors.toList());
+    }
 }

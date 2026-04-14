@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.Votify.backend.dto.AsignarCompetidorEventoRequest;
 import com.Votify.backend.model.CompetidorEventoMO;
+import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.service.CompetidorEventoService;
 
 import lombok.RequiredArgsConstructor;
@@ -45,5 +46,10 @@ public class CompetidorEventoController {
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable UUID id) {
         competidorEventoService.eliminarAsignacion(id);
+    }
+
+    @GetMapping("/competidores/{equipoId}")
+    public List<CompetidorMO> getCompetidoresPorEquipo(@PathVariable UUID equipoId) {
+        return competidorEventoService.getCompetidoresPorEquipo(equipoId);
     }
 }

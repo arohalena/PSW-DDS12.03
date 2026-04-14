@@ -1,5 +1,5 @@
 const API_URL = "http://localhost:8090/api/competidores";
-const COMPETIDOR_EVENTO_URL = "http://localhost:8090/api/competidor-evento/asignar";
+const COMPETIDOR_EVENTO_URL = "http://localhost:8090/api/competidor-evento";
 
 export async function getCompetidores() {
   const response = await fetch(API_URL);
@@ -31,7 +31,7 @@ export async function createCompetidor(competidor) {
 
 export async function assignCompetidor(datos) {
   try { 
-    await fetch(COMPETIDOR_EVENTO_URL, {
+    await fetch(`${COMPETIDOR_EVENTO_URL}/asignar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -41,6 +41,16 @@ export async function assignCompetidor(datos) {
   } catch(error) {  
     throw new Error(error || "No se pudo asignar el competidor");
   }
-
-  
 }
+
+export async function getCompetidoresByEquipo(equipoId) {
+  const response = await fetch(`${COMPETIDOR_EVENTO_URL}/competidores/${equipoId}`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudieron cargar los competidores del equipo");
+  }
+
+  return response.json();
+}
+  
