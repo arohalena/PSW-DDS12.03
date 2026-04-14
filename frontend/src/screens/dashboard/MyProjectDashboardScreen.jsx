@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, FolderKanban, MessageSquare, Trophy, Users, Vote } from "lucide-react";
-import { getMiProyectoDashboard } from "../services/proyectoService";
-import { getUsuarioLogueado } from "../services/sessionService";
-import "../styles/my-project-dashboard.css";
+import { getMiProyectoDashboard } from "../../services/proyectoService";
+import { getUsuarioLogueado } from "../../services/sessionService";
+import "../../styles/my-project-dashboard.css";
 
 function MyProjectDashboardScreen() {
   const [dashboard, setDashboard] = useState(null);

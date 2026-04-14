@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Trophy, Medal, Award } from "lucide-react";
-import { getEventos } from "../services/eventoService";
-import { getVotacionesByEvento } from "../services/votacionService";
-import { getRanking, getCriteriosByEvento } from "../services/criterioService";
-import "../styles/ranking.css";
+import { getEventos } from "../../services/eventoService";
+import { getVotacionesByEvento } from "../../services/votacionService";
+import { getRanking, getCriteriosByEvento } from "../../services/criterioService";
+import "../../styles/ranking.css";
 
 function RankingScreen() {
   const [eventos, setEventos] = useState([]);

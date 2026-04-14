@@ -1,19 +1,19 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "./common/AppLayout";
 import "./App.css";
-import EventsListScreen from "./screens/EventsListScreen";
-import CreateEventScreen from "./screens/CreateEventScreen";
-import LoginScreen from "./screens/LoginScreen";
-import RegisterScreen from "./screens/RegisterScreen";
-import UserManagementScreen from "./screens/UserManagementScreen";  
-import CompetitorsScreen from "./screens/CompetitorsScreen";
-import TeamsScreen from "./screens/TeamsScreen";
-import ProjectsScreen from "./screens/ProjectsScreen";
-import PopularVotingScreen from "./screens/PopularVotingScreen";
-import ProjectVotingDetailScreen from "./screens/ProjectVotingDetailScreen";
-import CriteriosScreen from "./screens/CriterioScreen";
-import RankingScreen from "./screens/RankingScreen";
-import MyProjectDashboardScreen from "./screens/MyProjectDashboardScreen";
+import EventsListScreen from "./screens/event/EventsListScreen";
+import CreateEventScreen from "./screens/event/CreateEventScreen";
+import LoginScreen from "./screens/login/LoginScreen";
+import RegisterScreen from "./screens/login/RegisterScreen";
+import UserManagementScreen from "./screens/user/UserManagementScreen";  
+import CompetitorsScreen from "./screens/competitor/CompetitorsScreen";
+import TeamsScreen from "./screens/team/TeamsScreen";
+import ProjectsScreen from "./screens/project/ProjectsScreen";
+import PopularVotingScreen from "./screens/voting/PopularVotingScreen";
+import ProjectVotingDetailScreen from "./screens/voting/ProjectVotingDetailScreen";
+import CriteriosScreen from "./screens/criterio/CriterioScreen";
+import RankingScreen from "./screens/ranking/RankingScreen";
+import MyProjectDashboardScreen from "./screens/dashboard/MyProjectDashboardScreen";
 
 function PrivateRoute({ children }) {
   const usuario = localStorage.getItem("usuarioLogueado");

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Vote, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { loginUsuario } from "../services/authService";
-import "../styles/auth.css";
+import { loginUsuario } from "../../services/authService";
+import "../../styles/auth.css";
 
 function LoginScreen() {
   const navigate = useNavigate();

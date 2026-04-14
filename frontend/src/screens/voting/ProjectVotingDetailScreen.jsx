@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, Star, Users, Vote } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getProyectosByEvento } from "../services/proyectoService";
-import { getEquipos } from "../services/equipoService";
-import { getVotingToken } from "../services/sessionService";
+import { getProyectosByEvento } from "../../services/proyectoService";
+import { getEquipos } from "../../services/equipoService";
+import { getVotingToken } from "../../services/sessionService";
 import {
   getAsignacionesCompetidorEvento,
   getConteoVotos,
@@ -14,8 +14,8 @@ import {
   votarProyectoMulticriterio,
   votarProyectoSimple,
   yaHaVotadoProyecto,
-} from "../services/votacionService";
-import "../styles/voting-detail.css";
+} from "../../services/votacionService";
+import "../../styles/voting-detail.css";
 
 function ProjectVotingDetailScreen() {
   const { eventoId, proyectoId } = useParams();

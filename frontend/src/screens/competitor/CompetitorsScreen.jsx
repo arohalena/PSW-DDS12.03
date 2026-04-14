@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { createCompetidor, getCompetidores } from "../services/competidorService";
-import "../styles/temp-management.css";
+import { createCompetidor, getCompetidores } from "../../services/competidorService";
+import "../../styles/temp-management.css";
 
 function CompetitorsScreen() {
   const [competidores, setCompetidores] = useState([]);

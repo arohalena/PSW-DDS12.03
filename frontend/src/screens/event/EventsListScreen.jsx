@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, FolderKanban, Plus, Search, Users } from "lucide-react";
-import { getEventos } from "../services/eventoService";
-import { esOrganizador } from "../services/sessionService";
-import "../styles/events.css";
-import { getProyectosByEvento } from "../services/proyectoService";
-import { getVotantesPorEvento } from "../services/votacionService";
+import { getEventos } from "../../services/eventoService";
+import { esOrganizador } from "../../services/sessionService";
+import "../../styles/events.css";
+import { getProyectosByEvento } from "../../services/proyectoService";
+import { getVotantesPorEvento } from "../../services/votacionService";
 
 function formatDate(dateValue) {
   if (!dateValue) return "Sin fecha";
@@ -231,4 +231,4 @@ function EventsListScreen() {
   );
 }
 
-export default EventsListScreen;
+export default EventsListScreen
