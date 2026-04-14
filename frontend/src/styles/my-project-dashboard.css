@@ -1,0 +1,290 @@
+.participant-dashboard-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.participant-dashboard-header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.participant-dashboard-header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.participant-hero-card {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.22);
+}
+
+.participant-hero-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.participant-hero-card h2 {
+  margin: 0 0 0.4rem;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.participant-hero-subtitle {
+  margin: 0 0 1.2rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.participant-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.participant-hero-meta p {
+  margin: 0 0 0.2rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.participant-hero-meta strong {
+  font-size: 1.05rem;
+}
+
+.participant-divider {
+  width: 1px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.participant-trophy-block {
+  text-align: center;
+}
+
+.participant-trophy-circle {
+  width: 110px;
+  height: 110px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 0.6rem;
+}
+
+.participant-trophy-block span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+}
+
+.participant-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.participant-stat-card,
+.participant-project-card,
+.participant-comments-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.participant-stat-card {
+  padding: 1.2rem;
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.participant-stat-card p {
+  margin: 0 0 0.25rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.participant-stat-card strong {
+  font-size: 1.45rem;
+  color: #111827;
+}
+
+.participant-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.participant-stat-icon.indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.participant-stat-icon.violet {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.participant-stat-icon.slate {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.participant-stat-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.participant-card-header {
+  padding: 1.2rem 1.2rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.participant-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #374151;
+}
+
+.participant-card-title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.participant-project-body {
+  padding: 1.2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.participant-project-field span {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.participant-project-field strong {
+  color: #111827;
+}
+
+.participant-project-field p {
+  margin: 0;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.participant-project-inline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.participant-comments-badge {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 700;
+}
+
+.participant-comments-list {
+  display: grid;
+  gap: 0;
+}
+
+.participant-comment-item {
+  padding: 1.2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.participant-comment-item:first-child {
+  border-top: 0;
+}
+
+.participant-comment-top {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.8rem;
+}
+
+.participant-comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #e5e7eb;
+  color: #374151;
+  font-weight: 700;
+}
+
+.participant-comment-author {
+  margin: 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.participant-comment-date {
+  margin: 0.2rem 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.participant-comment-text {
+  margin: 0;
+  color: #374151;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .participant-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .participant-hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .participant-stats-grid,
+  .participant-project-inline {
+    grid-template-columns: 1fr;
+  }
+
+  .participant-hero-card {
+    padding: 1.4rem;
+  }
+
+  .participant-hero-card h2 {
+    font-size: 1.6rem;
+  }
+
+  .participant-divider {
+    display: none;
+  }
+}

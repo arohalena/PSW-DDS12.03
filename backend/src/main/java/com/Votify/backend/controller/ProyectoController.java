@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.Votify.backend.dto.CrearProyectoRequest;
+import com.Votify.backend.dto.MiProyectoDashboardResponse;
 import com.Votify.backend.model.ProyectoMO;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.ProyectoService;
@@ -50,5 +51,10 @@ public class ProyectoController extends GenericController<ProyectoMO>{
 
         return proyectoService.crearConEquipo(req);
 
+    }
+
+    @GetMapping("/usuario/{usuarioId}/dashboard")
+    public MiProyectoDashboardResponse getMiProyectoDashboard(@PathVariable UUID usuarioId){
+        return proyectoService.getMiProyectoDashboard(usuarioId);
     }
 }
