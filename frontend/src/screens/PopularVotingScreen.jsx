@@ -278,7 +278,7 @@ function PopularVotingScreen() {
         eventoId,
         tipo: "POPULAR",
         modalidad: "MULTICRITERIO",
-        maxSelecciones: 1,
+        maxSelecciones: 3,
         inicio: ahora.toISOString(),
         fin: fin.toISOString(),
         estado: "ABIERTA",
