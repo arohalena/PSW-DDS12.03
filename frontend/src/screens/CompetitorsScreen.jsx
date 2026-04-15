@@ -76,6 +76,11 @@ function CompetitorsScreen() {
 
       <section className="temp-card">
         <h2>Crear competidor</h2>
+
+        <div className="feedback-card warning-box">
+          ⚠️ Para vincular automáticamente un competidor con un usuario, el email debe coincidir exactamente con el del usuario registrado.
+        </div>
+
         <form className="temp-form" onSubmit={handleSubmit}>
           <input
             type="text"
@@ -85,22 +90,21 @@ function CompetitorsScreen() {
             onChange={handleChange}
             required
           />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Contraseña"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
+
+          <div>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            <small className="helper-text">
+              Debe coincidir con el email del usuario para vincularse automáticamente.
+            </small>
+          </div>
+
           <button className="primary-btn" type="submit" disabled={saving}>
             {saving ? "Creando..." : "Crear competidor"}
           </button>
@@ -114,6 +118,7 @@ function CompetitorsScreen() {
       ) : (
         <section className="temp-card">
           <h2>Listado</h2>
+
           {competidores.length === 0 ? (
             <p>No hay competidores creados.</p>
           ) : (
@@ -123,6 +128,7 @@ function CompetitorsScreen() {
                   <tr>
                     <th>Nombre</th>
                     <th>Email</th>
+                    <th>Estado</th>
                     <th>ID</th>
                   </tr>
                 </thead>
@@ -131,6 +137,25 @@ function CompetitorsScreen() {
                     <tr key={competidor.id}>
                       <td>{competidor.nombre}</td>
                       <td>{competidor.email}</td>
+
+                      <td>
+                        {competidor.usuario ? (
+                          <span
+                            className="status-pill linked"
+                            title="Este competidor está vinculado a un usuario"
+                          >
+                            Vinculado
+                          </span>
+                        ) : (
+                          <span
+                            className="status-pill not-linked"
+                            title="No hay usuario vinculado con este email"
+                          >
+                            No vinculado
+                          </span>
+                        )}
+                      </td>
+
                       <td>{competidor.id}</td>
                     </tr>
                   ))}

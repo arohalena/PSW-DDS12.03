@@ -114,6 +114,13 @@ function UserManagementScreen() {
           Solo los organizadores pueden crear, editar o eliminar usuarios.
         </div>
       )}
+      
+      {puedeGestionarUsuarios && (
+        <div className="feedback-card warning-box">
+          Al crear un usuario desde esta pantalla, la contraseña se asigna automáticamente como <strong>1234</strong>.
+          Si se desea una contraseña distinta, el usuario debe registrarse desde la pantalla de registro.
+        </div>
+      )}
 
       {loading ? (
         <div className="feedback-card">Cargando usuarios...</div>
@@ -147,10 +154,10 @@ function UserManagementScreen() {
                 <strong>Jurado:</strong> Puede evaluar proyectos y emitir votos
               </p>
               <p>
-                <strong>Participante:</strong> Puede ver su proyecto y recibir feedback
+                <strong>Competidor:</strong> Puede ver su proyecto y recibir feedback
               </p>
               <p>
-                <strong>Espectador:</strong> Solo puede visualizar información pública
+                <strong>Publico:</strong> Solo puede visualizar información pública
               </p>
             </div>
           </section>

@@ -64,3 +64,18 @@ export async function deleteUsuario(id) {
     throw new Error(errorText || "No se pudo borrar el usuario");
   }
 }
+
+export async function usuarioHasProject(usuarioId) {
+  try {
+    const response = await fetch(`${API_URL}/hasProyecto/${usuarioId}`);
+    if (!response.ok) {
+      throw new Error("Error al consultar el proyecto");
+    }
+    // El backend devuelve true/false
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error en fetch hasProyecto:", error);
+    return false;
+  }
+};
