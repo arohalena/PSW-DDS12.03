@@ -105,15 +105,6 @@ function CompetitorsScreen() {
             </small>
           </div>
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Contraseña"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-
           <button className="primary-btn" type="submit" disabled={saving}>
             {saving ? "Creando..." : "Crear competidor"}
           </button>
