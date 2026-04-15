@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Vote, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Vote, Mail, Lock, Eye, EyeOff, Info } from "lucide-react";
 import { loginUsuario } from "../services/authService";
 import "../styles/auth.css";
 
 function LoginScreen() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminInfo, setShowAdminInfo] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
@@ -42,6 +43,25 @@ function LoginScreen() {
           </div>
           <h1>Bienvenido a Votify</h1>
           <p>Inicia sesión para acceder a tu cuenta</p>
+          <div
+            className="auth-info-tooltip-wrapper"
+            onMouseEnter={() => setShowAdminInfo(true)}
+            onMouseLeave={() => setShowAdminInfo(false)}
+          >
+            <button type="button" className="auth-info-btn" aria-label="Información sobre acceso por defecto">
+              <Info size={16} />
+            </button>
+
+            {showAdminInfo && (
+              <div className="auth-info-tooltip">
+                Existe un organizador por defecto.
+                <br />
+                <strong>Email:</strong> admin@votify.com
+                <br />
+                <strong>Contraseña:</strong> admin123
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="auth-card">

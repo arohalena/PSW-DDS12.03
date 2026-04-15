@@ -114,6 +114,13 @@ function UserManagementScreen() {
           Solo los organizadores pueden crear, editar o eliminar usuarios.
         </div>
       )}
+      
+      {puedeGestionarUsuarios && (
+        <div className="feedback-card warning-box">
+          Al crear un usuario desde esta pantalla, la contraseña se asigna automáticamente como <strong>1234</strong>.
+          Si se desea una contraseña distinta, el usuario debe registrarse desde la pantalla de registro.
+        </div>
+      )}
 
       {loading ? (
         <div className="feedback-card">Cargando usuarios...</div>
