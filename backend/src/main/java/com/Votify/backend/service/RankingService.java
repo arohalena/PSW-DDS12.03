@@ -9,15 +9,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.Votify.backend.model.CriterioEvaluacionMO;
-import com.Votify.backend.model.PuntuacionCriterioMO;
 import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
+import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.PuntuacionCriterioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
-import com.Votify.backend.repository.VotacionRepository;
 import com.Votify.backend.repository.VotoRepository;
-import com.Votify.backend.repository.EquipoRepository;
 
 import lombok.RequiredArgsConstructor;
 
