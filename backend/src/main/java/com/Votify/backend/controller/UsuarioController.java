@@ -2,6 +2,7 @@ package com.Votify.backend.controller;
 
 import java.util.UUID;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,11 +48,16 @@ public class UsuarioController extends GenericController<UsuarioMO>{
 
     }
 
-     @PutMapping("/{id}")
+    @PutMapping("/{id}")
     public UsuarioMO update(@PathVariable UUID id, @RequestBody UsuarioMO usuario, @RequestHeader(value = "X-User-Role", required = false) String rolHeader) {
        
         validarOrganizador(rolHeader);
         return usuarioService.update(id, usuario);
+    }
+
+    @GetMapping("/hasProyecto/{usuarioId}")
+    public boolean hasProyecto(@PathVariable UUID usuarioId) {
+        return usuarioService.hasProyecto(usuarioId);
     }
     
 
