@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 function UserModal({ isOpen, onClose, onSubmit, initialData }) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
-  const [rol, setRol] = useState("PARTICIPANTE");
+  const [rol, setRol] = useState("COMPETIDOR");
   const [error, setError] = useState("");
 
   const isEditMode = Boolean(initialData);
@@ -12,11 +12,11 @@ function UserModal({ isOpen, onClose, onSubmit, initialData }) {
     if (initialData) {
       setNombre(initialData.nombre || "");
       setEmail(initialData.email || "");
-      setRol(initialData.rol || "PARTICIPANTE");
+      setRol(initialData.rol || "COMPETIDOR");
     } else {
       setNombre("");
       setEmail("");
-      setRol("PARTICIPANTE");
+      setRol("COMPETIDOR");
     }
   }, [initialData, isOpen]);
 
@@ -80,7 +80,7 @@ function UserModal({ isOpen, onClose, onSubmit, initialData }) {
             <select value={rol} onChange={(e) => setRol(e.target.value)}>
               <option value="ORGANIZADOR">Organizador</option>
               <option value="JURADO">Jurado</option>
-              <option value="PARTICIPANTE">Participante</option>
+              <option value="COMPETIDOR">Competidor</option>
               <option value="PUBLICO">Público</option>
               <option value="ESPECTADOR">Espectador</option>
             </select>
