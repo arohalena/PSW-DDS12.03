@@ -192,11 +192,6 @@ function RankingScreen() {
         </div>
 
         <div className="ranking-header-actions">
-          <button type="button" className="secondary-btn ranking-action-btn">
-            <Filter size={16} />
-            Filtros
-          </button>
-
           <button
             type="button"
             className="primary-btn ranking-action-btn"
