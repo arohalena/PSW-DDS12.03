@@ -70,6 +70,14 @@ public class CompetidorService extends GenericService<CompetidorMO> {
         competidor.setUsuario(usuario);
         competidor.setPassword(usuario.getPassword());
     }
+
+    public CompetidorMO getByUsuarioId(UUID usuarioId) { 
+        try {
+            return competidorRepository.findByUsuarioId(usuarioId).get();
+        } catch (Exception e ) {
+            throw new RuntimeException("Error al obtener competidor mediante usuario id: " + e.getMessage());
+        }
+    }
 }
 
 
