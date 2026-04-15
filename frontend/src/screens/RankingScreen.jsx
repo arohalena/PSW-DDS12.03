@@ -292,11 +292,6 @@ function RankingScreen() {
                           <strong>{formatearNota(entry.puntuacionTotal)}</strong>
 
                           <div className="ranking-votes-line">
-                            {trendUp ? (
-                              <TrendingUp size={14} className="trend-up" />
-                            ) : (
-                              <TrendingDown size={14} className="trend-down" />
-                            )}
                             <span>{entry.totalVotos ?? 0} votos</span>
                           </div>
                         </div>
