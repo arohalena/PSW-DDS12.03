@@ -1,12 +1,11 @@
 import { NavLink } from "react-router-dom";
 
 const items = [
-  { label: "Dashboard", to: "/", disabled: true },
+  { label: "Home", to: "/", disabled: true },
   { label: "Eventos", to: "/eventos" },
   { label: "Equipos", to: "/equipos" },
   { label: "Competidores", to: "/competidores" },
   { label: "Proyectos", to: "/proyectos" },
-  { label: "Asignación", to: "/", disabled: true },
   { label: "Criterios", to: "/criterios" },
   { label: "Votación", to: "/votar" },
   { label: "Usuarios", to: "/usuarios" },

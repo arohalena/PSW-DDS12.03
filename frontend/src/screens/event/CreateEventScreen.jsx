@@ -227,8 +227,7 @@ function CreateEventScreen() {
         <section className="event-form-section event-form-section-disabled">
           <h2>Configuración de Votación</h2>
           <p className="field-help-text section-note">
-            Estos campos aparecen en el mockup, pero quedan deshabilitados hasta completar la
-            siguiente iteración del proyecto.
+            Estos campos aparecen en el mockup, pero quedan deshabilitados para el Sprint 2.
           </p>
 
           <label className="event-field">

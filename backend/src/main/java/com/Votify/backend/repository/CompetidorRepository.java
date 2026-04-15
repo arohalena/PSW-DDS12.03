@@ -10,7 +10,7 @@ import com.Votify.backend.model.CompetidorMO;
 public interface CompetidorRepository extends JpaRepository<CompetidorMO, UUID> {
 
     Optional<CompetidorMO> findByEmailIgnoreCase(String email);
-
+    Optional<CompetidorMO> findByEmail(String email);
     Optional<CompetidorMO> findByUsuarioId(UUID usuarioId);
     
 }

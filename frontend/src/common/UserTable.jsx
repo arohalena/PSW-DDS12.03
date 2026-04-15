@@ -4,8 +4,8 @@ function getRoleLabel(rol) {
       return "Organizador";
     case "JURADO":
       return "Jurado";
-    case "PARTICIPANTE":
-      return "Participante";
+    case "COMPETIDOR":
+      return "Competidor";
     case "PUBLICO":
       return "Público";
     case "ESPECTADOR":

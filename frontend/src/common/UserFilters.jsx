@@ -17,7 +17,7 @@ function UserFilters({ search, setSearch, selectedRole, setSelectedRole }) {
         <option value="TODOS">Todos los roles</option>
         <option value="ORGANIZADOR">Organizador</option>
         <option value="JURADO">Jurado</option>
-        <option value="PARTICIPANTE">Participante</option>
+        <option value="COMPETIDOR">Competidor</option>
         <option value="PUBLICO">Público</option>
         <option value="ESPECTADOR">Espectador</option>
       </select>

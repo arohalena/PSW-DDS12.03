@@ -97,6 +97,9 @@ function ProjectsScreen() {
             <Plus size={20} /> Crear Proyecto
           </button>
         )}
+        <p>
+          {filtrados.length} proyectos encontrados
+        </p>
       </header>
 
       {!desdeEvento && (
@@ -125,38 +128,38 @@ function ProjectsScreen() {
         </div>
       </div>
 
-      <div className="table-container">
-        <table className="projects-table">
-          <thead>
-            <tr>
-              <th>Proyecto</th>
-              <th>Categoría</th>
-              <th>Descripción</th>
-              <th>Equipo</th>
-              <th style={{ textAlign: 'right' }}>Comentarios</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.map((p) => (
-              <tr key={p.id} className="row-hover">
-                <td style={{ fontWeight: 500 }}>{p.nombre}</td>
-                <td><span className="badge">{p.tipoCategoria}</span></td>
-                <td style={{ color: '#6b7280' }}>{p.descripcion || "—"}</td>
-                <td style={{ color: '#6b7280' }}>{p.nombreEquipo}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <button
-                    className="btn-comment-pill"
-                    onClick={() => setComentarioProyecto(p)}
-                  >
-                    <MessageCircle size={15} />
-                    Comentar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="projects-grid">
+  {filtrados.map((p) => (
+    <div key={p.id} className="project-card">
+      
+      <div className="project-card-header">
+        <div>
+          <h3>{p.nombre}</h3>
+          <span className="badge">{p.tipoCategoria}</span>
+        </div>
       </div>
+
+      <p className="project-description">
+        {p.descripcion || "Sin descripción disponible"}
+      </p>
+
+      <div className="project-meta">
+        <span>👥 {p.nombreEquipo}</span>
+      </div>
+
+      <div className="project-actions">
+        <button
+          className="btn-comment"
+          onClick={() => setComentarioProyecto(p)}
+        >
+          <MessageCircle size={16} />
+          Ver comentarios
+        </button>
+      </div>
+
+    </div>
+  ))}
+</div>
 
       {showModal && (
         <CreateProyectoModal

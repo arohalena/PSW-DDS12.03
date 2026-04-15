@@ -10,7 +10,7 @@ import com.Votify.backend.model.UsuarioMO;
 public interface UsuarioRepository extends JpaRepository<UsuarioMO, UUID> {
 
     Optional<UsuarioMO> findByEmail(String email);
-
+    Optional<UsuarioMO> findByEmailIgnoreCase(String email);
     boolean existsByRol(RolMO rol);
 
 }

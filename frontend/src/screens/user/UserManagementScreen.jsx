@@ -147,10 +147,10 @@ function UserManagementScreen() {
                 <strong>Jurado:</strong> Puede evaluar proyectos y emitir votos
               </p>
               <p>
-                <strong>Participante:</strong> Puede ver su proyecto y recibir feedback
+                <strong>Competidor:</strong> Puede ver su proyecto y recibir feedback
               </p>
               <p>
-                <strong>Espectador:</strong> Solo puede visualizar información pública
+                <strong>Publico:</strong> Solo puede visualizar información pública
               </p>
             </div>
           </section>
