@@ -2,8 +2,11 @@ package com.Votify.backend.dto;
 
 import java.util.UUID;
 
-public record AsignarCompetidorEventoRequest(
-    UUID competidorId,
-    UUID eventoId,
-    UUID equipoId
-) {}
+import lombok.Data;
+
+@Data
+public class AsignarCompetidorEventoRequest{
+    private UUID competidorId;
+    private UUID eventoId;
+    private UUID equipoId;
+}
