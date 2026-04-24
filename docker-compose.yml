@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d votify"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -52,7 +52,7 @@ services:
         condition: service_completed_successfully
   
   flyway:
-    image: flyway/flyway:latest
+    image: flyway/flyway:10
     command: migrate
     volumes:
       - ./migrations:/flyway/sql
@@ -65,6 +65,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: on-failure
 
 volumes:
   postgres_data:

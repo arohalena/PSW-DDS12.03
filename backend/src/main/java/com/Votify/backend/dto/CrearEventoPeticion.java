@@ -2,13 +2,15 @@ package com.Votify.backend.dto;
 
 import java.time.OffsetDateTime;
 
-public record CrearEventoPeticion (
+import lombok.Data;
 
-    String tipo,
-    String nombre,
-    String descripcion,
-    String codigoAccesoPublico,
-    OffsetDateTime fecha_inicio,
-    OffsetDateTime fecha_fin
+@Data
+public class CrearEventoPeticion {
+    private String tipo;
+    private String nombre;
+    private String descripcion;
+    private String codigoAccesoPublico;
+    private OffsetDateTime fecha_inicio;
+    private OffsetDateTime fecha_fin;
 
-) {}
+}

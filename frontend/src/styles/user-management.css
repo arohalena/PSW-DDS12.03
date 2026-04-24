@@ -87,7 +87,7 @@
 }
 
 .filters-bar {
-  display: grid;
+  display: flex;
   grid-template-columns: 1.5fr 1fr 1fr;
   gap: 12px;
   padding: 14px;
@@ -108,6 +108,10 @@
   background: #fff;
 }
 
+.role-select {
+  flex-shrink: 0; 
+  width: auto; 
+}
 .table-card {
   overflow: hidden;
 }

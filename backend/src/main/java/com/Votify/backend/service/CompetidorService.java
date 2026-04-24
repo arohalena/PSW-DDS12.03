@@ -62,13 +62,23 @@ public class CompetidorService extends GenericService<CompetidorMO> {
     private void vincularUsuarioObligatorio(CompetidorMO competidor){
         if(competidor.getUsuario() != null) return;
         if(competidor.getEmail() == null || competidor.getEmail().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email del competidor es obligatorio");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email del competidor es obligatorio.");
         }
-        UsuarioMO usuario = usuarioRepository.findByEmailIgnoreCase(competidor.getEmail().trim())
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No existe un usuario regustrado con ese email. Debes crear primero el usuario"));
+        UsuarioMO usuario = usuarioRepository.findByEmailIgnoreCase(competidor.getEmail().trim()).orElse(null);
+        if(usuario == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No existe un usuario registrado con ese email. Debes crear primero el usuario.");
+        }
 
         competidor.setUsuario(usuario);
         competidor.setPassword(usuario.getPassword());
+    }
+
+    public CompetidorMO getByUsuarioId(UUID usuarioId) { 
+        try {
+            return competidorRepository.findByUsuarioId(usuarioId).get();
+        } catch (Exception e ) {
+            throw new RuntimeException("Error al obtener competidor mediante usuario id: " + e.getMessage());
+        }
     }
 }
 

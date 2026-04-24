@@ -9,10 +9,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.Votify.backend.model.CriterioEvaluacionMO;
+import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
+import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.PuntuacionCriterioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
+import com.Votify.backend.repository.VotoRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +26,8 @@ public class RankingService {
     private final CriterioEvaluacionRepository criterioRepository;
     private final PuntuacionCriterioRepository puntuacionRepository;
     private final VotacionProyectoRepository votacionProyectoRepository;
+    private final VotoRepository votoRepository;
+    private final EquipoRepository equipoRepository;
 
     public List<Map<String, Object>> calcularRanking(UUID eventoId, UUID votacionId) {
 
@@ -30,6 +35,7 @@ public class RankingService {
         List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
 
         List<Map<String, Object>> ranking = new ArrayList<>();
+        long votantesActivos = votoRepository.countDistinctVotantesByEventoId(eventoId);
 
         for (VotacionProyectoMO vp : proyectosVotacion) {
 
@@ -39,6 +45,14 @@ public class RankingService {
             entry.put("proyectoNombre", vp.getProyecto().getNombre());
             entry.put("votacionProyectoId", vp.getId());
 
+            EquipoMO equipo = equipoRepository.findByProyecto_Id(vp.getProyecto().getId());
+            entry.put("equipoNombre", equipo != null ? equipo.getNombre() : null);
+
+            long totalVotosProyecto = votoRepository.countByVotacionProyecto_Id(vp.getId());
+            entry.put("totalVotos", totalVotosProyecto);
+            
+            entry.put("votantesActivos", votantesActivos);
+            
             double puntuacionTotal = 0;
 
             List<Map<String, Object>> detalleCriterios = new ArrayList<>();

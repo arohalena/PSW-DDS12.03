@@ -1,4 +1,7 @@
+import { useState, useEffect, useMemo } from "react";
 import { NavLink } from "react-router-dom";
+import { usuarioHasProject } from "../services/usuarioService"; 
+import { getUsuarioLogueado } from "../services/sessionService";
 
 const items = [
   { label: "Home", to: "/", disabled: true },
@@ -10,10 +13,24 @@ const items = [
   { label: "Votación", to: "/votar" },
   { label: "Usuarios", to: "/usuarios" },
   { label: "Resultados", to: "/resultados" },
-  { label: "Mi Proyecto", to: "/mi-proyecto" },
+  { label: "Mi Proyecto", to: "/mi-proyecto", private: true },
 ];
 
 function Sidebar() {
+  const [userHasProject, setUserHasProject] = useState(false);
+
+  const usuario = useMemo(() => getUsuarioLogueado(), []);
+
+  useEffect(() => {
+    async function verifyProject() {
+      const result = await usuarioHasProject(usuario.id);
+      console.log("USUARIO" + usuario.id + " HAS PROJECT" + result)
+      setUserHasProject(result);
+    }
+
+    verifyProject();
+  }, [usuario]);
+
   return (
     <aside className="sidebar">
       <div>
@@ -24,6 +41,10 @@ function Sidebar() {
 
         <nav className="sidebar-nav">
           {items.map((item) => {
+            if (item.private && !userHasProject) {
+              return null;
+            }
+
             if (item.disabled) {
               return (
                 <button key={item.label} className="sidebar-link" disabled>
