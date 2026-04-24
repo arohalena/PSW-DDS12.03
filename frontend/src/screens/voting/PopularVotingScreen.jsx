@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Users, Plus, Trash2, SlidersHorizontal, Vote, CheckCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getEventos } from "../services/eventoService";
-import { getProyectosByEvento } from "../services/proyectoService";
-import { getEquipos } from "../services/equipoService";
-import { esOrganizador } from "../services/sessionService";
-import { getCriteriosByEvento } from "../services/criterioService";
+import { getEventos } from "../../services/eventoService";
+import { getProyectosByEvento } from "../../services/proyectoService";
+import { getEquipos } from "../../services/equipoService";
+import { esOrganizador } from "../../services/sessionService";
+import { getCriteriosByEvento } from "../../services/criterioService";
 import {
   asignarProyectoAVotacion,
   createVotacion,
@@ -13,8 +13,8 @@ import {
   getConteoVotos,
   getVotacionProyectosByVotacion,
   getVotacionesByEvento,
-} from "../services/votacionService";
-import "../styles/voting.css";
+} from "../../services/votacionService";
+import "../../styles/voting.css";
 
 const CRITERIO_INICIAL = {
   nombre: "",

@@ -4,9 +4,9 @@ import {
   getEquipos,
   getEventosParaEquipo,
   getProyectosParaEquipo,
-} from "../services/equipoService";
-import { getCompetidores, assignCompetidor, getCompetidoresByEquipo }  from "../services/competidorService";
-import "../styles/temp-management.css";
+} from "../../services/equipoService";
+import { getCompetidores, assignCompetidor, getCompetidoresByEquipo }  from "../../services/competidorService";
+import "../../styles/temp-management.css";
 
 function TeamsScreen() {
   const [equipos, setEquipos] = useState([]);

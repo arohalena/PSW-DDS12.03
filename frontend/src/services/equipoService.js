@@ -10,10 +10,6 @@ export async function getEquipos() {
     throw new Error(errorText || "No se pudieron cargar los equipos");
   }
 
-    console.log("GETEQUIPOSSS ")
-
-    console.log(response)
-
   return response.json();
 }
 

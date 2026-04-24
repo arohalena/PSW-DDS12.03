@@ -4,13 +4,13 @@ import {
   deleteUsuario,
   getUsuarios,
   updateUsuario,
-} from "../services/usuarioService";
-import { esOrganizador } from "../services/sessionService";
-import UserStats from "../common/UserStats";
-import UserFilters from "../common/UserFilters";
-import UserTable from "../common/UserTable";
-import UserModal from "../common/UserModal";
-import "../styles/user-management.css";
+} from "../../services/usuarioService";
+import { esOrganizador } from "../../services/sessionService";
+import UserStats from "../../common/UserStats";
+import UserFilters from "../../common/UserFilters";
+import UserTable from "../../common/UserTable";
+import UserModal from "../../common/UserModal";
+import "../../styles/user-management.css";
 
 function UserManagementScreen() {
   const [usuarios, setUsuarios] = useState([]);

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, Copy, RefreshCw } from "lucide-react";
-import { createEvento, generarCodigoEvento } from "../services/eventoService";
-import { esOrganizador } from "../services/sessionService";
-import "../styles/events.css";
+import { createEvento, generarCodigoEvento } from "../../services/eventoService";
+import { esOrganizador } from "../../services/sessionService";
+import "../../styles/events.css";
 
 function toOffsetDateTime(dateTimeValue) {
   if (!dateTimeValue) return null;
