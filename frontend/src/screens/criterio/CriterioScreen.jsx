@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, GripVertical } from "lucide-react";
-import { getEventos } from "../services/eventoService";
+import { getEventos } from "../../services/eventoService";
 import {
   getCriteriosByEvento,
   createCriterio,
   updateCriterio,
   deleteCriterio,
-} from "../services/criterioService";
-import { esOrganizador } from "../services/sessionService";
-import "../styles/criterios.css";
+} from "../../services/criterioService";
+import { esOrganizador } from "../../services/sessionService";
+import "../../styles/criterios.css";
 
 const ESCALAS = [
   { label: "1-5", min: 1, max: 5 },

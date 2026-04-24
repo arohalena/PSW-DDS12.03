@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
-import { getProyectosByEvento, createProyectoConEquipo } from "../services/proyectoService";
-import { getComentariosByProyecto, crearComentario } from "../services/comentarioService";
-import { getEventos } from "../services/eventoService";
-import { getCompetidores } from "../services/competidorService";
-import {createEquipo, getEquiposParaEvento} from "../services/equipoService";
-import {assignCompetidor} from "../services/competidorService";
-import { esOrganizador } from "../services/sessionService";
-import "../styles/projects.css";
+import { getProyectosByEvento, createProyectoConEquipo } from "../../services/proyectoService";
+import { getComentariosByProyecto, crearComentario } from "../../services/comentarioService";
+import { getEventos } from "../../services/eventoService";
+import { getCompetidores } from "../../services/competidorService";
+import {createEquipo, getEquiposParaEvento} from "../../services/equipoService";
+import {assignCompetidor} from "../../services/competidorService";
+import { esOrganizador } from "../../services/sessionService";
+import "../../styles/projects.css";
 
 
 const CATEGORIAS = ["IA", "SOSTENIBILIDAD"];
