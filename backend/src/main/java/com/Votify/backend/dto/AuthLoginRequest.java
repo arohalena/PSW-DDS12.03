@@ -1,9 +1,6 @@
 package com.Votify.backend.dto;
 
-import lombok.Data;
-
-@Data
-public class AuthLoginRequest {
-    private String email;
-    private String password;
-}
+public record AuthLoginRequest (
+    String email,
+    String password
+) {}

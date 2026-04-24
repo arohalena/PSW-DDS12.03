@@ -92,24 +92,24 @@ public class ProyectoService extends GenericService<ProyectoMO> {
 
     public ProyectoMO crearConEquipo(CrearProyectoRequest request) {
 
-        EventoMO evento = eventoRepository.findById(request.getEventoId())
+        EventoMO evento = eventoRepository.findById(request.eventoId())
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Evento no encontrado."
             ));
 
-        if (request.getTipoCategoria() == null || request.getTipoCategoria().isBlank()) {
+        if (request.tipoCategoria() == null || request.tipoCategoria().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La categoría es obligatoria.");
         }
 
-        CreadorProyecto creador = switch (request.getTipoCategoria()) {
+        CreadorProyecto creador = switch (request.tipoCategoria()) {
             case "IA" -> new CreadorProyectoIA();
             case "SOSTENIBILIDAD" -> new CreadorProyectoSostenibilidad();
             default -> throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, "No se reconoce la categoría: " + request.getTipoCategoria()
+                HttpStatus.BAD_REQUEST, "No se reconoce la categoría: " + request.tipoCategoria()
             );
         };
 
-        Proyecto proyectoDominio = creador.create(request.getNombre(), request.getDescripcion());
+        Proyecto proyectoDominio = creador.create(request.nombre(), request.descripcion());
 
         ProyectoMO proyecto = new ProyectoMO();
         proyecto.setNombre(proyectoDominio.getNombre());
@@ -119,12 +119,12 @@ public class ProyectoService extends GenericService<ProyectoMO> {
         proyecto = proyectoRepository.save(proyecto);
 
         EquipoMO equipo = new EquipoMO();
-        equipo.setNombre(request.getNombreEquipo());
+        equipo.setNombre(request.nombreEquipo());
         equipo.setProyecto(proyecto);
         equipo.setEvento(evento);
         equipo = equipoRepository.save(equipo);
 
-        List<String> emails = request.getMiembrosEmails();
+        List<String> emails = request.miembrosEmails();
         if (emails != null) {
             for (String email : emails) {
                 String emailLimpio = email.trim().toLowerCase();
