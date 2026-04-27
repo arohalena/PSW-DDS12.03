@@ -88,7 +88,8 @@ public class VotacionService extends GenericService<VotacionMO> {
         votacion.setMaxSelecciones(request.maxSelecciones());
         votacion.setInicio(request.inicio());
         votacion.setFin(request.fin());
-        votacion.setEstado(request.estado() != null ? request.estado() : EstadoVotacionMO.CERRADA);
+        votacion.setEstado(request.estado() != null ?
+        request.estado() : EstadoVotacionMO.PENDIENTE);
 
         VotacionMO guardada = votacionRepository.save(votacion);
 
@@ -137,4 +138,100 @@ public class VotacionService extends GenericService<VotacionMO> {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La suma de los pesos debe ser exactamente 100%.");
         }
     }
+
+    @Transactional
+    public VotacionMO abrir(UUID id) {
+
+        VotacionMO v = findById(id);
+
+        v.setEstado(EstadoVotacionMO.ABIERTA);
+
+        return votacionRepository.save(v);
+
+    }
+
+    @Transactional
+    public VotacionMO pausar(UUID id) {
+
+        VotacionMO v = findById(id);
+
+        if (v.getEstado() == EstadoVotacionMO.CERRADA) {
+
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                 "No se puede pausar una votación cerrada."
+                );
+
+        }
+
+        v.setEstado(EstadoVotacionMO.PAUSADA);
+        return votacionRepository.save(v);
+
+    }
+
+    @Transactional
+    public VotacionMO reanudar(UUID id) {
+
+        VotacionMO v = findById(id);
+
+        if (v.getEstado() != EstadoVotacionMO.PAUSADA) {
+
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                 "Solo se puede reanudar una votación pausada."
+                );
+
+        }
+
+        v.setEstado(EstadoVotacionMO.ABIERTA);
+        return votacionRepository.save(v);
+
+    }
+
+    @Transactional
+    public VotacionMO cerrar(UUID id) {
+
+        VotacionMO v = findById(id);
+
+        v.setEstado(EstadoVotacionMO.CERRADA);
+
+        return votacionRepository.save(v);
+
+    }
+
+    @Transactional
+    public int aplicarTransicionesAutomaticas() {
+
+        OffsetDateTime ahora = OffsetDateTime.now();
+
+        int cambios = 0;
+
+        for (VotacionMO v : votacionRepository.findAll()) {
+
+            EstadoVotacionMO actual = v.getEstado();
+
+            if (v.getFin() != null && ahora.isAfter(v.getFin())
+                    && actual != EstadoVotacionMO.CERRADA) {
+
+                v.setEstado(EstadoVotacionMO.CERRADA);
+                votacionRepository.save(v);
+
+                cambios++;
+                continue;
+            }
+
+            if (actual == EstadoVotacionMO.PENDIENTE
+                    && v.getInicio() != null
+                    && !ahora.isBefore(v.getInicio())
+                    && (v.getFin() == null || ahora.isBefore(v.getFin()))) {
+
+                v.setEstado(EstadoVotacionMO.ABIERTA);
+                votacionRepository.save(v);
+
+                cambios++;
+
+            }
+        }
+
+        return cambios;
+        
+    }    
 }

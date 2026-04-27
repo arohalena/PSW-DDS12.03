@@ -5,11 +5,14 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -43,5 +46,38 @@ public class VotacionMO extends ModeloBaseMO {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
     private EstadoVotacionMO estado;
+
+    @Transient
+    @JsonProperty("estadoActual")
+    public EstadoVotacionMO getEstadoActual(){
+
+        if(estado == EstadoVotacionMO.CERRADA){
+
+            return EstadoVotacionMO.CERRADA;
+
+        }
+        if(estado == EstadoVotacionMO.PAUSADA){
+
+            return EstadoVotacionMO.PAUSADA;
+
+        }
+
+        OffsetDateTime ahora = OffsetDateTime.now();
+
+        if(fin != null && ahora.isAfter(fin)){
+
+            return EstadoVotacionMO.CERRADA;
+
+        }
+
+        if(inicio != null && ahora.isBefore(inicio)){
+
+            return EstadoVotacionMO.PENDIENTE;
+            
+        }
+        
+        return EstadoVotacionMO.ABIERTA;
+        
+    }
     
 }

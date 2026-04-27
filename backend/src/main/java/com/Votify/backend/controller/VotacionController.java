@@ -47,4 +47,32 @@ public class VotacionController extends GenericController<VotacionMO> {
     public VotacionMO create(@RequestBody CrearVotacionRequest request) {
         return votacionService.crear(request);
     }
+
+    @PostMapping("/{id}/abrir")
+    public VotacionMO abrir(@PathVariable UUID id) {
+
+        return votacionService.abrir(id);
+
+    }
+
+    @PostMapping("/{id}/pausar")
+    public VotacionMO pausar(@PathVariable UUID id) {
+
+        return votacionService.pausar(id);
+
+    }
+
+    @PostMapping("/{id}/reanudar")
+    public VotacionMO reanudar(@PathVariable UUID id) {
+
+        return votacionService.reanudar(id);
+
+    }
+
+    @PostMapping("/{id}/cerrar")
+    public VotacionMO cerrar(@PathVariable UUID id) {
+
+        return votacionService.cerrar(id);
+        
+    }
 }

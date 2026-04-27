@@ -2,7 +2,6 @@ package com.Votify.backend.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -233,18 +232,34 @@ public class VotoService extends GenericService<VotoMO> {
     }
 
     private void validarEstadoYFechas(VotacionMO votacion) {
-        if (votacion.getEstado() != EstadoVotacionMO.ABIERTA) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no está abierta.");
-        }
+        
+        EstadoVotacionMO actual = votacion.getEstadoActual();
 
-        OffsetDateTime ahora = OffsetDateTime.now();
+        switch(actual){
 
-        if (votacion.getInicio() != null && ahora.isBefore(votacion.getInicio())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación todavía no ha comenzado.");
-        }
+            case PENDIENTE:
 
-        if (votacion.getFin() != null && ahora.isAfter(votacion.getFin())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación ya ha finalizado.");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La votación todavía no ha comenzado."
+
+                );
+            
+            case PAUSADA:
+
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La votación está pausada."
+                );
+            
+            case CERRADA:
+
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La votación ya ha finalizado."
+                );
+            
+            case ABIERTA:
+            default:
+                    return;
+
         }
     }
 
