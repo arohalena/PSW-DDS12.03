@@ -1,0 +1,2 @@
+ALTER TYPE public.estado_votacion ADD VALUE IF NOT EXISTS 'PENDIENTE';
+ALTER TYPE public.estado_votacion ADD VALUE IF NOT EXISTS 'PAUSADA';

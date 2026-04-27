@@ -49,35 +49,33 @@ public class VotacionMO extends ModeloBaseMO {
 
     @Transient
     @JsonProperty("estadoActual")
-    public EstadoVotacionMO getEstadoActual(){
+    public EstadoVotacionMO getEstadoActual() {
 
-        if(estado == EstadoVotacionMO.CERRADA){
-
+        if (estado == EstadoVotacionMO.CERRADA) {
             return EstadoVotacionMO.CERRADA;
-
         }
-        if(estado == EstadoVotacionMO.PAUSADA){
-
+        if (estado == EstadoVotacionMO.PAUSADA) {
             return EstadoVotacionMO.PAUSADA;
-
         }
 
         OffsetDateTime ahora = OffsetDateTime.now();
 
-        if(fin != null && ahora.isAfter(fin)){
-
+        // Si pasó el fin, se cierra automáticamente
+        if (fin != null && ahora.isAfter(fin)) {
             return EstadoVotacionMO.CERRADA;
-
         }
 
-        if(inicio != null && ahora.isBefore(inicio)){
+        // Si el admin la abrió manualmente, respetarlo aunque el inicio esté en el futuro
+        if (estado == EstadoVotacionMO.ABIERTA) {
+            return EstadoVotacionMO.ABIERTA;
+        }
 
+        // estado == PENDIENTE: pasa a ABIERTA cuando llega el inicio
+        if (inicio != null && ahora.isBefore(inicio)) {
             return EstadoVotacionMO.PENDIENTE;
-            
         }
-        
+
         return EstadoVotacionMO.ABIERTA;
-        
     }
     
 }
