@@ -16,6 +16,7 @@ import com.Votify.backend.dto.EmitirVotoSimpleRequest;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.VotoService;
+import com.Votify.backend.dto.EmitirVotoPuntosRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -65,4 +66,9 @@ public class VotoController extends GenericController<VotoMO> {
     public VotoMO votarMulticriterio(@RequestBody EmitirEvaluacionRequest request) {
         return votoService.votarMulticriterio(request);
     }
+
+    @PostMapping("/puntos")
+    public VotoMO votarPuntos(@RequestBody EmitirVotoPuntosRequest request) {
+    return votoService.votarPuntos(request);
+}
 }
