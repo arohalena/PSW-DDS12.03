@@ -60,17 +60,14 @@ public class VotacionMO extends ModeloBaseMO {
 
         OffsetDateTime ahora = OffsetDateTime.now();
 
-        // Si pasó el fin, se cierra automáticamente
         if (fin != null && ahora.isAfter(fin)) {
             return EstadoVotacionMO.CERRADA;
         }
 
-        // Si el admin la abrió manualmente, respetarlo aunque el inicio esté en el futuro
         if (estado == EstadoVotacionMO.ABIERTA) {
             return EstadoVotacionMO.ABIERTA;
         }
 
-        // estado == PENDIENTE: pasa a ABIERTA cuando llega el inicio
         if (inicio != null && ahora.isBefore(inicio)) {
             return EstadoVotacionMO.PENDIENTE;
         }
