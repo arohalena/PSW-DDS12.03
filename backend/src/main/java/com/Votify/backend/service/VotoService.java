@@ -258,7 +258,7 @@ public class VotoService extends GenericService<VotoMO> {
             
             case ABIERTA:
             default:
-                    return;
+                break;
 
         }
     }
