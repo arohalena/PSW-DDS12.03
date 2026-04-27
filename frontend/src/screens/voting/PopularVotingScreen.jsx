@@ -7,6 +7,10 @@ import { getEquipos } from "../../services/equipoService";
 import { esOrganizador } from "../../services/sessionService";
 import { getCriteriosByEvento } from "../../services/criterioService";
 import {
+  abrirVotacion,
+  pausarVotacion,
+  reanudarVotacion,
+  cerrarVotacion,
   asignarProyectoAVotacion,
   createVotacion,
   getAsignacionesCompetidorEvento,
@@ -50,6 +54,30 @@ function PopularVotingScreen() {
   const [criterios, setCriterios] = useState([]);
   const [criteriosExistentes, setCriteriosExistentes] = useState([]);
   const [nuevoCriterio, setNuevoCriterio] = useState(CRITERIO_INICIAL);
+
+  const ahoraLocal = () => {
+
+    const d = new Date();
+
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+
+    return d.toISOString().slice(0, 16);
+
+  };
+
+  const ahoraMas7DiasLocal = () => {
+    
+    const d = new Date();
+
+    d.setDate(d.getDate() + 7);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+
+    return d.toISOString().slice(0, 16);
+
+  };
+
+  const [fechaInicio, setFechaInicio] = useState(ahoraLocal());
+  const [fechaFin, setFechaFin] = useState(ahoraMas7DiasLocal());
 
   const puedeGestionar = esOrganizador();
 
@@ -234,22 +262,42 @@ function PopularVotingScreen() {
       setError("");
       setSuccess("");
 
-      const ahora = new Date();
-      const fin = new Date(ahora);
-      fin.setDate(fin.getDate() + 7);
+      const inicio = new Date(fechaInicio);
+      const fin = new Date(fechaFin);
+
+      if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+
+        setError("Debes indicar la fecha y hora de inicio y fin.");
+        setCreatingVoting(false);
+
+        return;
+
+      }
+
+      if (fin <= inicio) {
+
+        setError("La fecha/hora de fin debe ser posterior a la de inicio.");
+        setCreatingVoting(false);
+
+        return;
+
+      }
 
       const nueva = await createVotacion({
+
         eventoId,
         tipo: "POPULAR",
         modalidad: "SIMPLE",
         maxSelecciones: 3,
-        inicio: ahora.toISOString(),
+        inicio: inicio.toISOString(),
         fin: fin.toISOString(),
-        estado: "ABIERTA",
+        estado: "PENDIENTE",
+
       });
 
       setVotacionPopularSimple(nueva);
       setVotacionPopularMulticriterio(null);
+
       await recargarDatosEvento(nueva);
       setSuccess("Votación popular simple creada correctamente.");
     } catch (err) {
@@ -266,22 +314,41 @@ function PopularVotingScreen() {
     }
 
     try {
+
       setCreatingVoting(true);
       setError("");
       setSuccess("");
 
-      const ahora = new Date();
-      const fin = new Date(ahora);
-      fin.setDate(fin.getDate() + 7);
+      const inicio = new Date(fechaInicio);
+      const fin = new Date(fechaFin);
+
+      if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+
+        setError("Debes indicar la fecha y hora de inicio y fin.");
+        setCreatingVoting(false);
+
+        return;
+
+      }
+      if (fin <= inicio) {
+
+        setError("La fecha/hora de fin debe ser posterior a la de inicio.");
+        setCreatingVoting(false);
+
+        return;
+
+      }
 
       const payload = {
+
         eventoId,
         tipo: "POPULAR",
         modalidad: "MULTICRITERIO",
         maxSelecciones: 3,
-        inicio: ahora.toISOString(),
+        inicio: inicio.toISOString(),
         fin: fin.toISOString(),
-        estado: "ABIERTA",
+        estado: "PENDIENTE",
+
       };
 
       // Solo enviar criterios si NO existen del sidebar
@@ -324,24 +391,76 @@ function PopularVotingScreen() {
     }
   };
 
+  const handleControl = async (accion, id) => {
+    try {
+
+      setError("");
+      setSuccess("");
+
+      const fnMap = {
+
+        abrir: abrirVotacion,
+        pausar: pausarVotacion,
+        reanudar: reanudarVotacion,
+        cerrar: cerrarVotacion,
+
+      };
+
+      const actualizada = await fnMap[accion](id);
+
+      if (actualizada.modalidad === "MULTICRITERIO") setVotacionPopularMulticriterio(actualizada);
+      else setVotacionPopularSimple(actualizada);
+
+      setVotacionActiva(actualizada);
+      setSuccess(
+        `Votación ${
+          accion === "abrir" ? "abierta" :
+          accion === "pausar" ? "pausada" :
+          accion === "reanudar" ? "reanudada" : "cerrada"
+        } correctamente.`
+      );
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+
   const renderResumenVotacion = () => {
-    if (votacionPopularMulticriterio) {
-      return (
-        <div className="feedback-card success-box">
-          Existe una votación <strong>POPULAR MULTICRITERIO</strong> para este evento.
-        </div>
-      );
-    }
 
-    if (votacionPopularSimple) {
-      return (
-        <div className="feedback-card success-box">
-          Existe una votación <strong>POPULAR SIMPLE</strong> para este evento.
-        </div>
-      );
-    }
+    const v = votacionPopularMulticriterio || votacionPopularSimple;
 
-    return null;
+    if (!v) return null;
+
+    const tipoTexto = votacionPopularMulticriterio ? "POPULAR MULTICRITERIO" : "POPULAR SIMPLE";
+    const formatearFecha = (iso) => (iso ? new Date(iso).toLocaleString() : "—");
+
+    return (
+
+      <div className={`feedback-card ${v.estadoActual === "CERRADA" ? "warning-box" : "success-box"}`}>
+        <div>Existe una votación <strong>{tipoTexto}</strong> para este evento.</div>
+        <div style={{ marginTop: "0.5rem" }}>
+          <strong>Franja:</strong> {formatearFecha(v.inicio)} → {formatearFecha(v.fin)}
+        </div>
+        <div><strong>Estado:</strong> {v.estadoActual}</div>
+
+        {puedeGestionar && (
+          <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {v.estadoActual === "PENDIENTE" && (
+              <button className="primary-btn" onClick={() => handleControl("abrir", v.id)}>Abrir ahora</button>
+            )}
+            {v.estadoActual === "ABIERTA" && (
+              <button className="secondary-btn" onClick={() => handleControl("pausar", v.id)}>Detener</button>
+            )}
+            {v.estadoActual === "PAUSADA" && (
+              <button className="primary-btn" onClick={() => handleControl("reanudar", v.id)}>Reanudar</button>
+            )}
+            {v.estadoActual !== "CERRADA" && (
+              <button className="secondary-btn" onClick={() => handleControl("cerrar", v.id)}>Cerrar</button>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading) {
@@ -439,6 +558,32 @@ function PopularVotingScreen() {
               <SlidersHorizontal size={16} />
               Crear votación multicriterio
             </button>
+          </div>
+          
+          <div
+            style={{
+              display: "grid",
+              gap: "0.75rem",
+              gridTemplateColumns: "1fr 1fr",
+              marginBottom: "1rem",
+            }}
+          >
+            <label className="voting-selector-field">
+              <span>Inicio de la votación</span>
+              <input
+                type="datetime-local"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+              />
+            </label>
+            <label className="voting-selector-field">
+              <span>Fin de la votación</span>
+              <input
+                type="datetime-local"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+              />
+            </label>
           </div>
 
           {tipoCreacion === "SIMPLE" && (

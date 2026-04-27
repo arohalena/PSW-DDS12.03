@@ -123,6 +123,9 @@ function ProjectVotingDetailScreen() {
   const esMulticriterio = votacionPopular?.modalidad === "MULTICRITERIO";
   const esSimple = votacionPopular?.modalidad === "SIMPLE";
 
+  const estadoActual = votacionPopular?.estadoActual || "ABIERTA";
+  const admiteVotos = votacionPopular?.admiteVotos === true || estadoActual === "ABIERTA";
+
   const allRated =
     criterios.length > 0 && criterios.every((criterio) => Number(ratings[criterio.id] || 0) > 0);
 
@@ -132,6 +135,7 @@ function ProjectVotingDetailScreen() {
     esSimple &&
     !yaVotado &&
     !haAlcanzadoMaximo &&
+    admiteVotos &&
     comentario.trim().length > 0;
 
   const canSubmitMulti =
@@ -140,6 +144,7 @@ function ProjectVotingDetailScreen() {
     esMulticriterio &&
     !yaVotado &&
     !haAlcanzadoMaximo &&
+    admiteVotos &&
     comentario.trim().length > 0 &&
     allRated;
 
@@ -306,6 +311,30 @@ function ProjectVotingDetailScreen() {
           </div>
         )}
 
+        {votacionPopular && (
+          <div className="feedback-card">
+            <strong>Franja de votación:</strong>{" "}
+            {votacionPopular.inicio ? new Date(votacionPopular.inicio).toLocaleString() : "—"} →{" "}
+            {votacionPopular.fin ? new Date(votacionPopular.fin).toLocaleString() : "—"}
+          </div>
+        )}
+
+        {estadoActual === "PENDIENTE" && (
+          <div className="feedback-card warning-box">
+            La votación todavía no ha comenzado.
+          </div>
+        )}
+        {estadoActual === "PAUSADA" && (
+          <div className="feedback-card warning-box">
+            La votación está pausada por el organizador.
+          </div>
+        )}
+        {estadoActual === "CERRADA" && (
+          <div className="feedback-card error-box">
+            La votación ha finalizado. Ya no es posible votar.
+          </div>
+        )}
+
         {!yaVotado && haAlcanzadoMaximo && (
           <div className="feedback-card warning-box">
             Ya has alcanzado el número máximo de votos permitidos en esta votación.
@@ -397,25 +426,18 @@ function ProjectVotingDetailScreen() {
               disabled={voting || !canSubmitSimple}
             >
               {voting ? (
-                <>
-                  <CheckCircle2 size={18} />
-                  Registrando voto...
+                <><CheckCircle2 size={18} />Registrando voto...</>
+              ) : !admiteVotos ? (
+                <><CheckCircle2 size={18} />
+                  {estadoActual === "PENDIENTE" ? "Aún no ha comenzado" :
+                  estadoActual === "PAUSADA"   ? "Pausada" : "Finalizada"}
                 </>
               ) : yaVotado ? (
-                <>
-                  <CheckCircle2 size={18} />
-                  Ya votado
-                </>
+                <><CheckCircle2 size={18} />Ya votado</>
               ) : haAlcanzadoMaximo ? (
-                <>
-                  <CheckCircle2 size={18} />
-                  Máximo alcanzado
-                </>
+                <><CheckCircle2 size={18} />Máximo alcanzado</>
               ) : (
-                <>
-                  <Vote size={18} />
-                  Votar proyecto
-                </>
+                <><Vote size={18} />Votar proyecto</>
               )}
             </button>
           )}
@@ -427,25 +449,18 @@ function ProjectVotingDetailScreen() {
               disabled={voting || !canSubmitMulti}
             >
               {voting ? (
-                <>
-                  <CheckCircle2 size={18} />
-                  Enviando evaluación...
+                <><CheckCircle2 size={18} />Enviando evaluación...</>
+              ) : !admiteVotos ? (
+                <><CheckCircle2 size={18} />
+                  {estadoActual === "PENDIENTE" ? "Aún no ha comenzado" :
+                  estadoActual === "PAUSADA"   ? "Pausada" : "Finalizada"}
                 </>
               ) : yaVotado ? (
-                <>
-                  <CheckCircle2 size={18} />
-                  Ya votado
-                </>
+                <><CheckCircle2 size={18} />Ya votado</>
               ) : haAlcanzadoMaximo ? (
-                <>
-                  <CheckCircle2 size={18} />
-                  Máximo alcanzado
-                </>
+                <><CheckCircle2 size={18} />Máximo alcanzado</>
               ) : (
-                <>
-                  <Vote size={18} />
-                  Enviar evaluación
-                </>
+                <><Vote size={18} />Enviar evaluación</>
               )}
             </button>
           )}

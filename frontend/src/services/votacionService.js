@@ -143,3 +143,59 @@ export async function getVotantesPorEvento(eventoId) {
   }
   return response.json();
 }
+
+export async function abrirVotacion(id) {
+
+  const r = await fetch(`${VOTACIONES_URL}/${id}/abrir`, { method: "POST" });
+
+  if (!r.ok){
+
+    throw new Error((await r.text()) || "No se pudo abrir la votación");
+
+  }
+
+  return r.json();
+
+}
+
+export async function pausarVotacion(id) {
+
+  const r = await fetch(`${VOTACIONES_URL}/${id}/pausar`, { method: "POST" });
+
+  if (!r.ok){
+
+    throw new Error((await r.text()) || "No se pudo pausar la votación");
+
+  }
+
+  return r.json();
+
+}
+
+export async function reanudarVotacion(id) {
+
+  const r = await fetch(`${VOTACIONES_URL}/${id}/reanudar`, { method: "POST" });
+
+  if (!r.ok){
+    
+    throw new Error((await r.text()) || "No se pudo reanudar la votación");
+
+  }
+
+  return r.json();
+
+}
+
+export async function cerrarVotacion(id) {
+
+  const r = await fetch(`${VOTACIONES_URL}/${id}/cerrar`, { method: "POST" });
+
+  if (!r.ok){
+    
+    throw new Error((await r.text()) || "No se pudo cerrar la votación");
+  
+  }
+  
+  return r.json();
+
+}
