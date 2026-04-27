@@ -36,12 +36,12 @@ public class ComentarioService extends GenericService<ComentarioMO>{
 
     public ComentarioMO crear(ComentarioRequest request){
 
-        CompetidorMO competidor = buscarCompetidorPorUsuario(request.getUsuarioId());
-        ProyectoMO proyecto = proyectoService.findById(request.getProyectoId());
+        CompetidorMO competidor = buscarCompetidorPorUsuario(request.usuarioId());
+        ProyectoMO proyecto = proyectoService.findById(request.proyectoId());
 
         validarVinculacionConEvento(competidor, proyecto);
 
-        return comentarioRepository.save(buildComentario(proyecto, request.getTexto()));
+        return comentarioRepository.save(buildComentario(proyecto, request.texto()));
 
     }
 

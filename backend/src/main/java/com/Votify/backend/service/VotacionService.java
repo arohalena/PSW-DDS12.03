@@ -43,68 +43,68 @@ public class VotacionService extends GenericService<VotacionMO> {
 
     @Transactional
     public VotacionMO crear(CrearVotacionRequest request) {
-        if (request.getEventoId() == null) {
+        if (request.eventoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El evento es requerido");
         }
 
-        EventoMO evento = eventoRepository.findById(request.getEventoId())
+        EventoMO evento = eventoRepository.findById(request.eventoId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado"));
 
-        if (request.getTipo() == null) {
+        if (request.tipo() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tipo de votación es requerido");
         }
 
-        if (request.getModalidad() == null) {
+        if (request.modalidad() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La modalidad de votación es requerida");
         }
 
-        if (request.getMaxSelecciones() <= 0) {
+        if (request.maxSelecciones() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El número máximo de selecciones debe ser mayor a 0");
         }
 
-        OffsetDateTime inicio = request.getInicio();
-        OffsetDateTime fin = request.getFin();
+        OffsetDateTime inicio = request.inicio();
+        OffsetDateTime fin = request.fin();
 
         if (inicio != null && fin != null && inicio.isAfter(fin)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de fin debe ser posterior a la fecha de inicio");
         }
 
-        if (request.getModalidad() == ModalidadVotacionMO.MULTICRITERIO) {
+        if (request.modalidad() == ModalidadVotacionMO.MULTICRITERIO) {
             // Comprobar si ya existen criterios para este evento (creados desde el sidebar)
             List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
                 .findByEvento_IdOrderByOrdenAsc(evento.getId());
 
             if (criteriosExistentes.isEmpty()) {
                 // No hay criterios del sidebar → deben venir en el request
-                validarCriterios(request.getCriterios());
+                validarCriterios(request.criterios());
             }
             // Si ya existen criterios del sidebar, no pedimos ni creamos nuevos
         }
 
         VotacionMO votacion = new VotacionMO();
         votacion.setEvento(evento);
-        votacion.setTipo(request.getTipo());
-        votacion.setModalidad(request.getModalidad());
-        votacion.setMaxSelecciones(request.getMaxSelecciones());
-        votacion.setInicio(request.getInicio());
-        votacion.setFin(request.getFin());
-        votacion.setEstado(request.getEstado() != null ? request.getEstado() : EstadoVotacionMO.CERRADA);
+        votacion.setTipo(request.tipo());
+        votacion.setModalidad(request.modalidad());
+        votacion.setMaxSelecciones(request.maxSelecciones());
+        votacion.setInicio(request.inicio());
+        votacion.setFin(request.fin());
+        votacion.setEstado(request.estado() != null ? request.estado() : EstadoVotacionMO.CERRADA);
 
         VotacionMO guardada = votacionRepository.save(votacion);
 
-        if (request.getModalidad() == ModalidadVotacionMO.MULTICRITERIO) {
+        if (request.modalidad() == ModalidadVotacionMO.MULTICRITERIO) {
             // Solo crear criterios si NO existen ya para el evento
             List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
                 .findByEvento_IdOrderByOrdenAsc(evento.getId());
 
-            if (criteriosExistentes.isEmpty() && request.getCriterios() != null) {
+            if (criteriosExistentes.isEmpty() && request.criterios() != null) {
                 int orden = 1;
-                for (CriterioEvaluacionRequest criterioReq : request.getCriterios()) {
+                for (CriterioEvaluacionRequest criterioReq : request.criterios()) {
                     CriterioEvaluacionMO criterio = new CriterioEvaluacionMO();
                     criterio.setEvento(evento);
-                    criterio.setNombre(criterioReq.getNombre().trim());
-                    criterio.setDescripcion(criterioReq.getDescripcion());
-                    criterio.setPeso(criterioReq.getPeso().intValue());
+                    criterio.setNombre(criterioReq.nombre().trim());
+                    criterio.setDescripcion(criterioReq.descripcion());
+                    criterio.setPeso(criterioReq.peso().intValue());
                     criterio.setOrden(orden++);
                     criterioEvaluacionRepository.save(criterio);
                 }
@@ -122,15 +122,15 @@ public class VotacionService extends GenericService<VotacionMO> {
         BigDecimal total = BigDecimal.ZERO;
 
         for (CriterioEvaluacionRequest criterio : criterios) {
-            if (criterio.getNombre() == null || criterio.getNombre().isBlank()) {
+            if (criterio.nombre() == null || criterio.nombre().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos los criterios deben tener nombre.");
             }
 
-            if (criterio.getPeso() == null || criterio.getPeso().compareTo(BigDecimal.ZERO) <= 0) {
+            if (criterio.peso() == null || criterio.peso().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos los criterios deben tener un peso mayor a 0.");
             }
 
-            total = total.add(criterio.getPeso());
+            total = total.add(criterio.peso());
         }
 
         if (total.compareTo(new BigDecimal("100")) != 0) {

@@ -8,16 +8,14 @@ import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.TipoVotacionMO;
 
-import lombok.Data;
 
-@Data
-public class CrearVotacionRequest {
-    private UUID eventoId;
-    private TipoVotacionMO tipo;
-    private ModalidadVotacionMO modalidad;
-    private int maxSelecciones;
-    private OffsetDateTime inicio;
-    private OffsetDateTime fin;
-    private EstadoVotacionMO estado;
-    private List<CriterioEvaluacionRequest> criterios;
-}
+public record CrearVotacionRequest (
+    UUID eventoId,
+    TipoVotacionMO tipo,
+    ModalidadVotacionMO modalidad,
+    int maxSelecciones,
+    OffsetDateTime inicio,
+    OffsetDateTime fin,
+    EstadoVotacionMO estado,
+    List<CriterioEvaluacionRequest> criterios
+) {}

@@ -3,16 +3,11 @@ package com.Votify.backend.dto;
 import java.util.List;
 import java.util.UUID;
 
-import lombok.Data;
+public record CrearProyectoRequest (
 
-@Data
-public class CrearProyectoRequest {
-
-    private String nombre;
-    private String descripcion;
-    private String tipoCategoria;
-    private String nombreEquipo;
-    private List<String> miembrosEmails;
-    private UUID eventoId;
-    
-}
+    String nombre,
+    String descripcion,
+    String tipoCategoria,
+    String nombreEquipo,
+    List<String> miembrosEmails,
+    UUID eventoId) {}
