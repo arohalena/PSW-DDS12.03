@@ -2,5 +2,8 @@ package com.Votify.backend.model;
 
 public enum ModalidadVotacionMO {
     SIMPLE,
-    MULTICRITERIO
+    PUNTOS,
+    MULTICRITERIO,
+    MULTICRITERIO_PONDERADA
+
 }
