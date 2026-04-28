@@ -373,33 +373,32 @@ function ProjectVotingDetailScreen() {
   const puedeVotar =
     !esJurado || usuario?.rol === "JURADO" || usuario?.rol === "ORGANIZADOR";
 
-  const estadoActual = votacionPopular?.estadoActual || "ABIERTA";
-  const admiteVotos = votacionPopular?.admiteVotos === true || estadoActual === "ABIERTA";
+    const estadoActual = votacion?.estadoActual || "ABIERTA";
+    const admiteVotos = votacion?.admiteVotos === true || estadoActual === "ABIERTA";
 
-  const allRated =
-    criterios.length > 0 &&
-    criterios.every((criterio) => Number(ratings[criterio.id] || 0) > 0);
+    const allRated =
+      criterios.length > 0 &&
+      criterios.every((criterio) => Number(ratings[criterio.id] || 0) > 0);
 
-  const canSubmitSimple =
-    !!proyecto?.votacionProyectoId &&
-    !!votacionPopular &&
-    esSimple &&
-    !yaVotado &&
-    !haAlcanzadoMaximo &&
-    admiteVotos &&
-    comentario.trim().length > 0;
+    const canSubmitSimple =
+      !!proyecto?.votacionProyectoId &&
+      !!votacion &&
+      esSimple &&
+      !yaVotado &&
+      !haAlcanzadoMaximo &&
+      admiteVotos &&
+      comentario.trim().length > 0;
 
-  const canSubmitMulti =
-    !!proyecto?.votacionProyectoId &&
-    !!votacionPopular &&
-    esMulticriterio &&
-    !yaVotado &&
-    !haAlcanzadoMaximo &&
-    admiteVotos &&
-    comentario.trim().length > 0 &&
-    (esSimple ||
-      esPuntos ||
-      ((esMulticriterio || esPonderada) && allRated));
+    const canSubmitMulti =
+      !!proyecto?.votacionProyectoId &&
+      !!votacion &&
+      !yaVotado &&
+      !haAlcanzadoMaximo &&
+      admiteVotos &&
+      comentario.trim().length > 0 &&
+      (esSimple ||
+        esPuntos ||
+        ((esMulticriterio || esPonderada) && allRated));
 
   function handleError(message) {
     if (message.includes("máximo")) {
@@ -564,11 +563,11 @@ function ProjectVotingDetailScreen() {
           </div>
         )}
 
-        {votacionPopular && (
+        {votacion && (
           <div className="feedback-card">
             <strong>Franja de votación:</strong>{" "}
-            {votacionPopular.inicio ? new Date(votacionPopular.inicio).toLocaleString() : "—"} →{" "}
-            {votacionPopular.fin ? new Date(votacionPopular.fin).toLocaleString() : "—"}
+            {votacion.inicio ? new Date(votacion.inicio).toLocaleString() : "—"} →{" "}
+            {votacion.fin ? new Date(votacion.fin).toLocaleString() : "—"}
           </div>
         )}
 
@@ -675,58 +674,31 @@ function ProjectVotingDetailScreen() {
         </label>
 
         <div className="vote-action-row">
-          {esSimple && (
-            <button
-              className="primary-btn"
-              onClick={handleVoteSimple}
-              disabled={voting || !canSubmitSimple}
-            >
-              {voting ? (
-                <><CheckCircle2 size={18} />Registrando voto...</>
-              ) : !admiteVotos ? (
-                <><CheckCircle2 size={18} />
-                  {estadoActual === "PENDIENTE" ? "Aún no ha comenzado" :
-                  estadoActual === "PAUSADA"   ? "Pausada" : "Finalizada"}
-                </>
-              ) : yaVotado ? (
-                <><CheckCircle2 size={18} />Ya votado</>
-              ) : haAlcanzadoMaximo ? (
-                <><CheckCircle2 size={18} />Máximo alcanzado</>
-              ) : (
-                <><Vote size={18} />Votar proyecto</>
-              )}
-            </button>
-          )}
-
-          {esMulticriterio && (
-            <button
-              className="primary-btn"
-              onClick={handleVoteMulticriterio}
-              disabled={voting || !canSubmitMulti}
-            >
-              {voting ? (
-                <><CheckCircle2 size={18} />Enviando evaluación...</>
-              ) : !admiteVotos ? (
-                <><CheckCircle2 size={18} />
-                  {estadoActual === "PENDIENTE" ? "Aún no ha comenzado" :
-                  estadoActual === "PAUSADA"   ? "Pausada" : "Finalizada"}
-                </>
-              ) : yaVotado ? (
-                <><CheckCircle2 size={18} />Ya votado</>
-              ) : haAlcanzadoMaximo ? (
-                <><CheckCircle2 size={18} />Máximo alcanzado</>
-              ) : (
-                <><Vote size={18} />Enviar evaluación</>
-              )}
-            </button>
-          )}
           <button
             className="primary-btn"
-            disabled={!canSubmit || voting}
             onClick={() => setConfirmOpen(true)}
+            disabled={
+              voting ||
+              !puedeVotar ||
+              (esSimple ? !canSubmitSimple : !canSubmitMulti)
+            }
           >
-            <Vote size={18} />
-            Enviar evaluación
+            {voting ? (
+              <><CheckCircle2 size={18} />Enviando...</>
+            ) : !admiteVotos ? (
+              <><CheckCircle2 size={18} />
+                {estadoActual === "PENDIENTE" ? "Aún no ha comenzado" :
+                 estadoActual === "PAUSADA"   ? "Pausada" : "Finalizada"}
+              </>
+            ) : yaVotado ? (
+              <><CheckCircle2 size={18} />Ya votado</>
+            ) : haAlcanzadoMaximo ? (
+              <><CheckCircle2 size={18} />Máximo alcanzado</>
+            ) : esSimple ? (
+              <><Vote size={18} />Votar proyecto</>
+            ) : (
+              <><Vote size={18} />Enviar evaluación</>
+            )}
           </button>
         </div>
       </section>

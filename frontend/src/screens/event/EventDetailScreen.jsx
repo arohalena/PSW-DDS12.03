@@ -218,7 +218,11 @@ function ProjectCard({ eventoId, proyecto, votacionProyecto, votes }) {
             <button
               type="button"
               className="primary-btn"
-              onClick={() => navigate(`/eventos/${eventoId}/proyectos/${proyecto.id}/votar`)}
+              onClick={() =>
+                navigate(
+                  `/eventos/${eventoId}/votaciones/${votacionProyecto.votacion.id}/proyectos/${proyecto.id}/votar`
+                )
+              }
             >
               <Vote size={16} />
               Votar

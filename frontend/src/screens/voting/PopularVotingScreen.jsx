@@ -781,7 +781,10 @@ function PopularVotingScreen() {
               <div key={proyecto.id} className="voting-project-card">
                 <button
                   className="project-card-button"
-                  onClick={() => navigate(`/votar/${eventoId}/proyecto/${proyecto.id}`)}
+                  onClick={() => {
+                    if (!votacionActiva || !proyecto.votacionProyectoId) return;
+                    navigate(`/eventos/${eventoId}/votaciones/${votacionActiva.id}/proyectos/${proyecto.id}/votar`);
+                  }}
                 >
                   <div className="project-card-content">
                     <div className="project-title-row">
