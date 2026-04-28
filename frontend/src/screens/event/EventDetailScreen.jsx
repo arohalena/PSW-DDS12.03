@@ -216,7 +216,7 @@ function EventAccessModal({ event, onClose, onSuccess }) {
   );
 }
 
-function ProjectCard({ eventoId, proyecto, votacionProyecto, votes, votingOpen }) {
+function ProjectCard({ eventoId, votingId, proyecto, votacionProyecto, votes, votingOpen }) {
   const navigate = useNavigate();
 
   return (
@@ -261,7 +261,9 @@ function ProjectCard({ eventoId, proyecto, votacionProyecto, votes, votingOpen }
             <button
               type="button"
               className="primary-btn"
-              onClick={() => navigate(`/eventos/${eventoId}/proyectos/${proyecto.id}/votar`)}
+              onClick={() =>
+                navigate(`/eventos/${eventoId}/votaciones/${votingId}/proyectos/${proyecto.id}/votar`)
+              }
             >
               <Vote size={16} />
               {votingOpen ? "Votar" : "Votación no activa"}
@@ -757,6 +759,7 @@ function EventDetailScreen() {
                 <ProjectCard
                   key={proyecto.id}
                   eventoId={eventoId}
+                  votingId={selectedVotingId}
                   proyecto={proyecto}
                   votacionProyecto={relation}
                   votes={relation ? voteCounts[relation.id] : 0}
