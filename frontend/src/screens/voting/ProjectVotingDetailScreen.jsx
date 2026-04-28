@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -70,6 +71,37 @@ function ConfirmSubmitModal({ open, onCancel, onConfirm, loading }) {
             disabled={loading}
           >
             {loading ? "Enviando..." : "Sí, enviar evaluación"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ErrorModal({ open, title, message, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="vote-modal-backdrop">
+      <div className="vote-confirm-modal">
+        <button type="button" className="vote-modal-close" onClick={onClose}>
+          <X size={18} />
+        </button>
+
+        <div
+          className="vote-confirm-icon"
+          style={{ background: "#fee2e2", color: "#b91c1c" }}
+        >
+          <AlertTriangle size={30} />
+        </div>
+
+        <h2>{title}</h2>
+
+        <p>{message}</p>
+
+        <div className="vote-modal-actions">
+          <button type="button" className="primary-btn" onClick={onClose}>
+            Entendido
           </button>
         </div>
       </div>
@@ -261,6 +293,7 @@ function ProjectVotingDetailScreen() {
   const [ratings, setRatings] = useState({});
   const [puntuacion, setPuntuacion] = useState(5);
 
+  const [errorModal, setErrorModal] = useState({ open: false, title: "", message: "" });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [successData, setSuccessData] = useState(null);
 
@@ -401,16 +434,34 @@ function ProjectVotingDetailScreen() {
         ((esMulticriterio || esPonderada) && allRated));
 
   function handleError(message) {
+    if (message.includes("propio proyecto") || message.includes("auto-votación")) {
+      setErrorModal({
+        open: true,
+        title: "No puedes votar a tu propio proyecto",
+        message:
+          "El organizador del evento ha configurado esta votación para no permitir que los participantes voten a su propio proyecto.",
+      });
+      return;
+    }
+
     if (message.includes("máximo")) {
+
       setHaAlcanzadoMaximo(true);
       setError("Ya has alcanzado el número máximo de votos permitidos.");
+
     } else if (message.includes("Ya habías votado")) {
+
       setYaVotado(true);
       setError("Ya habías votado este proyecto.");
+
     } else if (message.includes("jurado") || message.includes("JURADO")) {
+
       setError("Solo jurado u organizador puede votar en esta votación.");
+      
     } else {
+
       setError(message || "No se pudo registrar el voto.");
+
     }
   }
 
@@ -703,11 +754,18 @@ function ProjectVotingDetailScreen() {
         </div>
       </section>
 
-      <ConfirmSubmitModal
+            <ConfirmSubmitModal
         open={confirmOpen}
         loading={voting}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={submitVote}
+      />
+
+      <ErrorModal
+        open={errorModal.open}
+        title={errorModal.title}
+        message={errorModal.message}
+        onClose={() => setErrorModal({ open: false, title: "", message: "" })}
       />
     </main>
   );
