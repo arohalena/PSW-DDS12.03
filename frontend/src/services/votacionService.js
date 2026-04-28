@@ -111,7 +111,7 @@ export async function getCriteriosByVotacion(votacionId) {
   return response.json();
 }
 
-export async function votarProyectoSimple(votacionProyectoId, anonTokenHash, comentario) {
+export async function votarProyectoSimple(votacionProyectoId, anonTokenHash, comentario, usuarioId) {
   const response = await fetch(`${VOTOS_URL}/simple`, {
     method: "POST",
     headers: {
@@ -120,6 +120,7 @@ export async function votarProyectoSimple(votacionProyectoId, anonTokenHash, com
     body: JSON.stringify({
       votacionProyectoId,
       anonTokenHash,
+      usuarioId,
       comentario,
     }),
   });
@@ -154,5 +155,22 @@ export async function getVotantesPorEvento(eventoId) {
   if (!response.ok) {
     return 0;
   }
+  return response.json();
+}
+
+export async function votarProyectoPuntos(payload) {
+  const response = await fetch(`${VOTOS_URL}/puntos`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo registrar el voto por puntos");
+  }
+
   return response.json();
 }
