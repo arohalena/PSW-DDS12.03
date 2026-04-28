@@ -1,6 +1,6 @@
+import { ChevronDown, LogOut, Search, User } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut } from "lucide-react";
 import { cerrarSesion, getUsuarioLogueado } from "../services/sessionService";
 
 function getRoleLabel(rol) {
@@ -16,12 +16,13 @@ function getRoleLabel(rol) {
     case "ESPECTADOR":
       return "Espectador";
     default:
-      return rol || "";
+      return rol || "Usuario";
   }
 }
 
-function getInitials(nombre = "") {
-  return nombre
+function getInitials(nombre = "", email = "") {
+  const base = nombre || email || "Usuario";
+  return base
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
@@ -29,51 +30,50 @@ function getInitials(nombre = "") {
     .join("");
 }
 
-function TopBar() {
+function Topbar() {
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(false);
-
   const usuario = useMemo(() => getUsuarioLogueado(), []);
-  const initials = getInitials(usuario?.nombre || "");
+  const initials = getInitials(usuario?.nombre, usuario?.email);
 
-  const handleLogout = () => {
+  function handleLogout() {
     cerrarSesion();
     navigate("/login");
-  };
+  }
 
   return (
     <header className="topbar">
-      <div className="topbar-event">
-        <span className="topbar-dot" />
-        <span>Nombre del Evento</span>
+      <div className="topbar-left">
+        <span className="topbar-status-dot" />
+        <span className="topbar-title">Votify</span>
       </div>
 
+
       <div className="topbar-user-wrapper">
-        <button
-          className="topbar-user"
-          onClick={() => setOpenMenu((prev) => !prev)}
-        >
+        <button className="topbar-user" onClick={() => setOpenMenu((value) => !value)}>
           <div className="topbar-user-avatar">
             {initials || <User size={16} />}
           </div>
 
           <div className="topbar-user-info">
-            <div className="topbar-user-name">{usuario?.nombre || ""}</div>
+            <div className="topbar-user-name">{usuario?.nombre || usuario?.email || "Usuario"}</div>
             <div className="topbar-user-role">{getRoleLabel(usuario?.rol)}</div>
           </div>
+
+          <ChevronDown size={16} />
         </button>
 
-        {openMenu && (
+        {openMenu ? (
           <div className="topbar-dropdown">
             <button className="topbar-dropdown-item" onClick={handleLogout}>
               <LogOut size={16} />
               Cerrar sesión
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </header>
   );
 }
 
-export default TopBar;
+export default Topbar;

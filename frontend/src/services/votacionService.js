@@ -10,10 +10,23 @@ export async function getVotacionesByEvento(eventoId) {
 }
 
 export async function createVotacion(votacion) {
+  const payload = {
+    eventoId: votacion.eventoId || votacion.evento?.id,
+    tipo: votacion.tipo,
+    modalidad: votacion.modalidad,
+    estado: votacion.estado || "ABIERTA",
+    maxSelecciones: Number(votacion.maxSelecciones || 1),
+    inicio: votacion.inicio || null,
+    fin: votacion.fin || null,
+    criterios: votacion.criterios || [],
+  };
+
   const response = await fetch(VOTACIONES_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(votacion),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

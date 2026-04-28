@@ -28,7 +28,7 @@ function LoginScreen() {
     try {
       const usuario = await loginUsuario(formData);
       localStorage.setItem("usuarioLogueado", JSON.stringify(usuario));
-      navigate("/usuarios");
+      navigate("/");
     } catch (err) {
       setError(err.message || "Error al iniciar sesión");
     }

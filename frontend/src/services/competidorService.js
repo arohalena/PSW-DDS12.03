@@ -53,4 +53,11 @@ export async function getCompetidoresByEquipo(equipoId) {
 
   return response.json();
 }
-  
+
+export async function deleteAsignacionCompetidor(asignacionId) {
+  const response = await fetch(`${COMPETIDOR_EVENTO_URL}/${asignacionId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) throw new Error(await response.text() || "No se pudo quitar el competidor del equipo");
+}
