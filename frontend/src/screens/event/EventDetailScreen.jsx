@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,26 +8,38 @@ import {
   Clock,
   FolderKanban,
   Lock,
+  Pause,
+  Play,
   Plus,
+  RefreshCw,
   ShieldCheck,
+  Square,
   Star,
+  Trash2,
   Trophy,
   Users,
   Vote,
   X,
 } from "lucide-react";
-import { getEventos, getEventoByCodigo } from "../../services/eventoService";
+import { deleteEvento, getEventos, getEventoByCodigo } from "../../services/eventoService";
 import { getProyectosByEvento } from "../../services/proyectoService";
 import {
+  abrirVotacion,
+  cerrarVotacion,
+  deleteVotacion,
   getConteoVotos,
   getVotacionProyectosByVotacion,
   getVotacionesByEvento,
+  pausarVotacion,
+  reanudarVotacion,
 } from "../../services/votacionService";
 import { esOrganizador } from "../../services/sessionService";
+import CreateVotingModal from "./CreateVotingModal";
 import "../../styles/events.css";
 
 function formatDate(value) {
   if (!value) return "Sin fecha";
+
   return new Intl.DateTimeFormat("es-ES", {
     day: "2-digit",
     month: "short",
@@ -45,6 +57,32 @@ function getEventEnd(evento) {
   return evento?.fecha_fin || evento?.fechaFin || evento?.fin;
 }
 
+function getVotingStart(votacion) {
+  return votacion?.inicio || votacion?.fechaInicio || votacion?.fecha_inicio;
+}
+
+function getVotingEnd(votacion) {
+  return votacion?.fin || votacion?.fechaFin || votacion?.fecha_fin;
+}
+
+function getVotingEstado(votacion) {
+  return votacion?.estadoActual || votacion?.estado || "PENDIENTE";
+}
+
+function getVotingEstadoClass(estado) {
+  if (estado === "ABIERTA") return "voting-status-open";
+  if (estado === "PAUSADA") return "voting-status-paused";
+  if (estado === "CERRADA") return "voting-status-closed";
+  return "voting-status-pending";
+}
+
+function getVotingEstadoLabel(estado) {
+  if (estado === "ABIERTA") return "Abierta";
+  if (estado === "PAUSADA") return "Pausada";
+  if (estado === "CERRADA") return "Cerrada";
+  return "Pendiente";
+}
+
 function isPrivateEvent(evento) {
   return Boolean(evento.codigoAccesoPublico || evento.codigoAcceso);
 }
@@ -59,8 +97,10 @@ function hasEventAccess(eventoId, evento) {
 }
 
 function votingLabel(votacion) {
-  const tipo = votacion?.tipo === "JURADO" ? "Jurado" : "Popular";
+  return votacion?.nombre || "Votación sin nombre";
+}
 
+function votingSubtitle(votacion) {
   const modalidadMap = {
     SIMPLE: "Simple",
     PUNTOS: "Puntos",
@@ -68,7 +108,10 @@ function votingLabel(votacion) {
     MULTICRITERIO_PONDERADA: "Ponderada",
   };
 
-  return `${tipo} · ${modalidadMap[votacion?.modalidad] || votacion?.modalidad}`;
+  const tipo = votacion?.tipo === "JURADO" ? "Jurado" : "Popular";
+  const modalidad = modalidadMap[votacion?.modalidad] || votacion?.modalidad || "Sin modalidad";
+
+  return `${tipo} · ${modalidad} · Máx. ${votacion?.maxSelecciones || 1}`;
 }
 
 function EventAccessModal({ event, onClose, onSuccess }) {
@@ -173,7 +216,7 @@ function EventAccessModal({ event, onClose, onSuccess }) {
   );
 }
 
-function ProjectCard({ eventoId, proyecto, votacionProyecto, votes }) {
+function ProjectCard({ eventoId, proyecto, votacionProyecto, votes, votingOpen }) {
   const navigate = useNavigate();
 
   return (
@@ -218,14 +261,10 @@ function ProjectCard({ eventoId, proyecto, votacionProyecto, votes }) {
             <button
               type="button"
               className="primary-btn"
-              onClick={() =>
-                navigate(
-                  `/eventos/${eventoId}/votaciones/${votacionProyecto.votacion.id}/proyectos/${proyecto.id}/votar`
-                )
-              }
+              onClick={() => navigate(`/eventos/${eventoId}/proyectos/${proyecto.id}/votar`)}
             >
               <Vote size={16} />
-              Votar
+              {votingOpen ? "Votar" : "Votación no activa"}
             </button>
           ) : null}
         </div>
@@ -246,34 +285,47 @@ function EventDetailScreen() {
   const [voteCounts, setVoteCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [accessModalOpen, setAccessModalOpen] = useState(false);
+  const [createVotingModalOpen, setCreateVotingModalOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const puedeGestionar = esOrganizador();
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
+  const loadEventData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const eventos = await getEventos();
-        const found = eventos.find((item) => String(item.id) === String(eventoId));
+      const eventos = await getEventos();
+      const found = eventos.find((item) => String(item.id) === String(eventoId));
 
-        setEvento(found || null);
+      setEvento(found || null);
 
-        const [proyectosData, votacionesData] = await Promise.all([
-          getProyectosByEvento(eventoId).catch(() => []),
-          getVotacionesByEvento(eventoId).catch(() => []),
-        ]);
+      const [proyectosData, votacionesData] = await Promise.all([
+        getProyectosByEvento(eventoId).catch(() => []),
+        getVotacionesByEvento(eventoId).catch(() => []),
+      ]);
 
-        setProyectos(proyectosData || []);
-        setVotaciones(votacionesData || []);
-        setSelectedVotingId(votacionesData?.[0]?.id || "");
-      } finally {
-        setLoading(false);
-      }
+      setProyectos(proyectosData || []);
+      setVotaciones(votacionesData || []);
+
+      setSelectedVotingId((current) => {
+        if (current && votacionesData?.some((v) => String(v.id) === String(current))) {
+          return current;
+        }
+
+        return votacionesData?.[0]?.id || "";
+      });
+    } catch (err) {
+      setError(err.message || "No se pudo cargar el evento.");
+    } finally {
+      setLoading(false);
     }
-
-    load();
   }, [eventoId]);
+
+  useEffect(() => {
+    loadEventData();
+  }, [loadEventData]);
 
   useEffect(() => {
     async function loadVotingProjects() {
@@ -305,6 +357,8 @@ function EventDetailScreen() {
     [votaciones, selectedVotingId]
   );
 
+  const selectedVotingEstado = getVotingEstado(selectedVoting);
+
   const relacionesByProjectId = useMemo(() => {
     const map = new Map();
 
@@ -317,12 +371,83 @@ function EventDetailScreen() {
     return map;
   }, [votacionProyectos]);
 
+  async function handleDeleteEvento() {
+    const confirmed = window.confirm(
+      "¿Seguro que quieres eliminar este evento? Se eliminarán también sus votaciones asociadas."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteEvento(eventoId);
+      navigate("/eventos");
+    } catch (err) {
+      alert(err.message || "No se pudo eliminar el evento.");
+    }
+  }
+
+  async function handleDeleteVotacion(votacionId) {
+    const confirmed = window.confirm("¿Seguro que quieres eliminar esta votación?");
+
+    if (!confirmed) return;
+
+    try {
+      await deleteVotacion(votacionId);
+      setSuccess("Votación eliminada correctamente.");
+      setSelectedVotingId("");
+      await loadEventData();
+    } catch (err) {
+      alert(err.message || "No se pudo eliminar la votación.");
+    }
+  }
+
+  async function handleCambiarEstadoVotacion(action, votacionId) {
+    try {
+      setError("");
+      setSuccess("");
+
+      const fnMap = {
+        abrir: abrirVotacion,
+        pausar: pausarVotacion,
+        reanudar: reanudarVotacion,
+        cerrar: cerrarVotacion,
+      };
+
+      await fnMap[action](votacionId);
+
+      const votacionesActualizadas = await getVotacionesByEvento(eventoId);
+      setVotaciones(votacionesActualizadas || []);
+
+      setSuccess(
+        `Votación ${
+          action === "abrir"
+            ? "abierta"
+            : action === "pausar"
+              ? "pausada"
+              : action === "reanudar"
+                ? "reanudada"
+                : "cerrada"
+        } correctamente.`
+      );
+    } catch (err) {
+      setError(err.message || "No se pudo cambiar el estado de la votación.");
+    }
+  }
+
   if (loading) {
-    return <main className="events-page"><div className="feedback-card">Cargando evento...</div></main>;
+    return (
+      <main className="events-page">
+        <div className="feedback-card">Cargando evento...</div>
+      </main>
+    );
   }
 
   if (!evento) {
-    return <main className="events-page"><div className="feedback-card error-box">Evento no encontrado.</div></main>;
+    return (
+      <main className="events-page">
+        <div className="feedback-card error-box">Evento no encontrado.</div>
+      </main>
+    );
   }
 
   const privateEvent = isPrivateEvent(evento);
@@ -399,7 +524,11 @@ function EventDetailScreen() {
               </span>
             )}
 
-            <span className="event-status status-active">Votación activa</span>
+            <span className="event-status status-active">
+              {selectedVoting
+                ? `Votación ${getVotingEstadoLabel(selectedVotingEstado)}`
+                : "Sin votación activa"}
+            </span>
           </div>
 
           <h1>{evento.nombre}</h1>
@@ -427,20 +556,33 @@ function EventDetailScreen() {
 
         <div className="event-detail-actions">
           {puedeGestionar ? (
-            <button
-              className="primary-btn"
-              onClick={() => navigate(`/eventos/${eventoId}/votaciones/crear`)}
-            >
-              <Plus size={17} />
-              Nueva Votación
-            </button>
+            <>
+              <button
+                className="primary-btn"
+                type="button"
+                onClick={() => setCreateVotingModalOpen(true)}
+              >
+                <Plus size={17} />
+                Nueva Votación
+              </button>
+
+              <button
+                className="danger-btn"
+                type="button"
+                onClick={handleDeleteEvento}
+              >
+                <Trash2 size={17} />
+                Eliminar Evento
+              </button>
+            </>
           ) : null}
 
           {selectedVotingId ? (
             <button
               className="secondary-btn"
+              type="button"
               onClick={() =>
-                navigate(`/eventos/${eventoId}/votaciones/${selectedVotingId}/resultados`)
+                window.location.assign(`/eventos/${eventoId}/votaciones/${selectedVotingId}/resultados`)
               }
             >
               <BarChart3 size={17} />
@@ -449,6 +591,9 @@ function EventDetailScreen() {
           ) : null}
         </div>
       </section>
+
+      {error ? <div className="feedback-card error-box">{error}</div> : null}
+      {success ? <div className="feedback-card success-box">{success}</div> : null}
 
       <section className="event-detail-stats">
         <div>
@@ -473,7 +618,7 @@ function EventDetailScreen() {
 
         <div>
           <CheckCircle size={22} />
-          <strong>{selectedVoting ? selectedVoting.estado : "—"}</strong>
+          <strong>{selectedVoting ? getVotingEstadoLabel(selectedVotingEstado) : "—"}</strong>
           <span>Estado actual</span>
         </div>
       </section>
@@ -482,7 +627,7 @@ function EventDetailScreen() {
         <div className="event-detail-section-header">
           <div>
             <h2>Votaciones del evento</h2>
-            <p>Selecciona una votación para ver sus proyectos y resultados.</p>
+            <p>Selecciona una votación para ver sus proyectos, fechas y controles.</p>
           </div>
         </div>
 
@@ -492,16 +637,93 @@ function EventDetailScreen() {
           </div>
         ) : (
           <div className="event-detail-tabs">
-            {votaciones.map((votacion) => (
-              <button
-                key={votacion.id}
-                className={`event-detail-tab ${String(selectedVotingId) === String(votacion.id) ? "active" : ""}`}
-                onClick={() => setSelectedVotingId(votacion.id)}
-              >
-                <span>{votingLabel(votacion)}</span>
-                <small>Máx. {votacion.maxSelecciones || 1} selección/es</small>
-              </button>
-            ))}
+            {votaciones.map((votacion) => {
+              const estado = getVotingEstado(votacion);
+
+              return (
+                <div
+                  key={votacion.id}
+                  className={`event-detail-tab-wrapper ${
+                    String(selectedVotingId) === String(votacion.id) ? "active" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="event-detail-tab"
+                    onClick={() => setSelectedVotingId(votacion.id)}
+                  >
+                    <div className="voting-tab-title-row">
+                      <span>{votingLabel(votacion)}</span>
+
+                      <strong className={`voting-status-chip ${getVotingEstadoClass(estado)}`}>
+                        {getVotingEstadoLabel(estado)}
+                      </strong>
+                    </div>
+
+                    <small>{votingSubtitle(votacion)}</small>
+                    <small>Inicio: {formatDate(getVotingStart(votacion))}</small>
+                    <small>Fin: {formatDate(getVotingEnd(votacion))}</small>
+                  </button>
+
+                  {puedeGestionar ? (
+                    <div className="voting-control-buttons">
+                      {estado === "PENDIENTE" || estado === "CERRADA" ? (
+                        <button
+                          type="button"
+                          className="voting-control-btn open"
+                          onClick={() => handleCambiarEstadoVotacion("abrir", votacion.id)}
+                          title="Abrir votación"
+                        >
+                          <Play size={15} />
+                        </button>
+                      ) : null}
+
+                      {estado === "ABIERTA" ? (
+                        <button
+                          type="button"
+                          className="voting-control-btn pause"
+                          onClick={() => handleCambiarEstadoVotacion("pausar", votacion.id)}
+                          title="Pausar votación"
+                        >
+                          <Pause size={15} />
+                        </button>
+                      ) : null}
+
+                      {estado === "PAUSADA" ? (
+                        <button
+                          type="button"
+                          className="voting-control-btn resume"
+                          onClick={() => handleCambiarEstadoVotacion("reanudar", votacion.id)}
+                          title="Reanudar votación"
+                        >
+                          <RefreshCw size={15} />
+                        </button>
+                      ) : null}
+
+                      {estado !== "CERRADA" ? (
+                        <button
+                          type="button"
+                          className="voting-control-btn close"
+                          onClick={() => handleCambiarEstadoVotacion("cerrar", votacion.id)}
+                          title="Cerrar votación"
+                        >
+                          <Square size={15} />
+                        </button>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        className="delete-voting-btn"
+                        onClick={() => handleDeleteVotacion(votacion.id)}
+                        title="Eliminar votación"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -538,12 +760,26 @@ function EventDetailScreen() {
                   proyecto={proyecto}
                   votacionProyecto={relation}
                   votes={relation ? voteCounts[relation.id] : 0}
+                  votingOpen={selectedVotingEstado === "ABIERTA"}
                 />
               );
             })}
           </div>
         )}
       </section>
+
+      {createVotingModalOpen ? (
+        <CreateVotingModal
+          eventoId={eventoId}
+          eventoNombre={evento.nombre}
+          onClose={() => setCreateVotingModalOpen(false)}
+          onCreated={async () => {
+            setCreateVotingModalOpen(false);
+            setSuccess("Votación creada correctamente.");
+            await loadEventData();
+          }}
+        />
+      ) : null}
     </main>
   );
 }

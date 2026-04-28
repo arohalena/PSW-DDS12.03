@@ -46,7 +46,9 @@ public class VotacionService extends GenericService<VotacionMO> {
         if (request.eventoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El evento es requerido");
         }
-
+        if (request.nombre() == null || request.nombre().isBlank()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la votación es requerido");
+}
         EventoMO evento = eventoRepository.findById(request.eventoId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado"));
 
@@ -92,6 +94,7 @@ public class VotacionService extends GenericService<VotacionMO> {
         votacion.setMaxSelecciones(request.maxSelecciones());
         votacion.setInicio(request.inicio());
         votacion.setFin(request.fin());
+        votacion.setNombre(request.nombre().trim());
         votacion.setEstado(request.estado() != null ?
         request.estado() : EstadoVotacionMO.PENDIENTE);
 
