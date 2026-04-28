@@ -1,67 +1,40 @@
-import { useState, useEffect, useMemo } from "react";
 import { NavLink } from "react-router-dom";
-import { usuarioHasProject } from "../services/usuarioService"; 
-import { getUsuarioLogueado } from "../services/sessionService";
+import { Calendar, Folder, Home, Settings, Trophy, Users, Vote } from "lucide-react";
 
 const items = [
-  { label: "Home", to: "/", disabled: true },
-  { label: "Eventos", to: "/eventos" },
-  { label: "Equipos", to: "/equipos" },
-  { label: "Competidores", to: "/competidores" },
-  { label: "Proyectos", to: "/proyectos" },
-  { label: "Criterios", to: "/criterios" },
-  { label: "Votación", to: "/votar" },
-  { label: "Usuarios", to: "/usuarios" },
-  { label: "Resultados", to: "/resultados" },
-  { label: "Mi Proyecto", to: "/mi-proyecto", private: true },
+  { label: "Inicio", to: "/", icon: Home },
+  { label: "Eventos", to: "/eventos", icon: Calendar },
+  { label: "Proyectos", to: "/proyectos", icon: Folder },
+  { label: "Usuarios", to: "/usuarios", icon: Users },
+  { label: "Mi Proyecto", to: "/configuracion", icon: Trophy },
 ];
 
 function Sidebar() {
-  const [userHasProject, setUserHasProject] = useState(false);
-
-  const usuario = useMemo(() => getUsuarioLogueado(), []);
-
-  useEffect(() => {
-    async function verifyProject() {
-      const result = await usuarioHasProject(usuario.id);
-      console.log("USUARIO" + usuario.id + " HAS PROJECT" + result)
-      setUserHasProject(result);
-    }
-
-    verifyProject();
-  }, [usuario]);
-
   return (
     <aside className="sidebar">
       <div>
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">V</div>
+          <div className="sidebar-logo-icon">
+            <Vote size={18} />
+          </div>
           <span>Votify</span>
         </div>
 
         <nav className="sidebar-nav">
           {items.map((item) => {
-            if (item.private && !userHasProject) {
-              return null;
-            }
-
-            if (item.disabled) {
-              return (
-                <button key={item.label} className="sidebar-link" disabled>
-                  {item.label}
-                </button>
-              );
-            }
+            const Icon = item.icon;
 
             return (
               <NavLink
-                key={item.label}
+                key={item.to}
                 to={item.to}
+                end={item.to === "/"}
                 className={({ isActive }) =>
                   `sidebar-link ${isActive ? "active" : ""}`
                 }
               >
-                {item.label}
+                <Icon size={19} />
+                <span>{item.label}</span>
               </NavLink>
             );
           })}
@@ -69,9 +42,10 @@ function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <button className="sidebar-link" disabled>
-          Configuración
-        </button>
+        <div className="sidebar-link sidebar-link-disabled">
+          <Settings size={19} />
+          <span>Configuración</span>
+        </div>
       </div>
     </aside>
   );

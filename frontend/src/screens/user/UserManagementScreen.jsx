@@ -1,177 +1,842 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Edit,
+  Mail,
+  Plus,
+  Search,
+  Shield,
+  Trash2,
+  Trophy,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
+import {
   createUsuario,
   deleteUsuario,
   getUsuarios,
   updateUsuario,
 } from "../../services/usuarioService";
+import {
+  assignCompetidor,
+  createCompetidor,
+  deleteAsignacionCompetidor,
+  getCompetidores,
+} from "../../services/competidorService";
+import { getEquipos } from "../../services/equipoService";
+import { getEventos } from "../../services/eventoService";
+import { createProyectoConEquipo, getProyectos } from "../../services/proyectoService";
+import {
+  asignarProyectoAVotacion,
+  getAsignacionesCompetidorEvento,
+  getVotacionesByEvento,
+} from "../../services/votacionService";
 import { esOrganizador } from "../../services/sessionService";
-import UserStats from "../../common/UserStats";
-import UserFilters from "../../common/UserFilters";
-import UserTable from "../../common/UserTable";
-import UserModal from "../../common/UserModal";
 import "../../styles/user-management.css";
 
-function UserManagementScreen() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [selectedRole, setSelectedRole] = useState("TODOS");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [usuarioEnEdicion, setUsuarioEnEdicion] = useState(null);
+const ROLES = ["ORGANIZADOR", "JURADO", "COMPETIDOR", "PUBLICO"];
 
-  const puedeGestionarUsuarios = esOrganizador();
+function roleLabel(role) {
+  return {
+    ORGANIZADOR: "Organizador",
+    JURADO: "Jurado",
+    COMPETIDOR: "Competidor",
+    PUBLICO: "Público",
+  }[role] || role;
+}
 
-  const loadUsuarios = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const data = await getUsuarios();
-      setUsuarios(data);
-    } catch (err) {
-      setError(err.message || "No se pudieron cargar los usuarios");
-    } finally {
-      setLoading(false);
-    }
-  };
+function roleClass(role) {
+  return `role-badge role-${String(role || "").toLowerCase()}`;
+}
+
+function initials(name = "", email = "") {
+  const base = name || email || "Usuario";
+  return (
+    base
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "U"
+  );
+}
+
+function getUsuarioVinculado(competidor, usuarios) {
+  if (competidor.usuario) return competidor.usuario;
+
+  return usuarios.find(
+    (usuario) =>
+      usuario.email &&
+      competidor.email &&
+      usuario.email.toLowerCase() === competidor.email.toLowerCase()
+  );
+}
+
+function UserModal({ open, onClose, onSubmit, initialData }) {
+  const [form, setForm] = useState({
+    nombre: "",
+    email: "",
+    rol: "PUBLICO",
+  });
 
   useEffect(() => {
-    loadUsuarios();
+    if (!open) return;
+
+    setForm({
+      nombre: initialData?.nombre || "",
+      email: initialData?.email || "",
+      rol: initialData?.rol || "PUBLICO",
+    });
+  }, [open, initialData]);
+
+  if (!open) return null;
+
+  async function submit(e) {
+    e.preventDefault();
+    await onSubmit(form);
+    onClose();
+  }
+
+  return (
+    <div className="users-modal-backdrop">
+      <form className="users-modal" onSubmit={submit}>
+        <h2>{initialData ? "Editar usuario" : "Crear usuario"}</h2>
+        <p>{initialData ? "Actualiza los datos." : "La contraseña inicial será 1234."}</p>
+
+        <label className="user-field">
+          <span>Nombre</span>
+          <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
+        </label>
+
+        <label className="user-field">
+          <span>Email</span>
+          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+        </label>
+
+        <label className="user-field">
+          <span>Rol</span>
+          <select value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
+            {ROLES.map((role) => (
+              <option key={role} value={role}>{roleLabel(role)}</option>
+            ))}
+          </select>
+        </label>
+
+        <div className="users-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="primary-btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function CompetidorModal({ open, onClose, onSubmit }) {
+  const [form, setForm] = useState({ nombre: "", email: "" });
+
+  useEffect(() => {
+    if (open) setForm({ nombre: "", email: "" });
+  }, [open]);
+
+  if (!open) return null;
+
+  async function submit(e) {
+    e.preventDefault();
+    await onSubmit(form);
+    onClose();
+  }
+
+  return (
+    <div className="users-modal-backdrop">
+      <form className="users-modal" onSubmit={submit}>
+        <h2>Crear competidor</h2>
+
+        <div className="feedback-card warning-box">
+          ⚠️ Debe existir antes un usuario con el mismo email. El competidor se vinculará automáticamente a ese usuario.
+        </div>
+
+        <label className="user-field">
+          <span>Nombre</span>
+          <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
+        </label>
+
+        <label className="user-field">
+          <span>Email del usuario vinculado</span>
+          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+        </label>
+
+        <div className="users-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="primary-btn">Crear competidor</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function CompetitorSearchPicker({ competidores, selectedIds, onChange, placeholder = "Buscar competidor..." }) {
+  const [query, setQuery] = useState("");
+
+  const selected = competidores.filter((competidor) => selectedIds.includes(competidor.id));
+
+  const results = competidores
+    .filter((competidor) => !selectedIds.includes(competidor.id))
+    .filter((competidor) => {
+      const text = `${competidor.nombre || ""} ${competidor.email || ""}`.toLowerCase();
+      return text.includes(query.toLowerCase());
+    })
+    .slice(0, 6);
+
+  function add(id) {
+    onChange([...selectedIds, id]);
+    setQuery("");
+  }
+
+  function remove(id) {
+    onChange(selectedIds.filter((item) => item !== id));
+  }
+
+  return (
+    <div className="competitor-search-picker">
+      <div className="selected-competitors">
+        {selected.length === 0 ? (
+          <span className="selected-empty">Aún no has seleccionado competidores.</span>
+        ) : (
+          selected.map((competidor) => (
+            <span className="selected-competitor-chip" key={competidor.id}>
+              <span>{initials(competidor.nombre, competidor.email)}</span>
+              {competidor.nombre}
+              <button type="button" onClick={() => remove(competidor.id)}>
+                <X size={13} />
+              </button>
+            </span>
+          ))
+        )}
+      </div>
+
+      <div className="competitor-search-box">
+        <Search size={17} />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={placeholder}
+        />
+      </div>
+
+      {query.trim() ? (
+        <div className="competitor-search-results">
+          {results.length === 0 ? (
+            <div className="competitor-result-empty">No se encontró ningún competidor.</div>
+          ) : (
+            results.map((competidor) => (
+              <button
+                type="button"
+                className="competitor-result"
+                key={competidor.id}
+                onClick={() => add(competidor.id)}
+              >
+                <div className="competitor-result-avatar">
+                  {initials(competidor.nombre, competidor.email)}
+                </div>
+                <div>
+                  <strong>{competidor.nombre}</strong>
+                  <small>{competidor.email}</small>
+                </div>
+                <Plus size={17} />
+              </button>
+            ))
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
+  const [form, setForm] = useState({
+    nombreEquipo: "",
+    nombreProyecto: "",
+    descripcionProyecto: "",
+    tipoCategoria: "IA",
+    eventoId: "",
+    votacionId: "",
+    competidorIds: [],
+  });
+  const [votaciones, setVotaciones] = useState([]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const firstEventoId = eventos[0]?.id || "";
+
+    setForm({
+      nombreEquipo: "",
+      nombreProyecto: "",
+      descripcionProyecto: "",
+      tipoCategoria: "IA",
+      eventoId: firstEventoId,
+      votacionId: "",
+      competidorIds: [],
+    });
+  }, [open, eventos]);
+
+  useEffect(() => {
+    if (!open || !form.eventoId) {
+      setVotaciones([]);
+      return;
+    }
+
+    getVotacionesByEvento(form.eventoId)
+      .then((data) => {
+        setVotaciones(data || []);
+        setForm((prev) => ({ ...prev, votacionId: data?.[0]?.id || "" }));
+      })
+      .catch(() => {
+        setVotaciones([]);
+        setForm((prev) => ({ ...prev, votacionId: "" }));
+      });
+  }, [open, form.eventoId]);
+
+  if (!open) return null;
+
+  async function submit(e) {
+    e.preventDefault();
+    await onSubmit(form);
+    onClose();
+  }
+
+  return (
+    <div className="users-modal-backdrop">
+      <form className="users-modal users-modal-wide" onSubmit={submit}>
+        <h2>Crear equipo + proyecto</h2>
+        <p>Crea el equipo, crea su proyecto, selecciona el evento y la votación donde participará.</p>
+
+        <div className="users-form-grid">
+          <label className="user-field">
+            <span>Nombre del equipo</span>
+            <input value={form.nombreEquipo} onChange={(e) => setForm({ ...form, nombreEquipo: e.target.value })} required />
+          </label>
+
+          <label className="user-field">
+            <span>Nombre del proyecto</span>
+            <input value={form.nombreProyecto} onChange={(e) => setForm({ ...form, nombreProyecto: e.target.value })} required />
+          </label>
+        </div>
+
+        <label className="user-field">
+          <span>Descripción del proyecto</span>
+          <textarea value={form.descripcionProyecto} onChange={(e) => setForm({ ...form, descripcionProyecto: e.target.value })} rows="3" required />
+        </label>
+
+        <div className="users-form-grid">
+          <label className="user-field">
+            <span>Categoría</span>
+            <select value={form.tipoCategoria} onChange={(e) => setForm({ ...form, tipoCategoria: e.target.value })}>
+              <option value="IA">IA</option>
+              <option value="SOSTENIBILIDAD">Sostenibilidad</option>
+            </select>
+          </label>
+
+          <label className="user-field">
+            <span>Evento donde estará el proyecto</span>
+            <select value={form.eventoId} onChange={(e) => setForm({ ...form, eventoId: e.target.value })} required>
+              <option value="">Selecciona evento</option>
+              {eventos.map((evento) => (
+                <option key={evento.id} value={evento.id}>{evento.nombre}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="user-field">
+          <span>Votación donde participará el proyecto</span>
+          <select value={form.votacionId} onChange={(e) => setForm({ ...form, votacionId: e.target.value })} required>
+            <option value="">Selecciona votación</option>
+            {votaciones.map((votacion) => (
+              <option key={votacion.id} value={votacion.id}>
+                {votacion.tipo} + {votacion.modalidad}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="user-field">
+          <span>Competidores del equipo</span>
+          <CompetitorSearchPicker
+            competidores={competidores}
+            selectedIds={form.competidorIds}
+            onChange={(ids) => setForm({ ...form, competidorIds: ids })}
+          />
+        </div>
+
+        <div className="users-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="primary-btn">Crear equipo</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function AssignCompetitorsModal({ open, onClose, equipo, competidores, currentAsignaciones, onSubmit }) {
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  useEffect(() => {
+    if (!open || !equipo) return;
+
+    setSelectedIds(
+      currentAsignaciones
+        .map((asignacion) => asignacion.competidor?.id)
+        .filter(Boolean)
+    );
+  }, [open, equipo, currentAsignaciones]);
+
+  if (!open || !equipo) return null;
+
+  async function submit(e) {
+    e.preventDefault();
+    await onSubmit(equipo, selectedIds, currentAsignaciones);
+    onClose();
+  }
+
+  return (
+    <div className="users-modal-backdrop">
+      <form className="users-modal" onSubmit={submit}>
+        <h2>Asignar competidores</h2>
+        <p>Añade o quita competidores del equipo {equipo.nombre}.</p>
+
+        <CompetitorSearchPicker
+          competidores={competidores}
+          selectedIds={selectedIds}
+          onChange={setSelectedIds}
+          placeholder="Buscar competidor para añadir..."
+        />
+
+        <div className="users-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="primary-btn">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function UserManagementScreen() {
+  const [activeTab, setActiveTab] = useState("usuarios");
+  const [usuarios, setUsuarios] = useState([]);
+  const [competidores, setCompetidores] = useState([]);
+  const [equipos, setEquipos] = useState([]);
+  const [eventos, setEventos] = useState([]);
+  const [proyectos, setProyectos] = useState([]);
+
+  const [asignacionesPorEquipo, setAsignacionesPorEquipo] = useState({});
+  const [asignacionesPorCompetidor, setAsignacionesPorCompetidor] = useState({});
+
+  const [search, setSearch] = useState("");
+  const [selectedRole, setSelectedRole] = useState("TODOS");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [competidorModalOpen, setCompetidorModalOpen] = useState(false);
+  const [equipoModalOpen, setEquipoModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedEquipo, setSelectedEquipo] = useState(null);
+
+  const puedeGestionar = esOrganizador();
+
+  async function loadAll() {
+  try {
+    setLoading(true);
+    setError("");
+
+    const [
+      usuariosData,
+      competidoresData,
+      equiposData,
+      eventosData,
+      proyectosData,
+    ] = await Promise.all([
+      getUsuarios().catch(() => []),
+      getCompetidores().catch(() => []),
+      getEquipos().catch(() => []),
+      getEventos().catch(() => []),
+      getProyectos().catch(() => []),
+    ]);
+
+    setUsuarios(usuariosData || []);
+    setCompetidores(competidoresData || []);
+    setEquipos(equiposData || []);
+    setEventos(eventosData || []);
+    setProyectos(proyectosData || []);
+
+    const todasAsignaciones = [];
+
+    await Promise.all(
+      (eventosData || []).map(async (evento) => {
+        const asignacionesEvento = await getAsignacionesCompetidorEvento(evento.id).catch(() => []);
+        todasAsignaciones.push(...asignacionesEvento);
+      })
+    );
+
+    const equipoAsignaciones = {};
+    const competidorAsignaciones = {};
+
+    for (const asignacion of todasAsignaciones) {
+      const equipoId = asignacion.equipo?.id;
+      const competidorId = asignacion.competidor?.id;
+
+      if (equipoId) {
+        if (!equipoAsignaciones[equipoId]) {
+          equipoAsignaciones[equipoId] = [];
+        }
+
+        equipoAsignaciones[equipoId].push(asignacion);
+      }
+
+      if (competidorId) {
+        if (!competidorAsignaciones[competidorId]) {
+          competidorAsignaciones[competidorId] = [];
+        }
+
+        competidorAsignaciones[competidorId].push(asignacion);
+      }
+    }
+
+    setAsignacionesPorEquipo(equipoAsignaciones);
+    setAsignacionesPorCompetidor(competidorAsignaciones);
+  } catch (err) {
+    setError(err.message || "No se pudieron cargar los datos");
+  } finally {
+    setLoading(false);
+  }
+}
+
+  useEffect(() => {
+    loadAll();
   }, []);
 
   const filteredUsuarios = useMemo(() => {
     return usuarios.filter((usuario) => {
-      const matchesSearch =
-        usuario.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-        usuario.email?.toLowerCase().includes(search.toLowerCase());
-
-      const matchesRole =
-        selectedRole === "TODOS" || usuario.rol === selectedRole;
-
+      const text = `${usuario.nombre || ""} ${usuario.email || ""}`.toLowerCase();
+      const matchesSearch = text.includes(search.toLowerCase());
+      const matchesRole = selectedRole === "TODOS" || usuario.rol === selectedRole;
       return matchesSearch && matchesRole;
     });
   }, [usuarios, search, selectedRole]);
 
-  const handleOpenCreate = () => {
-    if (!puedeGestionarUsuarios) return;
-    setUsuarioEnEdicion(null);
-    setIsModalOpen(true);
-  };
+  const filteredCompetidores = useMemo(() => {
+    return competidores.filter((competidor) => {
+      const equiposTexto = (asignacionesPorCompetidor[competidor.id] || [])
+        .map((a) => a.equipo?.nombre)
+        .join(" ");
 
-  const handleOpenEdit = (usuario) => {
-    if (!puedeGestionarUsuarios) return;
-    setUsuarioEnEdicion(usuario);
-    setIsModalOpen(true);
-  };
+      const text = `${competidor.nombre || ""} ${competidor.email || ""} ${equiposTexto}`.toLowerCase();
+      return text.includes(search.toLowerCase());
+    });
+  }, [competidores, search, asignacionesPorCompetidor]);
 
-  const handleSubmitUser = async (usuarioData) => {
-    if (!puedeGestionarUsuarios) return;
+  const filteredEquipos = useMemo(() => {
+    return equipos.filter((equipo) => {
+      const miembrosTexto = (asignacionesPorEquipo[equipo.id] || [])
+        .map((a) => `${a.competidor?.nombre || ""} ${a.competidor?.email || ""}`)
+        .join(" ");
 
-    if (usuarioEnEdicion) {
-      await updateUsuario(usuarioEnEdicion.id, usuarioData);
+      const text = `${equipo.nombre || ""} ${equipo.evento?.nombre || ""} ${equipo.proyecto?.nombre || ""} ${miembrosTexto}`.toLowerCase();
+      return text.includes(search.toLowerCase());
+    });
+  }, [equipos, search, asignacionesPorEquipo]);
+
+  async function handleSubmitUser(data) {
+    if (editingUser) {
+      await updateUsuario(editingUser.id, data);
     } else {
-      await createUsuario({
-        ...usuarioData,
-        password: "1234",
-      });
+      await createUsuario({ ...data, password: "1234" });
+    }
+    await loadAll();
+  }
+
+  async function handleDeleteUser(usuario) {
+    if (!window.confirm(`¿Eliminar a ${usuario.nombre}?`)) return;
+    await deleteUsuario(usuario.id);
+    await loadAll();
+  }
+
+  async function handleCreateCompetidor(data) {
+    await createCompetidor({
+      nombre: data.nombre.trim(),
+      email: data.email.trim(),
+    });
+    await loadAll();
+  }
+
+  async function handleCreateEquipo(data) {
+    const selectedCompetidores = competidores.filter((competidor) =>
+      data.competidorIds.includes(competidor.id)
+    );
+
+    const proyectoCreado = await createProyectoConEquipo({
+      nombre: data.nombreProyecto.trim(),
+      descripcion: data.descripcionProyecto.trim(),
+      tipoCategoria: data.tipoCategoria,
+      nombreEquipo: data.nombreEquipo.trim(),
+      miembrosEmails: selectedCompetidores.map((competidor) => competidor.email),
+      eventoId: data.eventoId,
+    });
+
+    await asignarProyectoAVotacion(data.votacionId, proyectoCreado.id);
+    await loadAll();
+  }
+
+  async function handleAssignCompetitors(equipo, selectedIds, currentAsignaciones) {
+    const eventoId = equipo.evento?.id;
+
+    if (!eventoId) {
+      setError("El equipo no tiene evento asociado.");
+      return;
     }
 
-    await loadUsuarios();
-  };
+    const currentIds = currentAsignaciones
+      .map((asignacion) => asignacion.competidor?.id)
+      .filter(Boolean);
 
-  const handleDeleteUser = async (usuario) => {
-    if (!puedeGestionarUsuarios) return;
+    const toAdd = selectedIds.filter((id) => !currentIds.includes(id));
+    const toRemove = currentAsignaciones.filter(
+      (asignacion) => asignacion.competidor?.id && !selectedIds.includes(asignacion.competidor.id)
+    );
 
-    const confirmacion = window.confirm(`¿Seguro que quieres borrar a ${usuario.nombre}?`);
-    if (!confirmacion) return;
-
-    try {
-      await deleteUsuario(usuario.id);
-      await loadUsuarios();
-    } catch (err) {
-      alert(err.message || "No se pudo borrar el usuario");
+    for (const competidorId of toAdd) {
+      await assignCompetidor({ competidorId, eventoId, equipoId: equipo.id });
     }
-  };
+
+    for (const asignacion of toRemove) {
+      await deleteAsignacionCompetidor(asignacion.id);
+    }
+
+    await loadAll();
+  }
 
   return (
-    <main className="users-page">
+    <main className="users-page users-mock-page">
       <header className="users-header">
         <div>
-          <h1>Gestión de Usuarios</h1>
-          <p>Administra roles y permisos de los participantes</p>
+          <h1>Usuarios, Competidores y Equipos</h1>
+          <p>Gestiona usuarios, competidores registrados y equipos del sistema.</p>
         </div>
 
-        {puedeGestionarUsuarios && (
-          <button className="primary-btn" onClick={handleOpenCreate}>
-            Añadir Usuario
-          </button>
-        )}
+        {puedeGestionar ? (
+          <div className="users-header-actions">
+            {activeTab === "usuarios" ? (
+              <button className="primary-btn" onClick={() => { setEditingUser(null); setUserModalOpen(true); }}>
+                <UserPlus size={17} /> Añadir Usuario
+              </button>
+            ) : null}
+
+            {activeTab === "competidores" ? (
+              <button className="primary-btn" onClick={() => setCompetidorModalOpen(true)}>
+                <Plus size={17} /> Crear Competidor
+              </button>
+            ) : null}
+
+            {activeTab === "equipos" ? (
+              <button className="primary-btn" onClick={() => setEquipoModalOpen(true)}>
+                <Plus size={17} /> Crear Equipo
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
-      {!puedeGestionarUsuarios && (
-        <div className="feedback-card warning-box">
-          Solo los organizadores pueden crear, editar o eliminar usuarios.
+      <section className="users-stats-grid">
+        <div className="users-stat-card"><div className="users-stat-icon blue"><Users size={23} /></div><div><strong>{usuarios.length}</strong><span>Usuarios</span></div></div>
+        <div className="users-stat-card"><div className="users-stat-icon purple"><Shield size={23} /></div><div><strong>{usuarios.filter((u) => u.rol === "JURADO").length}</strong><span>Jurado</span></div></div>
+        <div className="users-stat-card"><div className="users-stat-icon green"><UserPlus size={23} /></div><div><strong>{competidores.length}</strong><span>Competidores</span></div></div>
+        <div className="users-stat-card"><div className="users-stat-icon orange"><Trophy size={23} /></div><div><strong>{equipos.length}</strong><span>Equipos</span></div></div>
+      </section>
+
+      <section className="users-card">
+        <div className="users-tabs">
+          <button className={activeTab === "usuarios" ? "active" : ""} onClick={() => setActiveTab("usuarios")}>Usuarios</button>
+          <button className={activeTab === "competidores" ? "active" : ""} onClick={() => setActiveTab("competidores")}>Competidores</button>
+          <button className={activeTab === "equipos" ? "active" : ""} onClick={() => setActiveTab("equipos")}>Equipos</button>
         </div>
-      )}
-      
-      {puedeGestionarUsuarios && (
-        <div className="feedback-card warning-box">
-          Al crear un usuario desde esta pantalla, la contraseña se asigna automáticamente como <strong>1234</strong>.
-          Si se desea una contraseña distinta, el usuario debe registrarse desde la pantalla de registro.
+
+        <div className="users-toolbar">
+          <div className="users-search">
+            <Search size={17} />
+            <input placeholder="Buscar por nombre, email, evento, proyecto o equipo..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+
+          {activeTab === "usuarios" ? (
+            <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+              <option value="TODOS">Todos los roles</option>
+              {ROLES.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}
+            </select>
+          ) : null}
         </div>
-      )}
 
-      {loading ? (
-        <div className="feedback-card">Cargando usuarios...</div>
-      ) : error ? (
-        <div className="feedback-card error-box">{error}</div>
-      ) : (
-        <>
-          <UserStats usuarios={usuarios} />
+        {loading ? (
+          <div className="feedback-card">Cargando datos...</div>
+        ) : error ? (
+          <div className="feedback-card error-box">{error}</div>
+        ) : (
+          <>
+            {activeTab === "usuarios" ? (
+              <div className="users-table-wrapper">
+                <table className="users-table">
+                  <thead>
+                    <tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsuarios.map((usuario) => (
+                      <tr key={usuario.id}>
+                        <td><div className="user-cell"><div className="user-avatar">{initials(usuario.nombre, usuario.email)}</div><strong>{usuario.nombre}</strong></div></td>
+                        <td><span className="email-cell"><Mail size={15} />{usuario.email}</span></td>
+                        <td><span className={roleClass(usuario.rol)}>{roleLabel(usuario.rol)}</span></td>
+                        <td><span className="status-pill active">Activo</span></td>
+                        <td>
+                          <div className="table-actions">
+                            <button disabled={!puedeGestionar} onClick={() => { setEditingUser(usuario); setUserModalOpen(true); }}><Edit size={16} /></button>
+                            <button disabled={!puedeGestionar} onClick={() => handleDeleteUser(usuario)}><Trash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
 
-          <UserFilters
-            search={search}
-            setSearch={setSearch}
-            selectedRole={selectedRole}
-            setSelectedRole={setSelectedRole}
-          />
+            {activeTab === "competidores" ? (
+              <div className="competidores-list">
+                <div className="feedback-card warning-box">
+                  ⚠️ Un competidor queda vinculado cuando existe un usuario con el mismo email.
+                </div>
 
-          <UserTable
-            usuarios={filteredUsuarios}
-            onEdit={handleOpenEdit}
-            onDelete={handleDeleteUser}
-            canManage={puedeGestionarUsuarios}
-          />
+                {filteredCompetidores.map((competidor) => {
+                  const usuarioVinculado = getUsuarioVinculado(competidor, usuarios);
+                  const asignaciones = asignacionesPorCompetidor[competidor.id] || [];
 
-          <section className="roles-info">
-            <h3>Descripción de Roles</h3>
-            <div className="roles-grid">
-              <p>
-                <strong>Organizador:</strong> Gestión completa del evento, usuarios y configuración
-              </p>
-              <p>
-                <strong>Jurado:</strong> Puede evaluar proyectos y emitir votos
-              </p>
-              <p>
-                <strong>Competidor:</strong> Puede ver su proyecto y recibir feedback
-              </p>
-              <p>
-                <strong>Publico:</strong> Solo puede visualizar información pública
-              </p>
-            </div>
-          </section>
-        </>
-      )}
+                  return (
+                    <article className="competidor-card" key={competidor.id}>
+                      <div className="user-avatar large">{initials(competidor.nombre, competidor.email)}</div>
+
+                      <div className="competidor-info">
+                        <h3>{competidor.nombre}</h3>
+                        <p>{competidor.email}</p>
+
+                        <div className="competidor-badges">
+                          <span className="role-badge role-competidor">Competidor</span>
+                          {usuarioVinculado ? <span className="status-pill linked">Vinculado a usuario</span> : <span className="status-pill not-linked">No vinculado</span>}
+                        </div>
+
+                        {usuarioVinculado ? (
+                          <small className="helper-text">Vinculado con: {usuarioVinculado.email || usuarioVinculado.nombre}</small>
+                        ) : (
+                          <small className="helper-text error-text">No existe un usuario con este email.</small>
+                        )}
+
+                        <div className="competidor-teams">
+                          <strong>Equipos:</strong>
+                          {asignaciones.length === 0 ? (
+                            <span>Sin equipo asignado</span>
+                          ) : (
+                            asignaciones.map((a) => (
+                              <span className="team-chip" key={a.id}>
+                                {a.equipo?.nombre || "Equipo"} · {a.evento?.nombre || "Evento"}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+
+                {filteredCompetidores.length === 0 ? <div className="feedback-card">No hay competidores.</div> : null}
+              </div>
+            ) : null}
+
+            {activeTab === "equipos" ? (
+              <div className="equipos-grid">
+                {filteredEquipos.map((equipo) => {
+                  const asignaciones = asignacionesPorEquipo[equipo.id] || [];
+
+                  return (
+                    <article className="equipo-card" key={equipo.id}>
+                      <div className="equipo-card-header">
+                        <div className="equipo-icon"><Trophy size={24} /></div>
+                        <div>
+                          <h3>{equipo.nombre}</h3>
+                          <p>{equipo.evento?.nombre || "Sin evento"}</p>
+                        </div>
+                      </div>
+
+                      <div className="equipo-project">
+                        <span>Proyecto asociado</span>
+                        <strong>{equipo.proyecto?.nombre || "Sin proyecto"}</strong>
+                      </div>
+
+                      <div className="equipo-members">
+                        {asignaciones.slice(0, 4).map((a) => (
+                          <div className="mini-avatar" key={a.id}>
+                            {initials(a.competidor?.nombre, a.competidor?.email)}
+                          </div>
+                        ))}
+                        <span>{asignaciones.length} miembro{asignaciones.length === 1 ? "" : "s"}</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="secondary-btn full-width-btn"
+                        onClick={() => {
+                          setSelectedEquipo(equipo);
+                          setAssignModalOpen(true);
+                        }}
+                      >
+                        <Plus size={16} />
+                        Asignar más competidores
+                      </button>
+                    </article>
+                  );
+                })}
+
+                {filteredEquipos.length === 0 ? <div className="feedback-card">No hay equipos.</div> : null}
+              </div>
+            ) : null}
+          </>
+        )}
+      </section>
 
       <UserModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setUsuarioEnEdicion(null);
-        }}
+        open={userModalOpen}
+        initialData={editingUser}
+        onClose={() => { setUserModalOpen(false); setEditingUser(null); }}
         onSubmit={handleSubmitUser}
-        initialData={usuarioEnEdicion}
+      />
+
+      <CompetidorModal
+        open={competidorModalOpen}
+        onClose={() => setCompetidorModalOpen(false)}
+        onSubmit={handleCreateCompetidor}
+      />
+
+      <EquipoModal
+        open={equipoModalOpen}
+        onClose={() => setEquipoModalOpen(false)}
+        onSubmit={handleCreateEquipo}
+        eventos={eventos}
+        competidores={competidores}
+      />
+
+      <AssignCompetitorsModal
+        open={assignModalOpen}
+        onClose={() => { setAssignModalOpen(false); setSelectedEquipo(null); }}
+        equipo={selectedEquipo}
+        competidores={competidores}
+        currentAsignaciones={selectedEquipo ? asignacionesPorEquipo[selectedEquipo.id] || [] : []}
+        onSubmit={handleAssignCompetitors}
       />
     </main>
   );

@@ -19,4 +19,9 @@ public interface CompetidorEventoRepository extends JpaRepository<CompetidorEven
     List<CompetidorEventoMO> findByEquipoId(UUID equipoId);
 
     List<CompetidorEventoMO> findByCompetidorId(UUID competidorId);
+    List<CompetidorEventoMO> findByEvento_Id(UUID eventoId);
+
+    boolean existsByCompetidor_IdAndEquipo_Id(UUID competidorId, UUID equipoId);
+
+    void deleteByEquipo_IdAndCompetidor_Id(UUID equipoId, UUID competidorId);
 }

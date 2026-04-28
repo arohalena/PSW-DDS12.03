@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Vote, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Vote, Mail, Lock, Eye, EyeOff, Info } from "lucide-react";
 import { loginUsuario } from "../../services/authService";
 import "../../styles/auth.css";
 
@@ -28,7 +28,7 @@ function LoginScreen() {
     try {
       const usuario = await loginUsuario(formData);
       localStorage.setItem("usuarioLogueado", JSON.stringify(usuario));
-      navigate("/usuarios");
+      navigate("/");
     } catch (err) {
       setError(err.message || "Error al iniciar sesión");
     }
