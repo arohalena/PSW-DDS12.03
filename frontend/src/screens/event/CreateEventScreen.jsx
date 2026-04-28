@@ -25,6 +25,7 @@ function CreateEventScreen() {
     codigoAccesoPublico: "",
     fecha_inicio: "",
     fecha_fin: "",
+    numProyectosPorVoto: "3",
     tipoVotacion: "Evaluación multicriterio",
     numeroCategorias: "1",
     mostrarResultadosTiempoReal: false,
@@ -85,12 +86,15 @@ function CreateEventScreen() {
       setSuccess("");
 
       await createEvento({
+
         tipo: formData.tipo,
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim(),
         codigoAccesoPublico: formData.codigoAccesoPublico,
         fecha_inicio: toOffsetDateTime(formData.fecha_inicio),
         fecha_fin: toOffsetDateTime(formData.fecha_fin),
+        numProyectosPorVoto: parseInt(formData.numProyectosPorVoto, 10) || 3,
+        
       });
 
       setSuccess("Evento creado correctamente.");
@@ -222,23 +226,33 @@ function CreateEventScreen() {
               visualizarlo y votar cuando se habilite.
             </p>
           </div>
+
+          <h2> Configuración de Votación </h2>
+
+          <label className="event-field">
+            <span>Límite de proyectos por voto</span>
+            <input type="number" value={formData.numProyectosPorVoto}/>
+          </label>
+          <p className="field-help-text section-note">
+            Número de proyectos máximo que cada usuario puede evaluar.
+          </p>
         </section>
 
+        
         <section className="event-form-section event-form-section-disabled">
-          <h2>Configuración de Votación</h2>
           <p className="field-help-text section-note">
             Estos campos aparecen en el mockup, pero quedan deshabilitados para el Sprint 2.
           </p>
 
           <label className="event-field">
-            <span>Tipo de Votación</span>
+            <span> Tipo de Votación </span>
             <select name="tipoVotacion" value={formData.tipoVotacion} disabled>
-              <option>Evaluación multicriterio</option>
+              <option> Evaluación multicriterio </option>
             </select>
           </label>
 
           <label className="event-field">
-            <span>Número de Categorías</span>
+            <span> Número de Categorías </span>
             <input type="number" value={formData.numeroCategorias} disabled />
           </label>
 

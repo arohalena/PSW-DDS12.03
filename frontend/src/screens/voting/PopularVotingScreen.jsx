@@ -32,6 +32,7 @@ function PopularVotingScreen() {
 
   const [eventos, setEventos] = useState([]);
   const [eventoId, setEventoId] = useState(location.state?.eventoId || "");
+
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
@@ -45,6 +46,7 @@ function PopularVotingScreen() {
 
   const [loading, setLoading] = useState(true);
   const [loadingEvento, setLoadingEvento] = useState(false);
+  
   const [creatingVoting, setCreatingVoting] = useState(false);
   const [assigningProjectId, setAssigningProjectId] = useState("");
   const [error, setError] = useState("");
@@ -288,7 +290,6 @@ function PopularVotingScreen() {
         eventoId,
         tipo: "POPULAR",
         modalidad: "SIMPLE",
-        maxSelecciones: 3,
         inicio: inicio.toISOString(),
         fin: fin.toISOString(),
         estado: "PENDIENTE",
@@ -344,7 +345,6 @@ function PopularVotingScreen() {
         eventoId,
         tipo: "POPULAR",
         modalidad: "MULTICRITERIO",
-        maxSelecciones: 3,
         inicio: inicio.toISOString(),
         fin: fin.toISOString(),
         estado: "PENDIENTE",
