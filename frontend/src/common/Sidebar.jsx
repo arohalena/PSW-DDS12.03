@@ -1,15 +1,37 @@
 import { NavLink } from "react-router-dom";
 import { Calendar, Folder, Home, Settings, Trophy, Users, Vote } from "lucide-react";
 
+import { useState, useEffect, useMemo } from "react";
+import { usuarioHasProject } from "../services/usuarioService"; 
+import { getUsuarioLogueado } from "../services/sessionService";
+
+
 const items = [
   { label: "Inicio", to: "/", icon: Home },
   { label: "Eventos", to: "/eventos", icon: Calendar },
   { label: "Proyectos", to: "/proyectos", icon: Folder },
   { label: "Usuarios", to: "/usuarios", icon: Users },
-  { label: "Mi Proyecto", to: "/configuracion", icon: Trophy },
+  { label: "Mi Proyecto", to: "/configuracion", icon: Trophy, private:true },
 ];
 
 function Sidebar() {
+  const [userHasProject, setUserHasProject] = useState(false);
+
+  const usuario = useMemo(() => getUsuarioLogueado(), []);
+
+  useEffect(() => {
+
+    async function verifyProject() {
+      const result = await usuarioHasProject(usuario.id);
+
+      console.log("USUARIO" + usuario.id + " HAS PROJECT" + result)
+
+      setUserHasProject(result);
+    }
+
+    verifyProject();
+  }, [usuario]);
+
   return (
     <aside className="sidebar">
       <div>
@@ -23,6 +45,10 @@ function Sidebar() {
         <nav className="sidebar-nav">
           {items.map((item) => {
             const Icon = item.icon;
+            
+            if (item.private && !userHasProject) {
+              return null;
+            }
 
             return (
               <NavLink
