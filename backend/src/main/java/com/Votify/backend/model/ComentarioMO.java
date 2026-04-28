@@ -28,4 +28,8 @@ public class ComentarioMO extends ModeloBaseMO {
     @Column(nullable = false)
     private String texto;
 
+    @ManyToOne
+    @JoinColumn(name = "criterio_id")
+    private CriterioEvaluacionMO criterio;
+
 }

@@ -101,13 +101,14 @@ public class EventoService extends GenericService<EventoMO> {
 
     private String normalizarOCrearCodigo(String codigoAccesoPublico) {
         if (codigoAccesoPublico == null || codigoAccesoPublico.isBlank()) {
-            return generarCodigoAccesoPublico();
+        return null;
         }
 
         String codigo = normalizarCodigo(codigoAccesoPublico);
+
         if (eventoRepository.existsByCodigoAccesoPublico(codigo)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Ya existe un evento con ese código de acceso.");
+                "Ya existe un evento con ese código de acceso.");
         }
 
         return codigo;

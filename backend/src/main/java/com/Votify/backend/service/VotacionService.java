@@ -66,16 +66,20 @@ public class VotacionService extends GenericService<VotacionMO> {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de fin debe ser posterior a la fecha de inicio");
         }
 
-        if (request.modalidad() == ModalidadVotacionMO.MULTICRITERIO) {
-            // Comprobar si ya existen criterios para este evento (creados desde el sidebar)
+        boolean esMulticriterio =
+            request.modalidad() == ModalidadVotacionMO.MULTICRITERIO ||
+            request.modalidad() == ModalidadVotacionMO.MULTICRITERIO_PONDERADA;
+
+        boolean esPonderada =
+            request.modalidad() == ModalidadVotacionMO.MULTICRITERIO_PONDERADA;
+
+        if (esMulticriterio) {
             List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
                 .findByEvento_IdOrderByOrdenAsc(evento.getId());
 
             if (criteriosExistentes.isEmpty()) {
-                // No hay criterios del sidebar → deben venir en el request
-                validarCriterios(request.criterios());
+                validarCriterios(request.criterios(), esPonderada);
             }
-            // Si ya existen criterios del sidebar, no pedimos ni creamos nuevos
         }
 
         VotacionMO votacion = new VotacionMO();
@@ -90,20 +94,26 @@ public class VotacionService extends GenericService<VotacionMO> {
 
         VotacionMO guardada = votacionRepository.save(votacion);
 
-        if (request.modalidad() == ModalidadVotacionMO.MULTICRITERIO) {
-            // Solo crear criterios si NO existen ya para el evento
+        if (esMulticriterio) {
             List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
                 .findByEvento_IdOrderByOrdenAsc(evento.getId());
 
             if (criteriosExistentes.isEmpty() && request.criterios() != null) {
                 int orden = 1;
+
                 for (CriterioEvaluacionRequest criterioReq : request.criterios()) {
                     CriterioEvaluacionMO criterio = new CriterioEvaluacionMO();
                     criterio.setEvento(evento);
                     criterio.setNombre(criterioReq.nombre().trim());
                     criterio.setDescripcion(criterioReq.descripcion());
-                    criterio.setPeso(criterioReq.peso().intValue());
+
+                    BigDecimal peso = esPonderada
+                        ? criterioReq.peso()
+                        : BigDecimal.ONE;
+
+                    criterio.setPeso(peso.intValue());
                     criterio.setOrden(orden++);
+
                     criterioEvaluacionRepository.save(criterio);
                 }
             }
@@ -112,7 +122,7 @@ public class VotacionService extends GenericService<VotacionMO> {
         return guardada;
     }
 
-    private void validarCriterios(List<CriterioEvaluacionRequest> criterios) {
+    private void validarCriterios(List<CriterioEvaluacionRequest> criterios, boolean ponderada) {
         if (criterios == null || criterios.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debes añadir al menos un criterio.");
         }
@@ -124,14 +134,16 @@ public class VotacionService extends GenericService<VotacionMO> {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos los criterios deben tener nombre.");
             }
 
-            if (criterio.peso() == null || criterio.peso().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos los criterios deben tener un peso mayor a 0.");
-            }
+            if (ponderada) {
+                if (criterio.peso() == null || criterio.peso().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos los criterios ponderados deben tener un peso mayor a 0.");
+                }
 
-            total = total.add(criterio.peso());
+                total = total.add(criterio.peso());
+            }
         }
 
-        if (total.compareTo(new BigDecimal("100")) != 0) {
+        if (ponderada && total.compareTo(new BigDecimal("100")) != 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La suma de los pesos debe ser exactamente 100%.");
         }
     }

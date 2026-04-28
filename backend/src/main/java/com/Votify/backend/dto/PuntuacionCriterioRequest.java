@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record PuntuacionCriterioRequest (
     UUID criterioId,
-    Integer puntuacion
+    Integer puntuacion,
+    String comentario
 ) {}
 

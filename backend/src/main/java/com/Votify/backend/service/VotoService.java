@@ -29,9 +29,16 @@ import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.ComentarioRepository;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
 import com.Votify.backend.repository.PuntuacionCriterioRepository;
+import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotoCriterioRepository;
 import com.Votify.backend.repository.VotoRepository;
+
+import com.Votify.backend.dto.EmitirVotoPuntosRequest;
+import com.Votify.backend.model.RolMO;
+import com.Votify.backend.model.TipoVotacionMO;
+import com.Votify.backend.model.UsuarioMO;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +52,8 @@ public class VotoService extends GenericService<VotoMO> {
     private final VotoCriterioRepository votoCriterioRepository;
     private final PuntuacionCriterioRepository puntuacionCriterioRepository;
     private final ComentarioRepository comentarioRepository;
+
+    private final UsuarioRepository usuarioRepository;
 
     @Override
     protected JpaRepository<VotoMO, UUID> getRepository() {
@@ -78,12 +87,14 @@ public class VotoService extends GenericService<VotoMO> {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no es simple.");
         }
 
+        UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
         validarEstadoYFechas(votacion);
         validarMaximoYDuplicado(votacion, votacionProyecto, request.anonTokenHash());
 
         VotoMO voto = new VotoMO();
         voto.setVotacionProyecto(votacionProyecto);
         voto.setAnonTokenHash(request.anonTokenHash());
+        voto.setUsuario(usuario);
         voto.setPuntuacionTotal(BigDecimal.ONE);
 
         VotoMO guardado = votoRepository.save(voto);
@@ -117,10 +128,12 @@ public class VotoService extends GenericService<VotoMO> {
 
         VotacionMO votacion = votacionProyecto.getVotacion();
 
-        if (votacion.getModalidad() != ModalidadVotacionMO.MULTICRITERIO) {
+        if (votacion.getModalidad() != ModalidadVotacionMO.MULTICRITERIO &&
+            votacion.getModalidad() != ModalidadVotacionMO.MULTICRITERIO_PONDERADA) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no es multicriterio.");
         }
 
+        UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
         validarEstadoYFechas(votacion);
         validarMaximoYDuplicado(votacion, votacionProyecto, request.anonTokenHash());
 
@@ -148,30 +161,49 @@ public class VotoService extends GenericService<VotoMO> {
             }
         }
 
-        Map<UUID, Integer> puntuacionesMap = request.puntuaciones().stream()
-            .collect(Collectors.toMap(PuntuacionCriterioRequest::criterioId, PuntuacionCriterioRequest::puntuacion));
+        Map<UUID, PuntuacionCriterioRequest> puntuacionesRequestMap = request.puntuaciones().stream()
+            .collect(Collectors.toMap(
+                PuntuacionCriterioRequest::criterioId,
+                Function.identity(),
+                (a, b) -> {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No puedes repetir criterios.");
+                }
+            ));
+
+        Map<UUID, Integer> puntuacionesMap = puntuacionesRequestMap.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().puntuacion()
+            ));
 
         BigDecimal total = BigDecimal.ZERO;
 
         for (CriterioEvaluacionMO criterio : criterios) {
             Integer puntuacion = puntuacionesMap.get(criterio.getId());
 
-            if (puntuacion == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debes puntuar todos los criterios.");
-            }
+            BigDecimal parcial;
 
-            BigDecimal parcial = BigDecimal.valueOf(puntuacion)
-                .multiply(BigDecimal.valueOf(criterio.getPeso()))
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            if(votacion.getModalidad() == ModalidadVotacionMO.MULTICRITERIO_PONDERADA){
+                parcial = BigDecimal.valueOf(puntuacion)
+                    .multiply(BigDecimal.valueOf(criterio.getPeso()))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            } else {
+                parcial = BigDecimal.valueOf(puntuacion);
+            }
 
             total = total.add(parcial);
         }
+
+        if (votacion.getModalidad() == ModalidadVotacionMO.MULTICRITERIO){
+            total = total.divide(BigDecimal.valueOf(criterios.size()), 2, RoundingMode.HALF_UP);  
+        }
+        
 
         VotoMO voto = new VotoMO();
         voto.setVotacionProyecto(votacionProyecto);
         voto.setAnonTokenHash(request.anonTokenHash());
         voto.setPuntuacionTotal(total);
-
+        voto.setUsuario(usuario);
         VotoMO guardado = votoRepository.save(voto);
 
         for (CriterioEvaluacionMO criterio : criterios) {
@@ -187,6 +219,20 @@ public class VotoService extends GenericService<VotoMO> {
             puntuacionCriterio.setAnonTokenHash(request.anonTokenHash());
             puntuacionCriterio.setPuntuacion(puntuacionesMap.get(criterio.getId()));
             puntuacionCriterioRepository.save(puntuacionCriterio);
+
+            PuntuacionCriterioRequest puntuacionReq = puntuacionesRequestMap.get(criterio.getId());
+
+            if (puntuacionReq != null && puntuacionReq.comentario() != null && !puntuacionReq.comentario().isBlank()) {
+                ComentarioMO comentarioCriterio = new ComentarioMO();
+                comentarioCriterio.setAnonTokenHash(request.anonTokenHash());
+                comentarioCriterio.setVotacionProyecto(votacionProyecto);
+                comentarioCriterio.setProyecto(votacionProyecto.getProyecto());
+                comentarioCriterio.setCriterio(criterio);
+                comentarioCriterio.setTexto(puntuacionReq.comentario().trim());
+                comentarioRepository.save(comentarioCriterio);
+            }
+
+            
         }
 
         ComentarioMO comentario = new ComentarioMO();
@@ -284,5 +330,69 @@ public class VotoService extends GenericService<VotoMO> {
         return votoRepository.countDistinctVotantesByEventoId(eventoId);
     
     }
+
+    @Transactional
+    public VotoMO votarPuntos(EmitirVotoPuntosRequest request){
+        if(request.votacionProyectoId() == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La opción de votación es obligatoria");
+        }
+
+        if(request.anonTokenHash() == null || request.anonTokenHash().isBlank()){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token del votante es obligatorio");
+        }
+
+        if (request.puntuacion() == null || request.puntuacion() < 1 || request.puntuacion() > 10) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La puntuación debe estar entre 1 y 10.");
+        }
+
+        VotacionProyectoMO votacionProyecto = votacionProyectoRepository.findById(request.votacionProyectoId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la opción de votación"));
+
+        VotacionMO votacion = votacionProyecto.getVotacion();
+        if (votacion.getModalidad() != ModalidadVotacionMO.PUNTOS) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no es por puntos");
+        }
+
+        UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
+        validarEstadoYFechas(votacion);
+        validarMaximoYDuplicado(votacion, votacionProyecto, request.anonTokenHash());
+        VotoMO voto = new VotoMO();
+        voto.setVotacionProyecto(votacionProyecto);
+        voto.setAnonTokenHash(request.anonTokenHash());
+        voto.setUsuario(usuario);
+        voto.setPuntuacionTotal(BigDecimal.valueOf(request.puntuacion()));
+
+        VotoMO guardado = votoRepository.save(voto);
+
+        if (request.comentario() != null && !request.comentario().isBlank()) {
+        ComentarioMO comentario = new ComentarioMO();
+        comentario.setAnonTokenHash(request.anonTokenHash());
+        comentario.setVotacionProyecto(votacionProyecto);
+        comentario.setProyecto(votacionProyecto.getProyecto());
+        comentario.setTexto(request.comentario().trim());
+        comentarioRepository.save(comentario);
+        }
+
+        return guardado;
+
+    }
+
+    private UsuarioMO validarJuradoSiHaceFalta(VotacionMO votacion, UUID usuarioId) {
+    if (votacion.getTipo() != TipoVotacionMO.JURADO) {
+        return null;
+    }
+
+    if (usuarioId == null) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
+    }
+
+    UsuarioMO usuario = usuarioRepository.findById(usuarioId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario no encontrado."));
+
+    if (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el jurado puede votar en esta votación.");
+    }
+
+    return usuario;
+}
 
 }

@@ -20,7 +20,7 @@ public class EventoMO extends ModeloBaseMO {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(name= "codigo_acceso_publico", nullable = false, unique = true)
+    @Column(name= "codigo_acceso_publico", nullable = true, unique = true)
     private String codigoAccesoPublico;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

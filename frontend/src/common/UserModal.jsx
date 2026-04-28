@@ -86,23 +86,6 @@ function UserModal({ isOpen, onClose, onSubmit, initialData }) {
             </select>
           </label>
 
-          <div className="permissions-box">
-            <strong>Permisos Adicionales</strong>
-
-            <label className="checkbox-line">
-              <input type="checkbox" disabled />
-              Puede editar proyectos
-            </label>
-
-            <label className="checkbox-line">
-              <input type="checkbox" disabled />
-              Puede ver resultados anticipados
-            </label>
-
-            <p className="helper-text">
-              Por ahora el sistema persiste solo nombre, email y rol.
-            </p>
-          </div>
 
           {error && <div className="error-box">{error}</div>}
 
