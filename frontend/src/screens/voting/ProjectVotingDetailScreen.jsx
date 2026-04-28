@@ -381,7 +381,7 @@ function ProjectVotingDetailScreen() {
       criterios.every((criterio) => Number(ratings[criterio.id] || 0) > 0);
 
     const canSubmitSimple =
-      !!proyecto?.votacionProyectoId &&
+      !!votacionProyectoId &&
       !!votacion &&
       esSimple &&
       !yaVotado &&
@@ -390,7 +390,7 @@ function ProjectVotingDetailScreen() {
       comentario.trim().length > 0;
 
     const canSubmitMulti =
-      !!proyecto?.votacionProyectoId &&
+      !!votacionProyectoId &&
       !!votacion &&
       !yaVotado &&
       !haAlcanzadoMaximo &&
