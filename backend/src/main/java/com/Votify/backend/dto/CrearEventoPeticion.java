@@ -8,5 +8,6 @@ public record CrearEventoPeticion (
     String descripcion,
     String codigoAccesoPublico,
     OffsetDateTime fecha_inicio,
-    OffsetDateTime fecha_fin
+    OffsetDateTime fecha_fin,
+    int numProyectosPorVoto
 ) {}

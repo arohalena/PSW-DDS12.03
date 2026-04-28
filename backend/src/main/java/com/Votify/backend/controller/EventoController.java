@@ -40,7 +40,8 @@ public class EventoController extends GenericController<EventoMO>{
             body.descripcion(),
             body.codigoAccesoPublico(),
             body.fecha_inicio(),
-            body.fecha_fin()
+            body.fecha_fin(),
+            body.numProyectosPorVoto()
 
         );
     }
