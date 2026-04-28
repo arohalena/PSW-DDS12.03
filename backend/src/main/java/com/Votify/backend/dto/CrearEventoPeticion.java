@@ -2,7 +2,7 @@ package com.Votify.backend.dto;
 
 import java.time.OffsetDateTime;
 
-public record CrearEventoPeticion (
+public record CrearEventoRequest (
     String tipo,
     String nombre,
     String descripcion,
