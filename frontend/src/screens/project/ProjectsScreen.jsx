@@ -144,13 +144,16 @@ function CommentProjectModal({ open, onClose, proyecto, relaciones, onSubmit }) 
   if (!open || !proyecto) return null;
 
   async function submit(e) {
-  e.preventDefault();
+    e.preventDefault();
 
-  await onSubmit({
-    texto,
-  });
+    try{
 
-  onClose();
+      await onSubmit({ texto });
+      onClose();
+
+    } catch {
+      
+    }
   }
 
   return (
@@ -236,11 +239,39 @@ function ProjectsScreen() {
   const desdeEvento = Boolean(eventoId);
 
   async function handleCreateComment({ texto }) {
-  if (!commentProject) return;
 
-  await crearComentario(commentProject.id, texto.trim());
+    if (!commentProject) return;
 
-  await load();
+    try {
+
+      await crearComentario(commentProject.id, texto.trim());
+      await load();
+      
+    } catch (err) {
+
+      let mensaje = "No se ha podido enviar el comentario.";
+      
+      try {
+
+        const parsed = JSON.parse(err.message);
+
+        if (parsed.status === 403) {
+
+          mensaje = "No puedes comentar en este proyecto porque no formas parte del evento.";
+
+        } else if (parsed.message) {
+
+          mensaje = parsed.message;
+        }
+
+      } catch {
+        
+      }
+
+      alert(mensaje);
+
+      throw err; 
+    }
   }
 
   async function load() {
