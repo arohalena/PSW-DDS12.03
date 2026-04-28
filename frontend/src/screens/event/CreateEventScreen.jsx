@@ -94,7 +94,7 @@ function CreateEventScreen() {
         fecha_inicio: toOffsetDateTime(formData.fecha_inicio),
         fecha_fin: toOffsetDateTime(formData.fecha_fin),
         numProyectosPorVoto: parseInt(formData.numProyectosPorVoto, 10) || 3,
-        
+
       });
 
       setSuccess("Evento creado correctamente.");
@@ -231,7 +231,13 @@ function CreateEventScreen() {
 
           <label className="event-field">
             <span>Límite de proyectos por voto</span>
-            <input type="number" value={formData.numProyectosPorVoto}/>
+            <input 
+              type="number" 
+              name="numProyectosPorVoto"
+              value={formData.numProyectosPorVoto} 
+              onChange={handleChange}
+              min="1"
+              />
           </label>
           <p className="field-help-text section-note">
             Número de proyectos máximo que cada usuario puede evaluar.
