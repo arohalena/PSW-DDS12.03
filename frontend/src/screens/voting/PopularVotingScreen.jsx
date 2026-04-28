@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Users, Plus, Trash2, SlidersHorizontal, Vote, CheckCircle } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getEventos } from "../../services/eventoService";
 import { getProyectosByEvento } from "../../services/proyectoService";
 import { getEquipos } from "../../services/equipoService";
@@ -30,8 +30,11 @@ function PopularVotingScreen() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const params = useParams();
   const [eventos, setEventos] = useState([]);
-  const [eventoId, setEventoId] = useState(location.state?.eventoId || "");
+  const [eventoId, setEventoId] = useState(
+    params.eventoId || location.state?.eventoId || ""
+  );
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
