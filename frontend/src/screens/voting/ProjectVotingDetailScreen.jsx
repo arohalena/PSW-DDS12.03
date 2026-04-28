@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Star, Users, Vote } from "lucide-react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Star,
+  Users,
+  Vote,
+  X,
+} from "lucide-react";
 import { getProyectosByEvento } from "../../services/proyectoService";
 import { getEquipos } from "../../services/equipoService";
 import { getVotingToken } from "../../services/sessionService";
@@ -12,22 +21,235 @@ import {
   getVotacionesByEvento,
   haAlcanzadoMaximoVotacion,
   votarProyectoMulticriterio,
+  votarProyectoPuntos,
   votarProyectoSimple,
   yaHaVotadoProyecto,
 } from "../../services/votacionService";
 import "../../styles/voting-detail.css";
 
+function formatDateTime(value = new Date()) {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function ConfirmSubmitModal({ open, onCancel, onConfirm, loading }) {
+  if (!open) return null;
+
+  return (
+    <div className="vote-modal-backdrop">
+      <div className="vote-confirm-modal">
+        <button type="button" className="vote-modal-close" onClick={onCancel}>
+          <X size={18} />
+        </button>
+
+        <div className="vote-confirm-icon">
+          <Vote size={30} />
+        </div>
+
+        <h2>¿Enviar evaluación?</h2>
+
+        <p>
+          Una vez enviada, tu evaluación será registrada. ¿Estás seguro de
+          continuar?
+        </p>
+
+        <div className="vote-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onCancel}>
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading ? "Enviando..." : "Sí, enviar evaluación"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SuccessScreen({
+  proyecto,
+  equipo,
+  modalidad,
+  criterios,
+  ratings,
+  puntuacion,
+  confirmationCode,
+  onBack,
+  onResults,
+}) {
+  const total =
+    modalidad === "PUNTOS"
+      ? Number(puntuacion || 0)
+      : criterios.length > 0
+        ? criterios.reduce((acc, criterio) => {
+            const valor = Number(ratings[criterio.id] || 0);
+
+            if (modalidad === "MULTICRITERIO_PONDERADA") {
+              return acc + valor * (Number(criterio.peso || 0) / 100);
+            }
+
+            return acc + valor;
+          }, 0) / criterios.length
+        : 1;
+
+  return (
+    <main className="vote-success-page">
+      <section className="vote-success-hero">
+        <div className="vote-success-icon">
+          <Check size={34} />
+        </div>
+
+        <h1>¡Voto Registrado Correctamente!</h1>
+        <p>Tu evaluación ha sido enviada y registrada en el sistema</p>
+      </section>
+
+      <section className="vote-success-content">
+        <h2>Resumen de tu Evaluación</h2>
+
+        <div className="vote-summary-list">
+          <div>
+            <span>Proyecto evaluado:</span>
+            <strong>{proyecto?.nombre}</strong>
+          </div>
+
+          <div>
+            <span>Equipo:</span>
+            <strong>{equipo?.nombre || "Sin equipo"}</strong>
+          </div>
+
+          <div>
+            <span>Fecha y hora:</span>
+            <strong>{formatDateTime()}</strong>
+          </div>
+
+          <div>
+            <span>Código de confirmación:</span>
+            <strong className="vote-confirm-code">{confirmationCode}</strong>
+          </div>
+        </div>
+
+        {(modalidad === "MULTICRITERIO" ||
+          modalidad === "MULTICRITERIO_PONDERADA") && (
+          <div className="vote-score-box">
+            <h3>Calificaciones Otorgadas</h3>
+
+            {criterios.map((criterio) => (
+              <div className="vote-score-row" key={criterio.id}>
+                <span>
+                  {criterio.nombre}
+                  {modalidad === "MULTICRITERIO_PONDERADA"
+                    ? ` (${criterio.peso}%)`
+                    : ""}
+                </span>
+
+                <strong>
+                  {ratings[criterio.id] || 0}/5 <Star size={15} />
+                </strong>
+              </div>
+            ))}
+
+            <div className="vote-total-row">
+              <span>Puntuación Total:</span>
+              <strong>{total.toFixed(1)}/5.0</strong>
+            </div>
+          </div>
+        )}
+
+        {modalidad === "PUNTOS" && (
+          <div className="vote-score-box">
+            <h3>Puntuación Otorgada</h3>
+
+            <div className="vote-total-row">
+              <span>Puntuación Total:</span>
+              <strong>{puntuacion}/10</strong>
+            </div>
+          </div>
+        )}
+
+        {modalidad === "SIMPLE" && (
+          <div className="vote-score-box">
+            <h3>Voto Simple</h3>
+
+            <div className="vote-total-row">
+              <span>Estado:</span>
+              <strong>Voto registrado</strong>
+            </div>
+          </div>
+        )}
+
+        <div className="vote-note-box">
+          💡 <strong>Nota:</strong> Tu evaluación es definitiva y no puede ser
+          modificada. Si necesitas hacer cambios, contacta al organizador del
+          evento.
+        </div>
+
+        <div className="vote-progress-row">
+          <span>Tu progreso de evaluación</span>
+          <strong>1 de 18 proyectos</strong>
+        </div>
+
+        <div className="vote-progress-bar">
+          <div />
+        </div>
+
+        <div className="vote-success-actions">
+          <button type="button" className="primary-btn" onClick={onBack}>
+            Volver a Lista de Proyectos
+            <ArrowRight size={17} />
+          </button>
+
+          <button type="button" className="secondary-btn" onClick={onResults}>
+            Ver Resultados
+          </button>
+        </div>
+
+        <button type="button" className="vote-dashboard-link" onClick={onBack}>
+          Volver al dashboard
+        </button>
+      </section>
+    </main>
+  );
+}
+
+function StarsInput({ value, onChange, disabled }) {
+  return (
+    <div className="stars-input">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={disabled}
+          className={Number(value || 0) >= star ? "active" : ""}
+          onClick={() => onChange(star)}
+        >
+          <Star size={22} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ProjectVotingDetailScreen() {
-  const { eventoId, proyectoId } = useParams();
+  const { eventoId, proyectoId, votingId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
 
-  const [votacionPopular, setVotacionPopular] = useState(null);
-  const [votacionProyectos, setVotacionProyectos] = useState([]);
+  const [votacion, setVotacion] = useState(null);
+  const [votacionProyectoId, setVotacionProyectoId] = useState(null);
   const [criterios, setCriterios] = useState([]);
 
   const [voteCount, setVoteCount] = useState(0);
@@ -35,15 +257,22 @@ function ProjectVotingDetailScreen() {
   const [haAlcanzadoMaximo, setHaAlcanzadoMaximo] = useState(false);
 
   const [comentario, setComentario] = useState("");
+  const [comentariosCriterio, setComentariosCriterio] = useState({});
   const [ratings, setRatings] = useState({});
+  const [puntuacion, setPuntuacion] = useState(5);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [successData, setSuccessData] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(location.state?.successMessage || "");
+
+  const usuario = JSON.parse(localStorage.getItem("usuarioLogueado"));
+  const token = getVotingToken();
 
   useEffect(() => {
-    const loadData = async () => {
+    async function loadData() {
       try {
         setLoading(true);
         setError("");
@@ -56,78 +285,100 @@ function ProjectVotingDetailScreen() {
             getVotacionesByEvento(eventoId),
           ]);
 
-        const votacion =
-          votacionesData.find(
-            (v) => v.tipo === "POPULAR" && (v.modalidad === "SIMPLE" || v.modalidad === "MULTICRITERIO")
-          ) || null;
+        const votacionActual = votacionesData.find(
+          (item) => String(item.id) === String(votingId)
+        );
 
-        let votacionProyectosData = [];
-        let criteriosData = [];
-        let count = 0;
-        let voted = false;
-        let maximo = false;
-
-        if (votacion) {
-          votacionProyectosData = await getVotacionProyectosByVotacion(votacion.id);
-
-          const vp = votacionProyectosData.find((item) => item.proyecto?.id === proyectoId);
-          if (vp) {
-            count = await getConteoVotos(vp.id);
-            voted = await yaHaVotadoProyecto(vp.id, getVotingToken());
-          }
-
-          maximo = await haAlcanzadoMaximoVotacion(votacion.id, getVotingToken());
-
-          if (votacion.modalidad === "MULTICRITERIO") {
-            criteriosData = await getCriteriosByVotacion(votacion.id);
-          }
+        if (!votacionActual) {
+          throw new Error("No se ha encontrado la votación.");
         }
 
-        setProyectos(proyectosData);
-        setEquipos(equiposData.filter((e) => e.evento?.id === eventoId));
-        setAsignaciones(asignacionesData);
-        setVotacionPopular(votacion);
-        setVotacionProyectos(votacionProyectosData);
-        setCriterios(criteriosData);
-        setVoteCount(count);
-        setYaVotado(voted);
-        setHaAlcanzadoMaximo(maximo);
+        const relaciones = await getVotacionProyectosByVotacion(votingId);
+
+        const relacion = relaciones.find(
+          (item) => String(item.proyecto?.id) === String(proyectoId)
+        );
+
+        if (!relacion) {
+          throw new Error("Este proyecto no pertenece a esta votación.");
+        }
+
+        let criteriosData = [];
+
+        if (
+          votacionActual.modalidad === "MULTICRITERIO" ||
+          votacionActual.modalidad === "MULTICRITERIO_PONDERADA"
+        ) {
+          criteriosData = await getCriteriosByVotacion(votacionActual.id);
+        }
+
+        setProyectos(proyectosData || []);
+        setEquipos((equiposData || []).filter((e) => e.evento?.id === eventoId));
+        setAsignaciones(asignacionesData || []);
+        setVotacion(votacionActual);
+        setVotacionProyectoId(relacion.id);
+        setCriterios(criteriosData || []);
+
+        setVoteCount(await getConteoVotos(relacion.id));
+        setYaVotado(await yaHaVotadoProyecto(relacion.id, token));
+        setHaAlcanzadoMaximo(
+          await haAlcanzadoMaximoVotacion(votacionActual.id, token)
+        );
       } catch (err) {
-        setError(err.message || "No se pudo cargar el proyecto.");
+        setError(err.message || "No se pudo cargar la votación.");
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     loadData();
-  }, [eventoId, proyectoId]);
+  }, [eventoId, proyectoId, votingId]);
 
   const proyecto = useMemo(() => {
-    const proyectoBase = proyectos.find((p) => p.id === proyectoId);
+    const proyectoBase = proyectos.find(
+      (item) => String(item.id) === String(proyectoId)
+    );
+
     if (!proyectoBase) return null;
 
-    const equipo = equipos.find((eq) => eq.proyecto?.id === proyectoId) || null;
+    const equipo =
+      equipos.find((eq) => String(eq.proyecto?.id) === String(proyectoId)) ||
+      null;
+
     const miembros = equipo
-      ? asignaciones.filter((a) => a.equipo?.id === equipo.id).map((a) => a.competidor)
+      ? asignaciones
+          .filter((a) => String(a.equipo?.id) === String(equipo.id))
+          .map((a) => a.competidor)
+          .filter(Boolean)
       : [];
-    const votacionProyecto = votacionProyectos.find((vp) => vp.proyecto?.id === proyectoId);
 
     return {
       ...proyectoBase,
       equipo,
       miembros,
-      votacionProyectoId: votacionProyecto?.id || null,
     };
-  }, [proyectos, equipos, asignaciones, votacionProyectos, proyectoId]);
+  }, [proyectos, equipos, asignaciones, proyectoId]);
 
-  const esMulticriterio = votacionPopular?.modalidad === "MULTICRITERIO";
-  const esSimple = votacionPopular?.modalidad === "SIMPLE";
+  const modalidad = votacion?.modalidad;
+  const tipo = votacion?.tipo;
+
+  const esPopular = tipo === "POPULAR";
+  const esJurado = tipo === "JURADO";
+
+  const esSimple = modalidad === "SIMPLE";
+  const esPuntos = modalidad === "PUNTOS";
+  const esMulticriterio = modalidad === "MULTICRITERIO";
+  const esPonderada = modalidad === "MULTICRITERIO_PONDERADA";
+
+  const puedeVotar =
+    !esJurado || usuario?.rol === "JURADO" || usuario?.rol === "ORGANIZADOR";
 
   const estadoActual = votacionPopular?.estadoActual || "ABIERTA";
   const admiteVotos = votacionPopular?.admiteVotos === true || estadoActual === "ABIERTA";
 
   const allRated =
-    criterios.length > 0 && criterios.every((criterio) => Number(ratings[criterio.id] || 0) > 0);
+    criterios.length > 0 &&
+    criterios.every((criterio) => Number(ratings[criterio.id] || 0) > 0);
 
   const canSubmitSimple =
     !!proyecto?.votacionProyectoId &&
@@ -146,164 +397,166 @@ function ProjectVotingDetailScreen() {
     !haAlcanzadoMaximo &&
     admiteVotos &&
     comentario.trim().length > 0 &&
-    allRated;
+    (esSimple ||
+      esPuntos ||
+      ((esMulticriterio || esPonderada) && allRated));
 
-  const gestionarError = (message) => {
+  function handleError(message) {
     if (message.includes("máximo")) {
-      setError("Ya has alcanzado el número máximo de votos permitidos.");
       setHaAlcanzadoMaximo(true);
-    } else if (message.includes("Ya habías votado este proyecto")) {
-      setError("Ya habías votado este proyecto.");
+      setError("Ya has alcanzado el número máximo de votos permitidos.");
+    } else if (message.includes("Ya habías votado")) {
       setYaVotado(true);
-    } else if (message.includes("comentario es obligatorio")) {
-      setError("Debes escribir un comentario antes de enviar tu voto.");
-    } else if (message.includes("no está abierta")) {
-      setError("La votación no está abierta.");
-    } else if (message.includes("todavía no ha comenzado")) {
-      setError("La votación todavía no ha comenzado.");
-    } else if (message.includes("ya ha finalizado")) {
-      setError("La votación ya ha finalizado.");
-    } else if (message.includes("Debes puntuar todos los criterios")) {
-      setError("Debes puntuar todos los criterios antes de enviar la evaluación.");
+      setError("Ya habías votado este proyecto.");
+    } else if (message.includes("jurado") || message.includes("JURADO")) {
+      setError("Solo jurado u organizador puede votar en esta votación.");
     } else {
       setError(message || "No se pudo registrar el voto.");
     }
-  };
+  }
 
-  const handleVoteSimple = async () => {
-    if (!canSubmitSimple) return;
-
+  async function submitVote() {
     try {
       setVoting(true);
       setError("");
-      setSuccess("");
 
-      const token = getVotingToken();
+      if (esSimple) {
+        await votarProyectoSimple(
+          votacionProyectoId,
+          token,
+          comentario.trim(),
+          usuario?.id
+        );
+      }
 
-      await votarProyectoSimple(proyecto.votacionProyectoId, token, comentario.trim());
+      if (esPuntos) {
+        await votarProyectoPuntos({
+          votacionProyectoId,
+          anonTokenHash: token,
+          usuarioId: usuario?.id,
+          puntuacion: Number(puntuacion),
+          comentario: comentario.trim(),
+        });
+      }
 
-      navigate("/votar", {
-        state: {
-          successMessage: "Voto recibido correctamente.",
-          eventoId,
-        },
+      if (esMulticriterio || esPonderada) {
+        await votarProyectoMulticriterio({
+          votacionProyectoId,
+          anonTokenHash: token,
+          usuarioId: usuario?.id,
+          comentario: comentario.trim(),
+          puntuaciones: criterios.map((criterio) => ({
+            criterioId: criterio.id,
+            puntuacion: Number(ratings[criterio.id]),
+            comentario: comentariosCriterio[criterio.id] || "",
+          })),
+        });
+      }
+
+      setConfirmOpen(false);
+      setSuccessData({
+        confirmationCode: `#VOTE-${new Date().getFullYear()}-${String(
+          Date.now()
+        ).slice(-3)}`,
       });
     } catch (err) {
-      gestionarError(err.message || "");
+      setConfirmOpen(false);
+      handleError(err.message || "");
     } finally {
       setVoting(false);
     }
-  };
-
-  const handleVoteMulticriterio = async () => {
-    if (!canSubmitMulti) return;
-
-    try {
-      setVoting(true);
-      setError("");
-      setSuccess("");
-
-      const token = getVotingToken();
-
-      await votarProyectoMulticriterio({
-        votacionProyectoId: proyecto.votacionProyectoId,
-        anonTokenHash: token,
-        comentario: comentario.trim(),
-        puntuaciones: criterios.map((criterio) => ({
-          criterioId: criterio.id,
-          puntuacion: Number(ratings[criterio.id]),
-        })),
-      });
-
-      navigate("/votar", {
-        state: {
-          successMessage: "Evaluación enviada correctamente.",
-          eventoId,
-        },
-      });
-    } catch (err) {
-      gestionarError(err.message || "");
-    } finally {
-      setVoting(false);
-    }
-  };
+  }
 
   if (loading) {
     return (
       <main className="voting-detail-page">
-        <div className="feedback-card">Cargando proyecto...</div>
+        <div className="feedback-card">Cargando votación...</div>
       </main>
     );
   }
 
-  if (!proyecto) {
+  if (error && !proyecto) {
     return (
       <main className="voting-detail-page">
-        <div className="feedback-card error-box">No se ha encontrado el proyecto.</div>
+        <div className="feedback-card error-box">{error}</div>
       </main>
+    );
+  }
+
+  if (successData) {
+    return (
+      <SuccessScreen
+        proyecto={proyecto}
+        equipo={proyecto?.equipo}
+        modalidad={modalidad}
+        criterios={criterios}
+        ratings={ratings}
+        puntuacion={puntuacion}
+        confirmationCode={successData.confirmationCode}
+        onBack={() => navigate(`/eventos/${eventoId}`)}
+        onResults={() =>
+          navigate(`/eventos/${eventoId}/votaciones/${votingId}/resultados`)
+        }
+      />
     );
   }
 
   return (
     <main className="voting-detail-page">
       <button
+        type="button"
         className="back-link"
-        onClick={() =>
-          navigate("/votar", {
-            state: { eventoId },
-          })
-        }
+        onClick={() => navigate(`/eventos/${eventoId}/proyectos/${proyectoId}`)}
       >
         <ArrowLeft size={16} />
-        Volver a lista de votación
+        Volver al proyecto
       </button>
 
       <header className="detail-page-header">
         <div>
           <h1>Evaluación de Proyecto</h1>
           <p>
-            {esMulticriterio
-              ? "Evalúa el proyecto según los criterios establecidos."
-              : "Emite tu voto para este proyecto y añade un comentario obligatorio."}
+            {esPopular ? "Votación popular" : "Evaluación de jurado"} ·{" "}
+            {modalidad}
           </p>
         </div>
-        <span className="project-tag">{proyecto.tipoCategoria}</span>
+
+        <span className="project-tag">
+          {tipo} + {modalidad}
+        </span>
       </header>
 
       <section className="detail-main-card">
-        <h2>{proyecto.nombre}</h2>
-        <p>{proyecto.descripcion || "Sin descripción disponible."}</p>
+        <h2>{proyecto?.nombre}</h2>
+        <p>{proyecto?.descripcion || "Sin descripción disponible."}</p>
 
         <div className="project-meta-inline">
           <Users size={16} />
           <span>
-            {proyecto.equipo?.nombre || "Sin equipo"} · {proyecto.miembros.length} integrantes
+            {proyecto?.equipo?.nombre || "Sin equipo"} ·{" "}
+            {proyecto?.miembros?.length || 0} integrantes
           </span>
         </div>
 
-        <div className="member-tags">
-          {proyecto.miembros.map((miembro) => (
-            <span key={miembro.id} className="member-chip">
-              {miembro.nombre}
-            </span>
-          ))}
+        <div className="vote-count-box">
+          <strong>Votos actuales:</strong> {voteCount}
         </div>
       </section>
 
       <section className="detail-main-card">
         <h3>
-          {esMulticriterio ? "Votación Popular Multicriterio" : "Votación Popular Simple"}
+          {esSimple && "Voto simple"}
+          {esPuntos && "Votación por puntos"}
+          {esMulticriterio && "Evaluación multicriterio"}
+          {esPonderada && "Evaluación multicriterio ponderada"}
         </h3>
 
-        {esMulticriterio ? (
-          <p>Valora este proyecto en cada criterio y deja un comentario obligatorio.</p>
-        ) : (
-          <p>Registra tu voto simple para este proyecto y añade un comentario obligatorio.</p>
+        {!puedeVotar && (
+          <div className="feedback-card error-box">
+            Esta votación es de jurado. Solo pueden votar usuarios con rol
+            JURADO u ORGANIZADOR.
+          </div>
         )}
-
-        <div className="vote-count-box">
-          <strong>Votos actuales:</strong> {voteCount}
-        </div>
 
         {yaVotado && (
           <div className="feedback-card warning-box">
@@ -337,86 +590,89 @@ function ProjectVotingDetailScreen() {
 
         {!yaVotado && haAlcanzadoMaximo && (
           <div className="feedback-card warning-box">
-            Ya has alcanzado el número máximo de votos permitidos en esta votación.
+            Ya has alcanzado el número máximo de votos permitidos.
           </div>
         )}
 
         {error && <div className="feedback-card error-box">{error}</div>}
-        {success && <div className="feedback-card success-box">{success}</div>}
 
-        {esMulticriterio && criterios.length > 0 && (
-          <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
+        {esSimple && (
+          <div className="simple-vote-box">
+            <CheckCircle2 size={30} />
+            <strong>Voto simple</strong>
+            <span>
+              Tu voto contará como una selección directa para este proyecto.
+            </span>
+          </div>
+        )}
+
+        {esPuntos && (
+          <label className="voting-selector-field">
+            <span>Puntuación del 1 al 10</span>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={puntuacion}
+              disabled={!puedeVotar || yaVotado || haAlcanzadoMaximo || voting}
+              onChange={(e) => setPuntuacion(Number(e.target.value))}
+            />
+          </label>
+        )}
+
+        {(esMulticriterio || esPonderada) && (
+          <div className="criteria-rating-list">
             {criterios.map((criterio) => (
-              <div key={criterio.id} className="voting-project-card">
-                <div className="project-card-content">
-                  <div className="project-title-row">
+              <article className="criteria-rating-card" key={criterio.id}>
+                <div className="criteria-rating-header">
+                  <div>
                     <strong>{criterio.nombre}</strong>
-                    <span className="project-tag">{criterio.peso}%</span>
+                    <p>{criterio.descripcion || "Sin descripción disponible."}</p>
                   </div>
 
-                  <p>{criterio.descripcion || "Sin descripción disponible."}</p>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "0.5rem",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      marginTop: "0.5rem",
-                    }}
-                  >
-                    {[1, 2, 3, 4, 5].map((valor) => {
-                      const activa = Number(ratings[criterio.id] || 0) >= valor;
-
-                      return (
-                        <button
-                          key={valor}
-                          type="button"
-                          className="secondary-btn"
-                          onClick={() =>
-                            setRatings((prev) => ({ ...prev, [criterio.id]: valor }))
-                          }
-                          disabled={yaVotado || haAlcanzadoMaximo || voting}
-                          style={{
-                            opacity: activa ? 1 : 0.6,
-                            minWidth: "48px",
-                          }}
-                        >
-                          <Star size={16} />
-                          {valor}
-                        </button>
-                      );
-                    })}
-
-                    <span>
-                      {ratings[criterio.id]
-                        ? `Puntuación: ${ratings[criterio.id]}/5`
-                        : "Sin puntuar"}
-                    </span>
-                  </div>
+                  {esPonderada && (
+                    <span className="criteria-weight">{criterio.peso}%</span>
+                  )}
                 </div>
-              </div>
+
+                <StarsInput
+                  value={ratings[criterio.id]}
+                  disabled={!puedeVotar || yaVotado || haAlcanzadoMaximo || voting}
+                  onChange={(value) =>
+                    setRatings((prev) => ({
+                      ...prev,
+                      [criterio.id]: value,
+                    }))
+                  }
+                />
+
+                <textarea
+                  rows={3}
+                  value={comentariosCriterio[criterio.id] || ""}
+                  disabled={!puedeVotar || yaVotado || haAlcanzadoMaximo || voting}
+                  onChange={(e) =>
+                    setComentariosCriterio((prev) => ({
+                      ...prev,
+                      [criterio.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="Comentario opcional para este criterio..."
+                />
+              </article>
             ))}
           </div>
         )}
 
-        {esMulticriterio && criterios.length === 0 && (
-          <div className="feedback-card warning-box">
-            Esta votación multicriterio no tiene criterios configurados.
-          </div>
-        )}
-
-        <div style={{ marginTop: "1rem" }}>
-          <label className="voting-selector-field">
-            <span>Comentario obligatorio</span>
-            <textarea
-              rows={5}
-              value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-              placeholder="Escribe tu valoración del proyecto"
-            />
-          </label>
-        </div>
+        <label className="voting-selector-field vote-comment-field">
+          <span>Comentario obligatorio</span>
+          <textarea
+            rows={5}
+            value={comentario}
+            disabled={!puedeVotar || yaVotado || haAlcanzadoMaximo || voting}
+            onChange={(e) => setComentario(e.target.value)}
+            placeholder="Escribe tu valoración del proyecto"
+          />
+        </label>
 
         <div className="vote-action-row">
           {esSimple && (
@@ -464,8 +720,23 @@ function ProjectVotingDetailScreen() {
               )}
             </button>
           )}
+          <button
+            className="primary-btn"
+            disabled={!canSubmit || voting}
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Vote size={18} />
+            Enviar evaluación
+          </button>
         </div>
       </section>
+
+      <ConfirmSubmitModal
+        open={confirmOpen}
+        loading={voting}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={submitVote}
+      />
     </main>
   );
 }

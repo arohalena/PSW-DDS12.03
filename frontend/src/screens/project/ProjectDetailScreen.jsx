@@ -255,7 +255,18 @@ function ProjectDetailScreen() {
             type="button"
             className="primary-btn full-width-btn"
             disabled={!eventoFinalId}
-            onClick={() => navigate(`/eventos/${eventoFinalId}/proyectos/${proyecto.id}/votar`)}
+            onClick={() => {
+  const votacionId = votacionesProyecto[0]?.votacion?.id;
+
+  if (!votacionId) {
+    alert("Este proyecto no está asignado a ninguna votación.");
+    return;
+  }
+
+  navigate(
+    `/eventos/${eventoFinalId}/votaciones/${votacionId}/proyectos/${proyecto.id}/votar`
+  );
+}}
           >
             <Vote size={17} />
             Votar por este proyecto
