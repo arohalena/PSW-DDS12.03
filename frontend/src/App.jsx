@@ -12,8 +12,8 @@ import ProjectsScreen from "./screens/project/ProjectsScreen";
 import ProjectVotingDetailScreen from "./screens/voting/ProjectVotingDetailScreen";
 import RankingScreen from "./screens/ranking/RankingScreen";
 import MyProjectDashboardScreen from "./screens/dashboard/MyProjectDashboardScreen";
-import FlowPlaceholderScreen from "./screens/flow/FlowPlaceholderScreen";
 import EventDetailScreen from "./screens/event/EventDetailScreen";
+import ProjectDetailScreen from "./screens/project/ProjectDetailScreen";
 
 function PrivateRoute({ children }) {
   const usuario = localStorage.getItem("usuarioLogueado");
@@ -43,14 +43,14 @@ function App() {
         <Route path="/eventos/:eventoId/votaciones/crear" element={<PrivatePage><CreateEventScreen /></PrivatePage>} />
         <Route path="/eventos/:eventoId/votaciones/:votingId/resultados" element={<PrivatePage><RankingScreen /></PrivatePage>} />
 
-        <Route path="/eventos/:eventoId/proyectos/:proyectoId" element={<PrivatePage><FlowPlaceholderScreen type="projectDetail" /></PrivatePage>} />
+    
         <Route path="/eventos/:eventoId/proyectos/:proyectoId/votar" element={<PrivatePage><ProjectVotingDetailScreen /></PrivatePage>} />
 
         <Route path="/proyectos" element={<PrivatePage><ProjectsScreen /></PrivatePage>} />
         <Route path="/usuarios" element={<PrivatePage><UserManagementScreen /></PrivatePage>} />
         <Route path="/configuracion" element={<PrivatePage><MyProjectDashboardScreen /></PrivatePage>} />
 
-        {/* Legacy */}
+        
         <Route path="/proyectos-legacy" element={<PrivatePage><ProjectsScreen /></PrivatePage>} />
         <Route path="/asignacion" element={<Navigate to="/proyectos" replace />} />
         <Route path="/criterios" element={<Navigate to="/eventos" replace />} />
@@ -58,6 +58,27 @@ function App() {
         <Route path="/resultados" element={<PrivatePage><RankingScreen /></PrivatePage>} />
         <Route path="/mi-proyecto" element={<Navigate to="/configuracion" replace />} />
         <Route path="/votar" element={<Navigate to="/eventos" replace />} />
+        <Route
+          path="/proyectos/:proyectoId"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ProjectDetailScreen />
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+
+          <Route
+            path="/eventos/:eventoId/proyectos/:projectId"
+            element={
+              <PrivateRoute>
+                <AppLayout>
+                  <ProjectDetailScreen />
+                </AppLayout>
+              </PrivateRoute>
+            }
+          />
       </Routes>
     </BrowserRouter>
   );

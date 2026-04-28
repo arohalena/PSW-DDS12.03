@@ -82,3 +82,14 @@ export async function getMiProyectoDashboard(usuarioId) {
 
   return response.json();
 }
+
+export async function getProyectoById(proyectoId) {
+  const response = await fetch(`${API_URL}/${proyectoId}`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo cargar el proyecto.");
+  }
+
+  return response.json();
+}
