@@ -96,7 +96,7 @@ public class EventoService extends GenericService<EventoMO> {
     }
 
     public int getNumProyectosPorVoto(UUID eventoId){
-        return eventoRepository.getNumProyectosPorVotoByEvento(eventoId);
+        return eventoRepository.getNumProyectosPorVotoById(eventoId);
     }
 
     private String normalizarOCrearCodigo(String codigoAccesoPublico) {
