@@ -99,7 +99,7 @@ function CreateEventScreen() {
     autoVotacion: false,
   });
 
-  const [votingConfigs, setVotingConfigs] = useState([createVotingConfig()]);
+  const [votingConfigs, setVotingConfigs] = useState([]);
 
   useEffect(() => {
   if (!formData.usaCodigoAcceso) return;
@@ -117,10 +117,9 @@ function CreateEventScreen() {
       formData.nombre.trim() &&
       formData.descripcion.trim() &&
       formData.fecha_inicio &&
-      formData.fecha_fin &&
-      votingConfigs.length > 0
+      formData.fecha_fin
     );
-  }, [formData, puedeGestionarEventos, votingConfigs]);
+  }, [formData, puedeGestionarEventos]);
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
@@ -401,12 +400,12 @@ function CreateEventScreen() {
             <div className="event-field">
                 <span>Acceso al evento</span>
 
-  <label className="event-checkbox-row compact-checkbox">
-    <input
-      type="checkbox"
-      name="usaCodigoAcceso"
-      checked={formData.usaCodigoAcceso}
-      onChange={(event) => {
+      <label className="event-checkbox-row compact-checkbox">
+        <input
+        type="checkbox"
+        name="usaCodigoAcceso"
+        checked={formData.usaCodigoAcceso}
+        onChange={(event) => {
         const checked = event.target.checked;
 
         setFormData((prev) => ({
@@ -449,12 +448,12 @@ function CreateEventScreen() {
         Comparte este código con participantes o jurado.
       </p>
     </>
-  ) : (
+    ) : (
     <p className="field-help-text">
       El evento será público y cualquier usuario podrá abrirlo desde la lista.
     </p>
   )}
-</div>
+          </div>
 
             <label className="event-checkbox-row">
               <input
@@ -488,6 +487,12 @@ function CreateEventScreen() {
             </div>
 
             <div className="voting-config-list">
+              {/* Aqui pongo un aviso por si se crea sin votaciones */}
+              {votingConfigs.length === 0 ? (
+                <div className="feedback-card">
+                  Este evento se creará sin votaciones. Después podrás entrar al evento y pulsar “Nueva Votación”.
+                </div>
+              ) : null}
               {votingConfigs.map((config, index) => {
                 const total = config.criteria.reduce((sum, criterion) => sum + Number(criterion.peso || 0), 0);
 

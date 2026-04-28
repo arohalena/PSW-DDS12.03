@@ -12,6 +12,7 @@ export async function getVotacionesByEvento(eventoId) {
 export async function createVotacion(votacion) {
   const payload = {
     eventoId: votacion.eventoId || votacion.evento?.id,
+    nombre: votacion.nombre,
     tipo: votacion.tipo,
     modalidad: votacion.modalidad,
     estado: votacion.estado || "ABIERTA",
@@ -228,4 +229,15 @@ export async function votarProyectoPuntos(payload) {
   }
 
   return response.json();
+}
+
+export async function deleteVotacion(id) {
+  const response = await fetch(`${VOTACIONES_URL}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo eliminar la votación");
+  }
 }

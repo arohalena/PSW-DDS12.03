@@ -11,6 +11,7 @@ import com.Votify.backend.model.TipoVotacionMO;
 
 public record CrearVotacionRequest (
     UUID eventoId,
+    String nombre,
     TipoVotacionMO tipo,
     ModalidadVotacionMO modalidad,
     int maxSelecciones,

@@ -32,37 +32,42 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-  <Route path="/login" element={<LoginScreen />} />
-  <Route path="/registro" element={<RegisterScreen />} />
+        <Route path="/login" element={<LoginScreen />} />
 
-  <Route path="/" element={<PrivatePage><DashboardScreen /></PrivatePage>} />
+        <Route path="/registro" element={<RegisterScreen />} />
 
-  <Route path="/eventos" element={<PrivatePage><EventsListScreen /></PrivatePage>} />
-  <Route path="/eventos/crear" element={<PrivatePage><CreateEventScreen /></PrivatePage>} />
-  <Route path="/eventos/:eventoId" element={<PrivatePage><EventDetailScreen /></PrivatePage>} />
+        <Route path="/" element={<PrivatePage><DashboardScreen /></PrivatePage>} />
 
-  <Route
-    path="/eventos/:eventoId/proyectos/:proyectoId"
-    element={<PrivatePage><ProjectDetailScreen /></PrivatePage>}
-  />
+        <Route path="/eventos" element={<PrivatePage><EventsListScreen /></PrivatePage>} />
 
-  <Route
-    path="/eventos/:eventoId/votaciones/:votingId/proyectos/:proyectoId/votar"
-    element={<PrivatePage><ProjectVotingDetailScreen /></PrivatePage>}
-  />
+        <Route path="/eventos/crear" element={<PrivatePage><CreateEventScreen /></PrivatePage>} />
 
-  <Route
-    path="/eventos/:eventoId/votaciones/:votingId/resultados"
-    element={<PrivatePage><RankingScreen /></PrivatePage>}
-  />
+        <Route path="/eventos/:eventoId" element={<PrivatePage><EventDetailScreen /></PrivatePage>} />
 
-  <Route path="/proyectos" element={<PrivatePage><ProjectsScreen /></PrivatePage>} />
-  <Route path="/usuarios" element={<PrivatePage><UserManagementScreen /></PrivatePage>} />
-  <Route path="/configuracion" element={<PrivatePage><MyProjectDashboardScreen /></PrivatePage>} />
+        <Route
+          path="/eventos/:eventoId/proyectos/:proyectoId"
+          element={<PrivatePage><ProjectDetailScreen /></PrivatePage>}
+        />
 
-  {/* redirects */}
-  <Route path="/votar" element={<Navigate to="/eventos" replace />} />
-</Routes>
+        <Route
+          path="/eventos/:eventoId/votaciones/:votingId/proyectos/:proyectoId/votar"
+          element={<PrivatePage><ProjectVotingDetailScreen /></PrivatePage>}
+        />
+
+        <Route
+          path="/eventos/:eventoId/votaciones/:votingId/resultados"
+          element={<PrivatePage><RankingScreen /></PrivatePage>}
+        />
+
+        <Route path="/proyectos" element={<PrivatePage><ProjectsScreen /></PrivatePage>} />
+
+        <Route path="/usuarios" element={<PrivatePage><UserManagementScreen /></PrivatePage>} />
+
+        <Route path="/configuracion" element={<PrivatePage><MyProjectDashboardScreen /></PrivatePage>} />
+
+        {/* redirects */}
+        <Route path="/votar" element={<Navigate to="/eventos" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }
