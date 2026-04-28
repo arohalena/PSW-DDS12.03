@@ -1,500 +1,597 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Plus, Search, MessageCircle, Send, X } from "lucide-react";
-import { getProyectosByEvento, createProyectoConEquipo } from "../../services/proyectoService";
-import { getComentariosByProyecto, crearComentario } from "../../services/comentarioService";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowRight,
+  Calendar,
+  CheckCircle,
+  FolderKanban,
+  Plus,
+  Search,
+  Trophy,
+  Users,
+  Vote,
+  MessageCircle,
+} from "lucide-react";
+import { getEquipos } from "../../services/equipoService";
 import { getEventos } from "../../services/eventoService";
-import { getCompetidores } from "../../services/competidorService";
-import {createEquipo, getEquiposParaEvento} from "../../services/equipoService";
-import {assignCompetidor} from "../../services/competidorService";
+import {
+  asignarProyectoAVotacion,
+  getAsignacionesCompetidorEvento,
+  getVotacionProyectosByVotacion,
+  getVotacionesByEvento,
+} from "../../services/votacionService";
+import { crearComentario } from "../../services/comentarioService";
+import { getProyectos, getProyectosByEvento } from "../../services/proyectoService";
 import { esOrganizador } from "../../services/sessionService";
 import "../../styles/projects.css";
 
+function formatDate(value) {
+  if (!value) return "Sin fecha";
 
-const CATEGORIAS = ["IA", "SOSTENIBILIDAD"];
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
 
-function ProjectsScreen() {
-  const { eventoId } = useParams();
-  const [eventos, setEventos] = useState([]);
-  const [eventoSeleccionado, setEventoSeleccionado] = useState("");
-  const [equipos, setEquipos] = useState([]);
-  const [proyectos, setProyectos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [comentarioProyecto, setComentarioProyecto] = useState(null);
+function getEventStart(evento) {
+  return evento?.fecha_inicio || evento?.fechaInicio || evento?.inicio;
+}
 
-  const puedeGestionar = esOrganizador();
-  const desdeEvento = Boolean(eventoId);
-  const idEfectivo = eventoId || eventoSeleccionado;
+function getCategoriaLabel(categoria) {
+  if (categoria === "IA") return "IA";
+  if (categoria === "SOSTENIBILIDAD") return "Sostenibilidad";
+  return categoria || "Sin categoría";
+}
 
-  useEffect(() => {
-    if (!eventoId) {
-      getEventos().then(setEventos).catch(() => setEventos([]));
-    }
-  }, [eventoId]);
+function getProjectEventoId(proyecto) {
+  return proyecto.evento?.id || proyecto.eventoId || "";
+}
 
-  useEffect(() => {
-    if (eventoId) {
-      setEventoSeleccionado(eventoId);
-    }
-    getEventos()
-      .then(setEventos)
-      .catch(() => setEventos([]));
-  }, [eventoId]);
-
-  const cargarDatos = async () => {
-    if (!idEfectivo) return;
-    try {
-      setLoading(true);
-      const [proyectosData, equiposData] = await Promise.all([
-        getProyectosByEvento(idEfectivo),
-        getEquiposParaEvento(idEfectivo)
-      ]);
-      setProyectos(proyectosData);
-      setEquipos(equiposData);
-    } catch (err) {
-      setError("Error al cargar datos");
-    } finally {
-      setLoading(false);
-    }
-  };
+function AssignProjectModal({ open, onClose, proyecto, eventos, onSubmit }) {
+  const [eventoId, setEventoId] = useState("");
+  const [votacionId, setVotacionId] = useState("");
+  const [votaciones, setVotaciones] = useState([]);
 
   useEffect(() => {
-    if (!idEfectivo) {
-      setProyectos([]);
-      setEquipos([]);
+    if (!open || !proyecto) return;
+
+    const firstEventoId = proyecto.evento?.id || eventos[0]?.id || "";
+    setEventoId(firstEventoId);
+  }, [open, proyecto, eventos]);
+
+  useEffect(() => {
+    if (!open || !eventoId) {
+      setVotaciones([]);
+      setVotacionId("");
       return;
     }
 
-    cargarDatos();
-  }, [idEfectivo]);
+    getVotacionesByEvento(eventoId)
+      .then((data) => {
+        setVotaciones(data || []);
+        setVotacionId(data?.[0]?.id || "");
+      })
+      .catch(() => {
+        setVotaciones([]);
+        setVotacionId("");
+      });
+  }, [open, eventoId]);
 
-  const filtrados = useMemo(() => {
-    return proyectos.map(p => {
-      const equipoAsociado = equipos.find(e => e.proyecto?.id === p.id);
-      return {
-        ...p,
-        nombreEquipo: equipoAsociado ? equipoAsociado.nombre : "Sin equipo"
-      };
-    }).filter((p) =>
-      p.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-      p.tipoCategoria?.toLowerCase().includes(search.toLowerCase()) ||
-      p.nombreEquipo?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [proyectos, equipos, search]);
+  if (!open || !proyecto) return null;
+
+  async function submit(e) {
+    e.preventDefault();
+    await onSubmit({ eventoId, votacionId });
+    onClose();
+  }
 
   return (
-    <div className="projects-container">
-      <header className="page-header">
-        <div>
-          <h1>Gestión de Proyectos</h1>
-          <p>{desdeEvento ? "Proyectos del evento" : "Administra proyectos por evento"}</p>
-        </div>
-        {!desdeEvento && puedeGestionar && eventoSeleccionado && (
-          <button className="btn-primary" onClick={() => setShowModal(true)}>
-            <Plus size={20} /> Crear Proyecto
-          </button>
-        )}
-        <p>
-          {filtrados.length} proyectos encontrados
-        </p>
-      </header>
+    <div className="project-modal-backdrop">
+      <form className="project-modal" onSubmit={submit}>
+        <h2>Asignar proyecto a votación</h2>
+        <p>Selecciona el evento y la votación donde participará {proyecto.nombre}.</p>
 
-      {!desdeEvento && (
-        <div className="filters-section">
-          <select 
-            className="select-field" 
-            value={eventoSeleccionado} 
-            onChange={(e) => setEventoSeleccionado(e.target.value)}
-          >
-            <option value="">Selecciona un evento</option>
-            {eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+        <label className="project-field">
+          <span>Evento</span>
+          <select value={eventoId} onChange={(e) => setEventoId(e.target.value)} required>
+            <option value="">Selecciona evento</option>
+            {eventos.map((evento) => (
+              <option key={evento.id} value={evento.id}>
+                {evento.nombre}
+              </option>
+            ))}
           </select>
+        </label>
+
+        <label className="project-field">
+          <span>Votación</span>
+          <select value={votacionId} onChange={(e) => setVotacionId(e.target.value)} required>
+            <option value="">Selecciona votación</option>
+            {votaciones.map((votacion) => (
+              <option key={votacion.id} value={votacion.id}>
+                {votacion.tipo} + {votacion.modalidad}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="project-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onClose}>
+            Cancelar
+          </button>
+          <button type="submit" className="primary-btn">
+            Asignar
+          </button>
         </div>
-      )}
-
-      <div className="filters-section">
-        <div className="search-wrapper">
-          <Search className="search-icon" size={18} />
-          <input
-            type="text"
-            className="input-field"
-            placeholder="      Buscar proyectos por nombre o categoría..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="projects-grid">
-  {filtrados.map((p) => (
-    <div key={p.id} className="project-card">
-      
-      <div className="project-card-header">
-        <div>
-          <h3>{p.nombre}</h3>
-          <span className="badge">{p.tipoCategoria}</span>
-        </div>
-      </div>
-
-      <p className="project-description">
-        {p.descripcion || "Sin descripción disponible"}
-      </p>
-
-      <div className="project-meta">
-        <span>👥 {p.nombreEquipo}</span>
-      </div>
-
-      <div className="project-actions">
-        <button
-          className="btn-comment"
-          onClick={() => setComentarioProyecto(p)}
-        >
-          <MessageCircle size={16} />
-          Ver comentarios
-        </button>
-      </div>
-
-    </div>
-  ))}
-</div>
-
-      {showModal && (
-        <CreateProyectoModal
-          eventoId={idEfectivo}
-          onCreado={async () => {
-            setShowModal(false);
-            await cargarDatos(); 
-          }}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-
-      {comentarioProyecto && (
-        <ComentarioModal
-          proyecto={comentarioProyecto}
-          onClose={() => setComentarioProyecto(null)}
-        />
-      )}
+      </form>
     </div>
   );
 }
 
-function ComentarioModal({ proyecto, onClose }) {
+function CommentProjectModal({ open, onClose, proyecto, relaciones, onSubmit }) {
   const [texto, setTexto] = useState("");
-  const [comentarios, setComentarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [enviando, setEnviando] = useState(false);
-  const [enviado, setEnviado] = useState(false);
+  const [votacionProyectoId, setVotacionProyectoId] = useState("");
 
   useEffect(() => {
-    getComentariosByProyecto(proyecto.id)
-      .then(setComentarios)
-      .catch(() => setComentarios([]))
-      .finally(() => setLoading(false));
-  }, [proyecto.id]);
+    if (!open) return;
 
-  const handleEnviar = async (e) => {
-    e.preventDefault();
-    if (!texto.trim()) return;
-    try {
-      setEnviando(true);
-      const nuevo = await crearComentario(proyecto.id, texto.trim());
-      setComentarios([...comentarios, nuevo]);
-      setTexto("");
-      setEnviado(true);
-      setTimeout(() => setEnviado(false), 3000);
-    } catch (err) {
-      alert("Error al enviar comentario: " + err.message);
-    } finally {
-      setEnviando(false);
-    }
-  };
+    setTexto("");
+    setVotacionProyectoId(relaciones?.[0]?.id || "");
+  }, [open, relaciones]);
 
-  return (
-    <div className="comment-overlay" onClick={onClose}>
-      <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
+  if (!open || !proyecto) return null;
 
-        <div className="comment-header">
-          <div>
-            <h2>Comentarios y Feedback</h2>
-            <p>Proyecto: {proyecto.nombre}</p>
-          </div>
-          <button className="comment-close-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
+  async function submit(e) {
+  e.preventDefault();
 
-        <div className="comment-list">
-          {loading ? (
-            <p className="comment-loading">Cargando comentarios...</p>
-          ) : comentarios.length === 0 ? (
-            <div className="comment-empty">
-              <MessageCircle size={40} strokeWidth={1.5} />
-              <p>No hay comentarios aún</p>
-              <span>Sé el primero en dejar tu feedback</span>
-            </div>
-          ) : (
-            <div className="comment-items">
-              {comentarios.map((c) => (
-                <div key={c.id} className="comment-bubble">
-                  <div className="comment-bubble-header">
-                    <div className="comment-avatar">A</div>
-                    <div>
-                      <span className="comment-author">Anónimo</span>
-                      <span className="comment-time">
-                        {new Date(c.createdAt).toLocaleDateString("es-ES", {
-                          day: "2-digit", month: "short", year: "numeric",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  <p>{c.texto}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="comment-compose">
-          {enviado && (
-            <div className="comment-success">
-              Comentario enviado correctamente
-            </div>
-          )}
-          <textarea
-            rows={3}
-            placeholder="Escribe tu comentario..."
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-          />
-          <p className="comment-compose-hint">
-            Tus comentarios serán compartidos con el equipo de forma anónima
-          </p>
-          <div className="comment-compose-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button
-              className="btn-primary"
-              disabled={enviando || !texto.trim()}
-              onClick={handleEnviar}
-            >
-              <Send size={16} />
-              {enviando ? "Enviando..." : "Enviar"}
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-function CreateProyectoModal({ eventoId, onCreado, onClose }) {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    nombreEquipo: "",
-    descripcion: "",
-    tipoCategoria: "",
+  await onSubmit({
+    texto,
   });
 
-  const [miembros, setMiembros] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [competidoresSugeridos, setCompetidoresSugeridos] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchTerm.trim().length > 1) {
-        setIsSearching(true);
-        try {
-          const data = await getCompetidores(); 
-          const filtrados = data.filter(u => 
-            u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            u.email.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-          setCompetidoresSugeridos(filtrados);
-        } catch (error) {
-          console.error("Error buscando competidores", error);
-        }
-      } else {
-        setCompetidoresSugeridos([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
-
-  const addMiembro = (competidor) => {
-    if (!miembros.find(m => m.id === competidor.id)) {
-      setMiembros([...miembros, competidor]);
-    }
-    setSearchTerm("");
-    setCompetidoresSugeridos([]);
-  };
-
-  const removeMiembro = (id) => {
-    setMiembros(miembros.filter(m => m.id !== id));
-  };
-
-    const [submitting, setSubmitting] = useState(false);
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      if (submitting) return;
-
-      try {
-        setSubmitting(true);
-
-        const nuevoProyecto = await createProyectoConEquipo({
-          nombre: formData.nombre,
-          descripcion: formData.descripcion,
-          tipoCategoria: formData.tipoCategoria,
-          nombreEquipo: formData.nombreEquipo,
-          miembrosEmails: miembros.map(m => m.email),
-          eventoId: eventoId
-        });
-
-        onCreado(nuevoProyecto);
-        onClose();
-
-      } catch (err) {
-        alert("Error: " + err.message);
-      } finally {
-        setSubmitting(false);
-      }
-    };
-
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  onClose();
+  }
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Crear Nuevo Proyecto</h2>
-        </div>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            <div className="form-group">
-              <label>Nombre del Proyecto *</label>
-                <input 
-                name="nombre" 
-                className="input-field" 
-                placeholder="Ej: AI Health Monitor"
-                value={formData.nombre}
-                onChange={handleChange}
-                required 
-              />
+    <div className="project-modal-backdrop">
+      <form className="project-modal" onSubmit={submit}>
+        <h2>Añadir comentario</h2>
+        <p>
+          Añade feedback para el proyecto <strong>{proyecto.nombre}</strong>.
+        </p>
 
-            </div>
-
-            <div className="form-group">
-              <label>Nombre del Equipo *</label>
-              <input 
-                name="nombreEquipo"
-                className="input-field" 
-                placeholder="Ej: Tech Innovators"
-                value={formData.nombreEquipo}
-                onChange={handleChange}
-                required 
-              />
-
-            </div>
-
-            <div className="form-group">
-              <label>Descripción</label>
-              <textarea 
-                name="descripcion" 
-                className="textarea-field" 
-                placeholder="Describe el proyecto..."
-                value={formData.descripcion}
-                onChange={handleChange}
-                rows="3"
-              />
-
-            </div>
-
-            <div className="form-group">
-              <label>Miembros del Equipo *</label>
-              <div className="user-search-container">
-                <input 
-                  className="input-field" 
-                  placeholder="Buscar competidor por nombre o correo..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoComplete="off"
-                />
-                
-                {competidoresSugeridos.length > 0 && (
-                  <div className="user-results-dropdown">
-                    {competidoresSugeridos.map((u) => (
-                      <div 
-                        key={u.id} 
-                        className="user-result-item" 
-                        onClick={() => addMiembro(u)}
-                      >
-                        <span className="user-result-name">{u.nombre}</span>
-                        <span className="user-result-email">{u.email}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {searchTerm.length > 1 && competidoresSugeridos.length === 0 && (
-                  <div className="user-results-dropdown">
-                    <div className="no-results">No se encontraron competidores</div>
-                  </div>
-                )}
-              </div>
-
-              <div className="tags-container">
-                {miembros.map((m) => (
-                  <span key={m.id} className="tag">
-                    {m.nombre} 
-                    <button type="button" onClick={() => removeMiembro(m.id)}>×</button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Categoría *</label>
-              <select 
-                name="tipoCategoria" 
-                className="select-field" 
-                required 
-                value={formData.tipoCategoria}
-                onChange={handleChange}
+        {relaciones.length === 0 ? (
+          <div className="project-feedback error-box">
+            Este proyecto no está asignado a ninguna votación. Primero asígnalo a una votación.
+          </div>
+        ) : (
+          <>
+            <label className="project-field">
+              <span>Votación</span>
+              <select
+                value={votacionProyectoId}
+                onChange={(e) => setVotacionProyectoId(e.target.value)}
+                required
               >
-                <option value="">Seleccionar categoría</option>
-                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                {relaciones.map((relacion) => (
+                  <option key={relacion.id} value={relacion.id}>
+                    {relacion.votacion?.tipo} + {relacion.votacion?.modalidad}
+                  </option>
+                ))}
               </select>
-            </div>
-          </div>
+            </label>
 
-          <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? "Creando..." : "Crear Proyecto"}
-            </button>
+            <label className="project-field">
+              <span>Comentario</span>
+              <textarea
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Escribe un comentario o feedback..."
+                rows="5"
+                required
+              />
+            </label>
+          </>
+        )}
 
-          </div>
-        </form>
-      </div>
+        <div className="project-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onClose}>
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            className="primary-btn"
+            disabled={!texto.trim()}
+          >
+            Guardar comentario
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
 
+
+
+function ProjectsScreen() {
+  const { eventoId } = useParams();
+  const navigate = useNavigate();
+
+  const [proyectos, setProyectos] = useState([]);
+  const [eventos, setEventos] = useState([]);
+  const [equipos, setEquipos] = useState([]);
+  const [asignacionesPorEquipo, setAsignacionesPorEquipo] = useState({});
+  const [votacionesPorProyecto, setVotacionesPorProyecto] = useState({});
+  const [search, setSearch] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState(eventoId || "TODOS");
+  const [selectedStatus, setSelectedStatus] = useState("TODOS");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [commentProject, setCommentProject] = useState(null);
+
+  const puedeGestionar = esOrganizador();
+  const desdeEvento = Boolean(eventoId);
+
+  async function handleCreateComment({ texto }) {
+  if (!commentProject) return;
+
+  await crearComentario(commentProject.id, texto.trim());
+
+  await load();
+  }
+
+  async function load() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [eventosData, equiposData, proyectosData] = await Promise.all([
+        getEventos().catch(() => []),
+        getEquipos().catch(() => []),
+        eventoId ? getProyectosByEvento(eventoId).catch(() => []) : getProyectos().catch(() => []),
+      ]);
+
+      setEventos(eventosData || []);
+      setEquipos(equiposData || []);
+      setProyectos(proyectosData || []);
+
+      const asignacionesEquipo = {};
+
+      await Promise.all(
+        (eventosData || []).map(async (evento) => {
+          const asignaciones = await getAsignacionesCompetidorEvento(evento.id).catch(() => []);
+
+          asignaciones.forEach((asignacion) => {
+            const equipoId = asignacion.equipo?.id;
+            if (!equipoId) return;
+
+            if (!asignacionesEquipo[equipoId]) {
+              asignacionesEquipo[equipoId] = [];
+            }
+
+            asignacionesEquipo[equipoId].push(asignacion);
+          });
+        })
+      );
+
+      setAsignacionesPorEquipo(asignacionesEquipo);
+
+      const votacionesProyectoMap = {};
+
+      for (const evento of eventosData || []) {
+        const votaciones = await getVotacionesByEvento(evento.id).catch(() => []);
+
+        for (const votacion of votaciones || []) {
+          const relaciones = await getVotacionProyectosByVotacion(votacion.id).catch(() => []);
+
+          relaciones.forEach((relacion) => {
+            const proyectoId = relacion.proyecto?.id;
+            if (!proyectoId) return;
+
+            if (!votacionesProyectoMap[proyectoId]) {
+              votacionesProyectoMap[proyectoId] = [];
+            }
+
+            votacionesProyectoMap[proyectoId].push({
+              ...relacion,
+              votacion,
+            });
+          });
+        }
+      }
+
+      setVotacionesPorProyecto(votacionesProyectoMap);
+    } catch (err) {
+      setError(err.message || "No se pudieron cargar los proyectos.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, [eventoId]);
+
+  const projectsWithData = useMemo(() => {
+    return proyectos.map((proyecto) => {
+      const equipo = equipos.find((item) => String(item.proyecto?.id) === String(proyecto.id));
+      const evento = eventos.find((item) => String(item.id) === String(getProjectEventoId(proyecto)));
+      const asignaciones = equipo ? asignacionesPorEquipo[equipo.id] || [] : [];
+      const votaciones = votacionesPorProyecto[proyecto.id] || [];
+
+      return {
+        ...proyecto,
+        equipo,
+        evento: proyecto.evento || evento,
+        miembrosCount: asignaciones.length,
+        votaciones,
+        asignado: votaciones.length > 0,
+      };
+    });
+  }, [proyectos, equipos, eventos, asignacionesPorEquipo, votacionesPorProyecto]);
+
+  const filteredProjects = useMemo(() => {
+    return projectsWithData.filter((proyecto) => {
+      const text = [
+        proyecto.nombre,
+        proyecto.descripcion,
+        proyecto.tipoCategoria,
+        proyecto.equipo?.nombre,
+        proyecto.evento?.nombre,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch = text.includes(search.toLowerCase());
+      const matchesEvent =
+        selectedEvent === "TODOS" ||
+        String(getProjectEventoId(proyecto)) === String(selectedEvent);
+      const matchesStatus =
+        selectedStatus === "TODOS" ||
+        (selectedStatus === "ASIGNADO" && proyecto.asignado) ||
+        (selectedStatus === "NO_ASIGNADO" && !proyecto.asignado);
+
+      return matchesSearch && matchesEvent && matchesStatus;
+    });
+  }, [projectsWithData, search, selectedEvent, selectedStatus]);
+
+  const stats = useMemo(() => {
+    return {
+      total: projectsWithData.length,
+      assigned: projectsWithData.filter((p) => p.asignado).length,
+      unassigned: projectsWithData.filter((p) => !p.asignado).length,
+      teams: projectsWithData.filter((p) => p.equipo).length,
+    };
+  }, [projectsWithData]);
+
+  async function handleAssign({ votacionId }) {
+    if (!selectedProject || !votacionId) return;
+
+    await asignarProyectoAVotacion(votacionId, selectedProject.id);
+    await load();
+  }
+
+  return (
+    <main className="projects-page projects-management-page">
+      <header className="projects-header">
+        <div>
+          <h1>Gestión de Proyectos</h1>
+          <p>
+            {desdeEvento
+              ? "Proyectos participantes del evento seleccionado."
+              : "Administra todos los proyectos del sistema."}
+          </p>
+        </div>
+
+        {puedeGestionar ? (
+          <button
+            className="primary-btn"
+            onClick={() => navigate("/usuarios")}
+          >
+            <Plus size={17} />
+            Crear desde Equipo
+          </button>
+        ) : null}
+      </header>
+
+      <section className="projects-stats-grid">
+        <div className="project-stat-card">
+          <FolderKanban size={22} />
+          <strong>{stats.total}</strong>
+          <span>Total proyectos</span>
+        </div>
+        <div className="project-stat-card">
+          <CheckCircle size={22} />
+          <strong>{stats.assigned}</strong>
+          <span>Asignados</span>
+        </div>
+        <div className="project-stat-card">
+          <Vote size={22} />
+          <strong>{stats.unassigned}</strong>
+          <span>Sin votación</span>
+        </div>
+        <div className="project-stat-card">
+          <Users size={22} />
+          <strong>{stats.teams}</strong>
+          <span>Con equipo</span>
+        </div>
+      </section>
+
+      <section className="projects-card">
+        <div className="projects-toolbar">
+          <div className="projects-search">
+            <Search size={17} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar proyecto, equipo, evento o categoría..."
+            />
+          </div>
+
+          {!desdeEvento ? (
+            <select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)}>
+              <option value="TODOS">Todos los eventos</option>
+              {eventos.map((evento) => (
+                <option key={evento.id} value={evento.id}>
+                  {evento.nombre}
+                </option>
+              ))}
+            </select>
+          ) : null}
+
+          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
+            <option value="TODOS">Todos los estados</option>
+            <option value="ASIGNADO">Asignado a votación</option>
+            <option value="NO_ASIGNADO">Sin votación</option>
+          </select>
+        </div>
+
+        {loading ? (
+          <div className="project-feedback">Cargando proyectos...</div>
+        ) : error ? (
+          <div className="project-feedback error-box">{error}</div>
+        ) : filteredProjects.length === 0 ? (
+          <div className="project-feedback">No hay proyectos que coincidan con la búsqueda.</div>
+        ) : (
+          <div className="projects-table-wrapper">
+            <table className="projects-table">
+              <thead>
+                <tr>
+                  <th>Proyecto</th>
+                  <th>Evento</th>
+                  <th>Equipo</th>
+                  <th>Miembros</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                  {filteredProjects.map((proyecto) => (
+                  <tr
+                    key={proyecto.id}
+                    className="project-clickable-row"
+                    onClick={() =>
+                      navigate(
+                        proyecto.evento?.id
+                          ? `/eventos/${proyecto.evento.id}/proyectos/${proyecto.id}`
+                          : `/proyectos/${proyecto.id}`
+                      )
+                    }
+                  >
+                  <td>
+                    <div className="project-name-cell">
+                      <div className="project-table-avatar">
+                      {proyecto.nombre?.charAt(0)?.toUpperCase() || "P"}
+                      </div>
+
+                      <div>
+                        <strong>{proyecto.nombre}</strong>
+                        <span>{getCategoriaLabel(proyecto.tipoCategoria)}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="project-event-cell">
+                      <strong>{proyecto.evento?.nombre || "Sin evento"}</strong>
+                      <span>{formatDate(getEventStart(proyecto.evento))}</span>
+                    </div>
+                  </td>
+
+                  <td>{proyecto.equipo?.nombre || "Sin equipo"}</td>
+
+                  <td>
+                    <span className="project-members-pill">
+                      <Users size={14} />
+                      {proyecto.miembrosCount}
+                   </span>
+                  </td>
+
+                  <td>
+                    {proyecto.asignado ? (
+                      <span className="project-status-chip assigned">
+                        Asignado
+                      </span>
+                    ) : (
+                      <span className="project-status-chip unassigned">
+                        No asignado
+                      </span>
+                    )}
+                  </td>
+
+  <td>
+    <div className="project-actions-cell">
+      {!proyecto.asignado && puedeGestionar ? (
+        <button
+          type="button"
+          className="project-assign-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedProject(proyecto);
+          }}
+        >
+          Asignar a votación
+        </button>
+      ) : null}
+
+      <button
+        type="button"
+        className="project-comment-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          setCommentProject(proyecto);
+        }}
+      >
+        <MessageCircle size={15} />
+        Comentar
+      </button>
+
+      <button
+        type="button"
+        className="project-view-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(
+            proyecto.evento?.id
+              ? `/eventos/${proyecto.evento.id}/proyectos/${proyecto.id}`
+              : `/proyectos/${proyecto.id}`
+          );
+        }}
+      >
+        Ver
+        <ArrowRight size={15} />
+      </button>
+    </div>
+  </td>
+</tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <AssignProjectModal
+        open={Boolean(selectedProject)}
+        proyecto={selectedProject}
+        eventos={eventos}
+        onClose={() => setSelectedProject(null)}
+        onSubmit={handleAssign}
+      />
+      <CommentProjectModal
+        open={Boolean(commentProject)}
+        proyecto={commentProject}
+        relaciones={commentProject ? votacionesPorProyecto[commentProject.id] || [] : []}
+        onClose={() => setCommentProject(null)}
+        onSubmit={handleCreateComment}
+/>
+    </main>
+  );
+}
 
 export default ProjectsScreen;
