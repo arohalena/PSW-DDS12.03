@@ -5,9 +5,9 @@ import java.time.OffsetDateTime;
 
 public class FeriaInovacionEvento extends Evento {
     
-    public FeriaInovacionEvento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin){
+    public FeriaInovacionEvento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, boolean autoVotacion){
 
-        super(nombre, descripcion, codigoAccesoPublico, fecha_inicio, fecha_fin);
+        super(nombre, descripcion, codigoAccesoPublico, fecha_inicio, fecha_fin, autoVotacion);
 
     }
 

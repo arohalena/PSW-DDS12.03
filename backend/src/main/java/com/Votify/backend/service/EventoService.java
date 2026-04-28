@@ -37,7 +37,7 @@ public class EventoService extends GenericService<EventoMO> {
     }
 
     //Método para la creación de la factoría de evento
-    public EventoMO crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin) {
+    public EventoMO crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, boolean autoVotacion) {
 
         if (tipo == null || tipo.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se reconoce el tipo de evento deseado.");
@@ -66,15 +66,17 @@ public class EventoService extends GenericService<EventoMO> {
                     "No se reconoce el tipo de evento deseado.");
         };
 
-        Evento eventoDominio = creador.create(nombre.trim(), descripcion.trim(), codigo, fecha_inicio, fecha_fin);
+        Evento eventoDominio = creador.create(nombre.trim(), descripcion.trim(), codigo, fecha_inicio, fecha_fin, autoVotacion);
 
         EventoMO entidad = new EventoMO();
+        
         entidad.setNombre(eventoDominio.getNombre());
         entidad.setCodigoAccesoPublico(eventoDominio.getCodigoAccesoPublico());
         entidad.setDescripcion(eventoDominio.getDescripcion());
         entidad.setTipoEvento(eventoDominio.tipo());
         entidad.setFecha_inicio(eventoDominio.getFechaInicio());
         entidad.setFecha_fin(eventoDominio.getFechaFin());
+        entidad.setAutoVotacion(eventoDominio.isAutoVotacion());
 
         return eventoRepository.save(entidad);
     }
