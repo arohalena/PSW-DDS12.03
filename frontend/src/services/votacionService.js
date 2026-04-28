@@ -211,6 +211,7 @@ export async function cerrarVotacion(id) {
   }
   
   return r.json();
+}
 
 export async function votarProyectoPuntos(payload) {
   const response = await fetch(`${VOTOS_URL}/puntos`, {
