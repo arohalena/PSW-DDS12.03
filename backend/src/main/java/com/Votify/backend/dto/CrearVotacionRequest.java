@@ -13,7 +13,6 @@ public record CrearVotacionRequest (
     UUID eventoId,
     TipoVotacionMO tipo,
     ModalidadVotacionMO modalidad,
-    int maxSelecciones,
     OffsetDateTime inicio,
     OffsetDateTime fin,
     EstadoVotacionMO estado,

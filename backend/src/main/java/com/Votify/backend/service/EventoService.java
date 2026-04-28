@@ -37,7 +37,7 @@ public class EventoService extends GenericService<EventoMO> {
     }
 
     //Método para la creación de la factoría de evento
-    public EventoMO crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin) {
+    public EventoMO crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, int numProyectosPorVoto) {
 
         if (tipo == null || tipo.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se reconoce el tipo de evento deseado.");
@@ -66,7 +66,7 @@ public class EventoService extends GenericService<EventoMO> {
                     "No se reconoce el tipo de evento deseado.");
         };
 
-        Evento eventoDominio = creador.create(nombre.trim(), descripcion.trim(), codigo, fecha_inicio, fecha_fin);
+        Evento eventoDominio = creador.create(nombre.trim(), descripcion.trim(), codigo, fecha_inicio, fecha_fin, numProyectosPorVoto);
 
         EventoMO entidad = new EventoMO();
         entidad.setNombre(eventoDominio.getNombre());
@@ -75,6 +75,7 @@ public class EventoService extends GenericService<EventoMO> {
         entidad.setTipoEvento(eventoDominio.tipo());
         entidad.setFecha_inicio(eventoDominio.getFechaInicio());
         entidad.setFecha_fin(eventoDominio.getFechaFin());
+        entidad.setNumProyectosPorVoto(eventoDominio.getNumProyectosPorVoto());
 
         return eventoRepository.save(entidad);
     }
@@ -92,6 +93,10 @@ public class EventoService extends GenericService<EventoMO> {
         return eventoRepository.findByCodigoAccesoPublico(normalizarCodigo(codigo))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se ha encontrado ningún evento con ese código."));
+    }
+
+    public int getNumProyectosPorVoto(UUID eventoId){
+        return eventoRepository.getNumProyectosPorVotoByEvento(eventoId);
     }
 
     private String normalizarOCrearCodigo(String codigoAccesoPublico) {
