@@ -6,9 +6,9 @@ import com.Votify.backend.model.TipoEventoMO;
 
 public class HackathonEvento extends Evento {
     
-    public HackathonEvento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, int numProyectosPorVoto, boolean autoVotacion) {
+    public HackathonEvento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, boolean autoVotacion) {
 
-        super(nombre, descripcion, codigoAccesoPublico, fecha_inicio, fecha_fin, numProyectosPorVoto, autoVotacion);
+        super(nombre, descripcion, codigoAccesoPublico, fecha_inicio, fecha_fin, autoVotacion);
 
     }
 
