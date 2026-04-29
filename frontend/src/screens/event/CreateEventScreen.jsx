@@ -96,7 +96,6 @@ function CreateEventScreen() {
     usaCodigoAcceso: true,
     fecha_inicio: "",
     fecha_fin: "",
-    numProyectosPorVoto: "3",
     tipoVotacion: "Evaluación multicriterio",
     numeroCategorias: "1",
     mostrarResultadosTiempoReal: false,
@@ -141,18 +140,6 @@ function CreateEventScreen() {
       setSubmitting(true);
       setError("");
       setSuccess("");
-
-      await createEvento({
-
-        tipo: formData.tipo,
-        nombre: formData.nombre.trim(),
-        descripcion: formData.descripcion.trim(),
-        codigoAccesoPublico: formData.codigoAccesoPublico,
-        fecha_inicio: toOffsetDateTime(formData.fecha_inicio),
-        fecha_fin: toOffsetDateTime(formData.fecha_fin),
-        numProyectosPorVoto: parseInt(formData.numProyectosPorVoto, 10) || 3,
-
-      });
 
       setSuccess("Evento creado correctamente.");
       setTimeout(() => navigate("/eventos"), 800);
@@ -495,22 +482,6 @@ function CreateEventScreen() {
               </div>
             </label>
           </div>
-
-          <h2> Configuración de Votación </h2>
-
-          <label className="event-field">
-            <span>Límite de proyectos por voto</span>
-            <input 
-              type="number" 
-              name="numProyectosPorVoto"
-              value={formData.numProyectosPorVoto} 
-              onChange={handleChange}
-              min="1"
-              />
-          </label>
-          <p className="field-help-text section-note">
-            Número de proyectos máximo que cada usuario puede evaluar.
-          </p>
         </section>
 
         <section className="event-form-card">
