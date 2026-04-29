@@ -44,27 +44,46 @@ public class VotacionProyectoService extends GenericService<VotacionProyectoMO>{
         
     }
 
-    public VotacionProyectoMO crear(VotacionProyectoMO votacionProyecto){
-        if(votacionProyecto.getVotacion() == null || votacionProyecto.getVotacion().getId() == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación es requerida");
-        }
-
-        if(votacionProyecto.getProyecto() == null || votacionProyecto.getProyecto().getId() == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El proyecto es requerido");
-        }
-
-        VotacionMO votacion = votacionRepository.findById(votacionProyecto.getVotacion().getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada"));
-        ProyectoMO proyecto = proyectoRepository.findById(votacionProyecto.getProyecto().getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
-
-
-        if (!proyecto.getEvento().getId().equals(votacion.getEvento().getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"El proyecto no pertenece al mismo evento que la votación.");
-        }
-
-        VotacionProyectoMO nuevo = new VotacionProyectoMO();
-        nuevo.setVotacion(votacion);
-        nuevo.setProyecto(proyecto);
-        return votacionProyectoRepository.save(nuevo);
-
+   public VotacionProyectoMO crear(VotacionProyectoMO votacionProyecto) {
+    if (votacionProyecto.getVotacion() == null || votacionProyecto.getVotacion().getId() == null) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación es requerida");
     }
+
+    if (votacionProyecto.getProyecto() == null || votacionProyecto.getProyecto().getId() == null) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El proyecto es requerido");
+    }
+
+    VotacionMO votacion = votacionRepository.findById(votacionProyecto.getVotacion().getId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada"));
+
+    ProyectoMO proyecto = proyectoRepository.findById(votacionProyecto.getProyecto().getId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
+
+    if (proyecto.getEvento() == null) {
+        proyecto.setEvento(votacion.getEvento());
+        proyectoRepository.save(proyecto);
+    }
+
+    if (!proyecto.getEvento().getId().equals(votacion.getEvento().getId())) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "El proyecto no pertenece al mismo evento que la votación."
+        );
+    }
+
+    if (votacionProyectoRepository.existsByVotacion_IdAndProyecto_Id(votacion.getId(), proyecto.getId())) {
+        throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "El proyecto ya está asignado a esta votación."
+        );
+    }
+
+    VotacionProyectoMO nuevo = new VotacionProyectoMO();
+    nuevo.setVotacion(votacion);
+    nuevo.setProyecto(proyecto);
+
+    return votacionProyectoRepository.save(nuevo);
+}
+
+
 }

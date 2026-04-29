@@ -248,3 +248,25 @@ export async function votarProyectoPuntos(payload) {
 
   return response.json();
 }
+
+export async function getVotacionProyectosByProyecto(proyectoId) {
+  const response = await fetch(`${VOTACION_PROYECTOS_URL}/proyecto/${proyectoId}`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudieron cargar las votaciones del proyecto.");
+  }
+
+  return response.json();
+}
+
+export async function deleteVotacionProyecto(id) {
+  const response = await fetch(`${VOTACION_PROYECTOS_URL}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo quitar el proyecto de la votación.");
+  }
+}

@@ -3,6 +3,7 @@ package com.Votify.backend.model;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,14 +22,16 @@ import lombok.EqualsAndHashCode;
 public class EquipoMO extends ModeloBaseMO {
 
     @OneToOne
-    @JoinColumn(name = "proyecto_id", nullable = false)
+    @JoinColumn(name = "proyecto_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "equipo"})
     private ProyectoMO proyecto;
 
     @Column(nullable = false)
     private String nombre;
 
     @ManyToOne
-    @JoinColumn(name = "evento_id", nullable = false)
+    @JoinColumn(name = "evento_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private EventoMO evento;
     
     @JsonIgnore
