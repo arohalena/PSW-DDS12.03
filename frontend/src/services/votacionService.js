@@ -12,6 +12,7 @@ export async function getVotacionesByEvento(eventoId) {
 export async function createVotacion(votacion) {
   const payload = {
     eventoId: votacion.eventoId || votacion.evento?.id,
+    nombre: votacion.nombre,
     tipo: votacion.tipo,
     modalidad: votacion.modalidad,
     estado: votacion.estado || "ABIERTA",
@@ -111,45 +112,6 @@ export async function getCriteriosByVotacion(votacionId) {
   return response.json();
 }
 
-export async function votarProyectoSimple(votacionProyectoId, anonTokenHash, comentario, usuarioId) {
-  const response = await fetch(`${VOTOS_URL}/simple`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      votacionProyectoId,
-      anonTokenHash,
-      usuarioId,
-      comentario,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo registrar el voto");
-  }
-
-  return response.json();
-}
-
-export async function votarProyectoMulticriterio(payload) {
-  const response = await fetch(`${VOTOS_URL}/multicriterio`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo registrar la evaluación");
-  }
-
-  return response.json();
-}
-
 export async function getVotantesPorEvento(eventoId) {
   const response = await fetch(`${VOTOS_URL}/evento/${eventoId}/votantes`);
   if (!response.ok) {
@@ -213,6 +175,64 @@ export async function cerrarVotacion(id) {
   return r.json();
 }
 
+export async function deleteVotacion(id) {
+  const response = await fetch(`${VOTACIONES_URL}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo eliminar la votación");
+  }
+}
+
+async function extraerMensajeError(response, fallback) {
+  const texto = await response.text();
+  try {
+    const json = JSON.parse(texto);
+    return json.message || json.error || fallback;
+  } catch {
+    return texto || fallback;
+  }
+}
+
+export async function votarProyectoSimple(votacionProyectoId, anonTokenHash, comentario, usuarioId) {
+  const response = await fetch(`${VOTOS_URL}/simple`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      votacionProyectoId,
+      anonTokenHash,
+      usuarioId,
+      comentario,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await extraerMensajeError(response, "No se pudo registrar el voto"));
+  }
+
+  return response.json();
+}
+
+export async function votarProyectoMulticriterio(payload) {
+  const response = await fetch(`${VOTOS_URL}/multicriterio`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await extraerMensajeError(response, "No se pudo registrar la evaluación"));
+  }
+
+  return response.json();
+}
+
 export async function votarProyectoPuntos(payload) {
   const response = await fetch(`${VOTOS_URL}/puntos`, {
     method: "POST",
@@ -223,8 +243,7 @@ export async function votarProyectoPuntos(payload) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo registrar el voto por puntos");
+    throw new Error(await extraerMensajeError(response, "No se pudo registrar el voto por puntos"));
   }
 
   return response.json();

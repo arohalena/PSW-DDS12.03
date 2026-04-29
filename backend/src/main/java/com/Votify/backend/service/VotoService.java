@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -18,7 +19,9 @@ import com.Votify.backend.dto.EmitirEvaluacionRequest;
 import com.Votify.backend.dto.EmitirVotoSimpleRequest;
 import com.Votify.backend.dto.PuntuacionCriterioRequest;
 import com.Votify.backend.model.ComentarioMO;
+import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.model.CriterioEvaluacionMO;
+import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.PuntuacionCriterioMO;
@@ -27,7 +30,10 @@ import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoCriterioMO;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.ComentarioRepository;
+import com.Votify.backend.repository.CompetidorEventoRepository;
+import com.Votify.backend.repository.CompetidorRepository;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
+import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.PuntuacionCriterioRepository;
 import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
@@ -54,6 +60,9 @@ public class VotoService extends GenericService<VotoMO> {
     private final ComentarioRepository comentarioRepository;
 
     private final UsuarioRepository usuarioRepository;
+    private final CompetidorRepository competidorRepository;
+    private final EquipoRepository equipoRepository;
+    private final CompetidorEventoRepository competidorEventoRepository;
 
     @Override
     protected JpaRepository<VotoMO, UUID> getRepository() {
@@ -89,6 +98,7 @@ public class VotoService extends GenericService<VotoMO> {
 
         UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
         validarEstadoYFechas(votacion);
+        validarAutoVotacion(votacion, votacionProyecto, request.usuarioId());
         validarMaximoYDuplicado(votacion, votacionProyecto, request.anonTokenHash());
 
         VotoMO voto = new VotoMO();
@@ -135,6 +145,7 @@ public class VotoService extends GenericService<VotoMO> {
 
         UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
         validarEstadoYFechas(votacion);
+        validarAutoVotacion(votacion, votacionProyecto, request.usuarioId());
         validarMaximoYDuplicado(votacion, votacionProyecto, request.anonTokenHash());
 
         List<CriterioEvaluacionMO> criterios = criterioEvaluacionRepository
@@ -325,6 +336,33 @@ public class VotoService extends GenericService<VotoMO> {
         }
     }
 
+    private void validarAutoVotacion(VotacionMO votacion, VotacionProyectoMO votacionProyecto, UUID usuarioId) {
+        if (votacion.getEvento() == null || votacion.getEvento().isAutoVotacion()) {
+            return;
+        }
+        if (usuarioId == null) {
+            return;
+        }
+
+        Optional<CompetidorMO> competidorOpt = competidorRepository.findByUsuarioId(usuarioId);
+        if (competidorOpt.isEmpty()) {
+            return;
+        }
+
+        EquipoMO equipo = equipoRepository.findByProyecto_Id(votacionProyecto.getProyecto().getId());
+        if (equipo == null) {
+            return;
+        }
+
+        boolean esMiembro = competidorEventoRepository
+            .existsByCompetidor_IdAndEquipo_Id(competidorOpt.get().getId(), equipo.getId());
+
+        if (esMiembro) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "No puedes votar a tu propio proyecto en este evento.");
+        }
+    }
+
     public long contarVotantesUnicos(UUID eventoId) {
 
         return votoRepository.countDistinctVotantesByEventoId(eventoId);
@@ -354,6 +392,7 @@ public class VotoService extends GenericService<VotoMO> {
 
         UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
         validarEstadoYFechas(votacion);
+        validarAutoVotacion(votacion, votacionProyecto, request.usuarioId());
         validarMaximoYDuplicado(votacion, votacionProyecto, request.anonTokenHash());
         VotoMO voto = new VotoMO();
         voto.setVotacionProyecto(votacionProyecto);
@@ -377,22 +416,22 @@ public class VotoService extends GenericService<VotoMO> {
     }
 
     private UsuarioMO validarJuradoSiHaceFalta(VotacionMO votacion, UUID usuarioId) {
-    if (votacion.getTipo() != TipoVotacionMO.JURADO) {
-        return null;
+        if (votacion.getTipo() != TipoVotacionMO.JURADO) {
+            return null;
+        }
+
+        if (usuarioId == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
+        }
+
+        UsuarioMO usuario = usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario no encontrado."));
+
+        if (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el jurado puede votar en esta votación.");
+        }
+
+        return usuario;
     }
-
-    if (usuarioId == null) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
-    }
-
-    UsuarioMO usuario = usuarioRepository.findById(usuarioId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario no encontrado."));
-
-    if (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el jurado puede votar en esta votación.");
-    }
-
-    return usuario;
-}
 
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Users, Plus, Trash2, SlidersHorizontal, Vote, CheckCircle } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getEventos } from "../../services/eventoService";
 import { getProyectosByEvento } from "../../services/proyectoService";
 import { getEquipos } from "../../services/equipoService";
@@ -30,12 +30,16 @@ function PopularVotingScreen() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const params = useParams();
   const [eventos, setEventos] = useState([]);
-  const [eventoId, setEventoId] = useState(location.state?.eventoId || "");
-
+  const [eventoId, setEventoId] = useState(
+    params.eventoId || location.state?.eventoId || ""
+  );
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
+
+  const [todasLasVotaciones, setTodasLasVotaciones] = useState([]);
 
   const [votacionPopularSimple, setVotacionPopularSimple] = useState(null);
   const [votacionPopularMulticriterio, setVotacionPopularMulticriterio] = useState(null);
@@ -149,6 +153,7 @@ function PopularVotingScreen() {
         setVotacionPopularSimple(votacionSimple);
         setVotacionPopularMulticriterio(votacionMulticriterio);
         setVotacionActiva(activa);
+        setTodasLasVotaciones(votacionesData || []);
         setVotacionProyectos(votacionProyectosData);
         setVoteCounts(counts);
         setCriteriosExistentes(criteriosData || []);
@@ -297,7 +302,14 @@ function PopularVotingScreen() {
       });
 
       setVotacionPopularSimple(nueva);
+      setTodasLasVotaciones((prev) => [...prev, nueva]);
+      setFechaInicio(ahoraLocal());
+      setFechaFin(ahoraMas7DiasLocal());
+
       setVotacionPopularMulticriterio(null);
+      setTodasLasVotaciones((prev) => [...prev, nueva]);
+      setFechaInicio(ahoraLocal());
+      setFechaFin(ahoraMas7DiasLocal());
 
       await recargarDatosEvento(nueva);
       setSuccess("Votación popular simple creada correctamente.");
@@ -364,6 +376,10 @@ function PopularVotingScreen() {
 
       setVotacionPopularSimple(null);
       setVotacionPopularMulticriterio(nueva);
+      setTodasLasVotaciones((prev) => [...prev, nueva]);
+      setFechaInicio(ahoraLocal());
+      setFechaFin(ahoraMas7DiasLocal());
+
       await recargarDatosEvento(nueva);
       setSuccess("Votación popular multicriterio creada correctamente.");
     } catch (err) {
@@ -419,6 +435,11 @@ function PopularVotingScreen() {
           accion === "reanudar" ? "reanudada" : "cerrada"
         } correctamente.`
       );
+
+      setTodasLasVotaciones((prev) =>
+        prev.map((v) => (v.id === actualizada.id ? actualizada : v))
+      );
+
     } catch (err) {
       setError(err.message);
     }
@@ -517,9 +538,43 @@ function PopularVotingScreen() {
         </section>
       )}
 
-      {renderResumenVotacion()}
+      {todasLasVotaciones.length > 0 && (
+        <section className="detail-main-card">
+          <h2>Votaciones del evento</h2>
+          <div className="voting-project-list">
+            {todasLasVotaciones.map((v) => {
+              const formatear = (iso) => (iso ? new Date(iso).toLocaleString() : "—");
+              return (
+                <div key={v.id} className="voting-project-card">
+                  <div className="project-card-content">
+                    <div className="project-title-row">
+                      <strong>{v.tipo} + {v.modalidad}</strong>
+                      <span className="project-tag">{v.estadoActual || "—"}</span>
+                    </div>
+                    <p>
+                      <strong>Franja:</strong> {formatear(v.inicio)} → {formatear(v.fin)}
+                    </p>
+                    {puedeGestionar && (
+                      <div className="assign-button-row">
+                        <button
+                          className="secondary-btn"
+                          onClick={() =>
+                            navigate(`/eventos/${eventoId}/votaciones/${v.id}/editar`)
+                          }
+                        >
+                          Editar votación
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
-      {!votacionActiva && puedeGestionar && (
+      {puedeGestionar && (
         <section className="detail-main-card">
           <h2>Crear votación popular</h2>
           <p>Elige si la votación popular del evento será simple o multicriterio.</p>
@@ -781,7 +836,10 @@ function PopularVotingScreen() {
               <div key={proyecto.id} className="voting-project-card">
                 <button
                   className="project-card-button"
-                  onClick={() => navigate(`/votar/${eventoId}/proyecto/${proyecto.id}`)}
+                  onClick={() => {
+                    if (!votacionActiva || !proyecto.votacionProyectoId) return;
+                    navigate(`/eventos/${eventoId}/votaciones/${votacionActiva.id}/proyectos/${proyecto.id}/votar`);
+                  }}
                 >
                   <div className="project-card-content">
                     <div className="project-title-row">

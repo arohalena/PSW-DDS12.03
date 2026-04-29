@@ -36,6 +36,9 @@ public class EventoMO extends ModeloBaseMO {
     @Column(nullable = false)
     private String descripcion;
 
+    @Column(name = "auto_votacion", nullable = false)
+    private boolean autoVotacion = false;
+    
     @Column(nullable = false)
     private int numProyectosPorVoto;
 

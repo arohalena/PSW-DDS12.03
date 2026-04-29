@@ -43,6 +43,9 @@ public class VotacionMO extends ModeloBaseMO {
     @Column
     private OffsetDateTime fin;
 
+    @Column(nullable = false)
+    private String nombre;
+
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
     private EstadoVotacionMO estado;

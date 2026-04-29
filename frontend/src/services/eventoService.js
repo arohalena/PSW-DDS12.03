@@ -49,3 +49,14 @@ export async function getEventoByCodigo(codigo) {
 
   return response.json();
 }
+
+export async function deleteEvento(id) {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo eliminar el evento");
+  }
+}

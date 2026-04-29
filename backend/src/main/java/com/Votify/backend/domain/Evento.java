@@ -1,7 +1,8 @@
 package com.Votify.backend.domain;
 
-import com.Votify.backend.model.TipoEventoMO;
 import java.time.OffsetDateTime;
+
+import com.Votify.backend.model.TipoEventoMO;
 
 public abstract class Evento {
     
@@ -11,15 +12,15 @@ public abstract class Evento {
     protected OffsetDateTime fecha_inicio;
     protected OffsetDateTime fecha_fin;
     protected int numProyectosPorVoto;
+    protected boolean autoVotacion;
 
-    public Evento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, int numProyectosPorVoto){
+    public Evento(String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, int numProyectosPorVoto, boolean autoVotacion){
 
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.codigoAccesoPublico = codigoAccesoPublico;
         this.fecha_inicio = fecha_inicio;
         this.fecha_fin = fecha_fin;
-        this.numProyectosPorVoto = numProyectosPorVoto;
 
     }
 
@@ -31,6 +32,6 @@ public abstract class Evento {
     public OffsetDateTime getFechaInicio() { return fecha_inicio; }
     public OffsetDateTime getFechaFin() { return fecha_fin; }
     public int getNumProyectosPorVoto() { return numProyectosPorVoto; }
-
+    public boolean isAutoVotacion() {return autoVotacion;}
 
 }
