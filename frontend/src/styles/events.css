@@ -360,8 +360,6 @@
   padding: 1rem;
 }
 
-/* eliminada .compact-checkbox — ya no se usa */
-
 .event-checkbox-row input[type="checkbox"] {
   margin-top: 0.2rem;
   flex-shrink: 0;
@@ -408,8 +406,6 @@
     flex-direction: column;
   }
 }
-
-/* Mockup events redesign */
 
 .events-mock-page,
 .create-event-mock-page {
@@ -498,8 +494,6 @@
   background: #eef2ff;
   color: #4f46e5;
 }
-
-/* private access modal */
 
 .event-access-backdrop {
   position: fixed;
@@ -700,7 +694,6 @@
   margin-top: 1.4rem;
 }
 
-/* create event mock */
 
 .create-event-layout {
   display: grid;
@@ -1939,9 +1932,9 @@
   transform: translateY(-1px);
 }
 
-/* =========================
+/* 
    TARJETAS DE VOTACIÓN EN EVENT DETAIL
-========================= */
+ */
 
 .event-detail-tabs {
   display: grid;
@@ -2116,9 +2109,7 @@
   transform: none;
 }
 
-/* =========================
-   RESPONSIVE
-========================= */
+
 
 @media (max-width: 820px) {
   .event-grid.two-columns,
