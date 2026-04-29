@@ -96,6 +96,7 @@ public class EventoService extends GenericService<EventoMO> {
                         "No se ha encontrado ningún evento con ese código."));
     }
 
+
     private String normalizarOCrearCodigo(String codigoAccesoPublico) {
         if (codigoAccesoPublico == null || codigoAccesoPublico.isBlank()) {
         return null;

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.Votify.backend.dto.CrearEventoPeticion;
+import com.Votify.backend.dto.CrearEventoRequest;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.service.EventoService;
 import com.Votify.backend.service.GenericService;
@@ -31,7 +31,7 @@ public class EventoController extends GenericController<EventoMO>{
 
     //Uso de DTO a la hora de crear el evento mediante el controlador de REST para simplificar el paso de parámetros
     @PostMapping("/crear")
-    public EventoMO crear(@RequestBody CrearEventoPeticion body){
+    public EventoMO crear(@RequestBody CrearEventoRequest body){
 
         return eventoService.crear(
 

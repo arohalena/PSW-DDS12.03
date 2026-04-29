@@ -1,7 +1,8 @@
 package com.Votify.backend.domain;
 
-import com.Votify.backend.model.TipoEventoMO;
 import java.time.OffsetDateTime;
+
+import com.Votify.backend.model.TipoEventoMO;
 
 public class FeriaInovacionEvento extends Evento {
     

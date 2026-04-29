@@ -50,6 +50,7 @@ function PopularVotingScreen() {
 
   const [loading, setLoading] = useState(true);
   const [loadingEvento, setLoadingEvento] = useState(false);
+  
   const [creatingVoting, setCreatingVoting] = useState(false);
   const [assigningProjectId, setAssigningProjectId] = useState("");
   const [error, setError] = useState("");

@@ -96,6 +96,11 @@ function CreateEventScreen() {
     usaCodigoAcceso: true,
     fecha_inicio: "",
     fecha_fin: "",
+    tipoVotacion: "Evaluación multicriterio",
+    numeroCategorias: "1",
+    mostrarResultadosTiempoReal: false,
+    permitirFeedbackPublico: true,
+    permitirVotacionAnonima: false,
     autoVotacion: false,
   });
 
@@ -132,10 +137,19 @@ function CreateEventScreen() {
 
   async function handleRegenerateCode() {
     try {
+      setSubmitting(true);
+      setError("");
+      setSuccess("");
+
+      setSuccess("Evento creado correctamente.");
+      setTimeout(() => navigate("/eventos"), 800);
+    } catch (err) {
+      setError("No se pudo generar un código nuevo.");
+      setError(err.message || "No se pudo crear el evento");
+    } finally {
+      setSubmitting(false);
       const codigo = await generarCodigoEvento();
       setFormData((prev) => ({ ...prev, codigoAccesoPublico: codigo }));
-    } catch {
-      setError("No se pudo generar un código nuevo.");
     }
   }
 
