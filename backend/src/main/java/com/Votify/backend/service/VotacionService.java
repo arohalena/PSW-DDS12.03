@@ -31,7 +31,7 @@ public class VotacionService extends GenericService<VotacionMO> {
     private final VotacionRepository votacionRepository;
     private final EventoRepository eventoRepository;
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
-    private EventoService eventoService;
+    private final EventoService eventoService;
 
     @Override
     protected JpaRepository<VotacionMO, UUID> getRepository() {
@@ -52,7 +52,7 @@ public class VotacionService extends GenericService<VotacionMO> {
 }
         EventoMO evento = eventoRepository.findById(request.eventoId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado"));
-
+        
         if (request.tipo() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tipo de votación es requerido");
         }
@@ -88,12 +88,12 @@ public class VotacionService extends GenericService<VotacionMO> {
         votacion.setEvento(evento);
         votacion.setTipo(request.tipo());
         votacion.setModalidad(request.modalidad());
-        votacion.setMaxSelecciones(eventoService.getNumProyectosPorVoto(request.eventoId()));
+        votacion.setMaxSelecciones(request.maxSelecciones());
         votacion.setInicio(request.inicio());
         votacion.setFin(request.fin());
         votacion.setNombre(request.nombre().trim());
         votacion.setEstado(request.estado() != null ?
-        request.estado() : EstadoVotacionMO.PENDIENTE);
+            request.estado() : EstadoVotacionMO.PENDIENTE);
 
         VotacionMO guardada = votacionRepository.save(votacion);
 

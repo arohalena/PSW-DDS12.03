@@ -14,6 +14,7 @@ public record CrearVotacionRequest (
     String nombre,
     TipoVotacionMO tipo,
     ModalidadVotacionMO modalidad,
+    int maxSelecciones,
     OffsetDateTime inicio,
     OffsetDateTime fin,
     EstadoVotacionMO estado,
