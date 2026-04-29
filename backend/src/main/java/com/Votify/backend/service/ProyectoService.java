@@ -32,6 +32,12 @@ import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotoRepository;
 
+import org.springframework.transaction.annotation.Transactional;
+import com.Votify.backend.dto.ProyectoGestionRequest;
+import com.Votify.backend.model.TipoCategoriaMO;
+import com.Votify.backend.model.VotacionMO;
+import com.Votify.backend.repository.VotacionRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -47,6 +53,7 @@ public class ProyectoService extends GenericService<ProyectoMO> {
     private final ComentarioRepository comentarioRepository;
     private final VotacionProyectoRepository votacionProyectoRepository;
     private final VotoRepository votoRepository;
+    private final VotacionRepository votacionRepository;
 
     @Override
     protected JpaRepository<ProyectoMO, UUID> getRepository(){
@@ -212,5 +219,160 @@ public class ProyectoService extends GenericService<ProyectoMO> {
             totalVotos,
             comentarios != null ? comentarios : Collections.emptyList()
         );
+    }
+
+    @Transactional
+    public ProyectoMO crearGestionado(ProyectoGestionRequest request) {
+        validarBase(request);
+
+        EquipoMO equipo = equipoRepository.findById(request.equipoId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado."));
+
+        EventoMO evento = null;
+
+        if (request.eventoId() != null) {
+            evento = eventoRepository.findById(request.eventoId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado."));
+
+        validarEquipoDisponibleEnEvento(equipo.getId(), evento.getId(), null);
+        validarVotacionesObligatoriasYDelEvento(request.votacionIds(), evento.getId());
+        }
+
+        ProyectoMO proyecto = new ProyectoMO();
+        aplicarDatosProyecto(proyecto, request, equipo, evento);
+
+        proyecto = proyectoRepository.save(proyecto);
+
+        if (evento != null) {
+            asignarAVotaciones(proyecto, request.votacionIds());
+        }
+
+        return proyecto;
+    }
+
+    @Transactional
+    public ProyectoMO actualizarGestionado(UUID id, ProyectoGestionRequest request) {
+        validarBase(request);
+
+        ProyectoMO proyecto = proyectoRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado."));
+
+        EquipoMO equipo = equipoRepository.findById(request.equipoId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado."));
+
+        EventoMO evento = proyecto.getEvento();
+
+        validarEquipoDisponibleEnEvento(equipo.getId(), evento != null ? evento.getId() : null, proyecto.getId());
+
+        aplicarDatosProyecto(proyecto, request, equipo, evento);
+
+        return proyectoRepository.save(proyecto);
+    }
+
+    @Transactional
+    public ProyectoMO meterEnEvento(UUID proyectoId, UUID eventoId) {
+        ProyectoMO proyecto = proyectoRepository.findById(proyectoId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado."));
+
+        if (proyecto.getEquipo() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El proyecto debe tener equipo asignado.");
+        }
+
+        EventoMO evento = eventoRepository.findById(eventoId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado."));
+
+        validarEquipoDisponibleEnEvento(proyecto.getEquipo().getId(), evento.getId(), proyecto.getId());
+
+        proyecto.setEvento(evento);
+
+        return proyectoRepository.save(proyecto);
+    }
+
+    @Transactional
+    public ProyectoMO quitarDeEvento(UUID proyectoId) {
+        ProyectoMO proyecto = proyectoRepository.findById(proyectoId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado."));
+
+        for (VotacionProyectoMO relacion : votacionProyectoRepository.findByProyecto_Id(proyectoId)) {
+            votacionProyectoRepository.delete(relacion);
+        }
+
+        proyecto.setEvento(null);
+
+        return proyectoRepository.save(proyecto);
+    }
+
+    private void validarBase(ProyectoGestionRequest request) {
+        if (request.nombre() == null || request.nombre().isBlank()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del proyecto es obligatorio.");
+        }
+
+        if (request.tipoCategoria() == null || request.tipoCategoria().isBlank()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La categoría es obligatoria.");
+        }
+
+        if (request.equipoId() == null) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo es obligatorio.");
+        }
+    }
+
+    private void aplicarDatosProyecto(ProyectoMO proyecto, ProyectoGestionRequest request, EquipoMO equipo, EventoMO evento) { 
+        proyecto.setNombre(request.nombre().trim());
+        proyecto.setDescripcion(request.descripcion());
+        proyecto.setTipoCategoria(TipoCategoriaMO.valueOf(request.tipoCategoria()));
+        proyecto.setEquipo(equipo);
+        proyecto.setEvento(evento);
+    }
+
+    private void validarEquipoDisponibleEnEvento(UUID equipoId, UUID eventoId, UUID proyectoActualId) {
+        if (eventoId == null) return;
+
+        boolean ocupado = proyectoActualId == null
+            ? proyectoRepository.existsByEvento_IdAndEquipo_Id(eventoId, equipoId)
+            : proyectoRepository.existsByEvento_IdAndEquipo_IdAndIdNot(eventoId, equipoId, proyectoActualId);
+
+        if (ocupado) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Este equipo ya tiene otro proyecto asignado a este evento."
+            );
+        }
+    }
+
+    private void validarVotacionesObligatoriasYDelEvento(List<UUID> votacionIds, UUID eventoId) {
+        if (votacionIds == null || votacionIds.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Si eliges un evento, debes elegir al menos una votación."
+            );
+        }
+
+        for (UUID votacionId : votacionIds) {
+            VotacionMO votacion = votacionRepository.findById(votacionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada."));
+
+            if (!votacion.getEvento().getId().equals(eventoId)) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Todas las votaciones deben pertenecer al evento seleccionado.");
+            }
+        }
+    }
+
+    private void asignarAVotaciones(ProyectoMO proyecto, List<UUID> votacionIds) {
+        for (UUID votacionId : votacionIds) {
+            if (votacionProyectoRepository.existsByVotacion_IdAndProyecto_Id(votacionId, proyecto.getId())) {
+                continue;
+            }
+
+            VotacionMO votacion = votacionRepository.findById(votacionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada."));
+
+            VotacionProyectoMO relacion = new VotacionProyectoMO();
+            relacion.setProyecto(proyecto);
+            relacion.setVotacion(votacion);
+
+            votacionProyectoRepository.save(relacion);
+        }
     }
 }
