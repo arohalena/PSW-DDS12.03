@@ -37,7 +37,7 @@ public class EventoService extends GenericService<EventoMO> {
     }
 
     //Método para la creación de la factoría de evento
-    public EventoMO crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, int numProyectosPorVoto, boolean autoVotacion) {
+    public EventoMO crear(String tipo, String nombre, String descripcion, String codigoAccesoPublico, OffsetDateTime fecha_inicio, OffsetDateTime fecha_fin, boolean autoVotacion) {
 
         if (tipo == null || tipo.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se reconoce el tipo de evento deseado.");
@@ -66,7 +66,7 @@ public class EventoService extends GenericService<EventoMO> {
                     "No se reconoce el tipo de evento deseado.");
         };
 
-        Evento eventoDominio = creador.create(nombre.trim(), descripcion.trim(), codigo, fecha_inicio, fecha_fin, numProyectosPorVoto, autoVotacion);
+        Evento eventoDominio = creador.create(nombre.trim(), descripcion.trim(), codigo, fecha_inicio, fecha_fin, autoVotacion);
 
         EventoMO entidad = new EventoMO();
         
@@ -76,7 +76,6 @@ public class EventoService extends GenericService<EventoMO> {
         entidad.setTipoEvento(eventoDominio.tipo());
         entidad.setFecha_inicio(eventoDominio.getFechaInicio());
         entidad.setFecha_fin(eventoDominio.getFechaFin());
-        entidad.setNumProyectosPorVoto(eventoDominio.getNumProyectosPorVoto());
         entidad.setAutoVotacion(eventoDominio.isAutoVotacion());
 
         return eventoRepository.save(entidad);
@@ -97,9 +96,6 @@ public class EventoService extends GenericService<EventoMO> {
                         "No se ha encontrado ningún evento con ese código."));
     }
 
-    public int getNumProyectosPorVoto(UUID eventoId){
-        return eventoRepository.getNumProyectosPorVotoById(eventoId);
-    }
 
     private String normalizarOCrearCodigo(String codigoAccesoPublico) {
         if (codigoAccesoPublico == null || codigoAccesoPublico.isBlank()) {

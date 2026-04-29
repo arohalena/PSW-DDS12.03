@@ -12,6 +12,5 @@ public interface EventoRepository extends JpaRepository<EventoMO, UUID>{
 
     boolean existsByCodigoAccesoPublico(String codigoAccesoPublico);
     Optional<EventoMO> findByCodigoAccesoPublico(String codigoAccesoPublico);
-    int getNumProyectosPorVotoById(UUID eventoId);
     
 }

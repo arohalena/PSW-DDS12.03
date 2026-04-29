@@ -9,6 +9,5 @@ public record CrearEventoRequest (
     String codigoAccesoPublico,
     OffsetDateTime fecha_inicio,
     OffsetDateTime fecha_fin,
-    int numProyectosPorVoto,
     Boolean autoVotacion
 ) {}
