@@ -35,6 +35,7 @@ import {
 } from "../../services/votacionService";
 import { esOrganizador } from "../../services/sessionService";
 import CreateVotingModal from "./CreateVotingModal";
+import EventProjectCard from "./EventProjectCard";
 import "../../styles/events.css";
 
 function formatDate(value) {
@@ -213,65 +214,6 @@ function EventAccessModal({ event, onClose, onSuccess }) {
         </form>
       </div>
     </div>
-  );
-}
-
-function ProjectCard({ eventoId, votingId, proyecto, votacionProyecto, votes, votingOpen }) {
-  const navigate = useNavigate();
-
-  return (
-    <article className="event-detail-project-card">
-      <div className="event-detail-project-cover">
-        {proyecto.nombre?.charAt(0)?.toUpperCase() || "P"}
-      </div>
-
-      <div className="event-detail-project-body">
-        <div className="event-detail-project-header">
-          <div>
-            <h3>{proyecto.nombre}</h3>
-            <p>{proyecto.descripcion || "Proyecto participante del evento."}</p>
-          </div>
-
-          <span className="event-detail-project-badge">
-            {votes ?? 0} votos
-          </span>
-        </div>
-
-        <div className="event-detail-project-meta">
-          <span>
-            <Users size={14} />
-            Equipo participante
-          </span>
-          <span>
-            <Star size={14} />
-            Evaluación abierta
-          </span>
-        </div>
-
-        <div className="event-detail-project-actions">
-          <button
-            type="button"
-            className="secondary-btn"
-            onClick={() => navigate(`/eventos/${eventoId}/proyectos/${proyecto.id}`)}
-          >
-            Ver detalle
-          </button>
-
-          {votacionProyecto ? (
-            <button
-              type="button"
-              className="primary-btn"
-              onClick={() =>
-                navigate(`/eventos/${eventoId}/votaciones/${votingId}/proyectos/${proyecto.id}/votar`)
-              }
-            >
-              <Vote size={16} />
-              {votingOpen ? "Votar" : "Votación no activa"}
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -764,7 +706,7 @@ function EventDetailScreen() {
               const relation = relacionesByProjectId.get(String(proyecto.id));
 
               return (
-                <ProjectCard
+                <EventProjectCard
                   key={proyecto.id}
                   eventoId={eventoId}
                   votingId={selectedVotingId}
