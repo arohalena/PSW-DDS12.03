@@ -1,3 +1,6 @@
+import "../../styles/events.css";
+import { Star, Users, Vote } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function EventProjectCard({ eventoId, votingId, proyecto, votacionProyecto, votes, votingOpen }) {
   const navigate = useNavigate();
