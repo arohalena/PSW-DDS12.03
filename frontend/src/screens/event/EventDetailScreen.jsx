@@ -531,6 +531,14 @@ function EventDetailScreen() {
                 ? `Votación ${getVotingEstadoLabel(selectedVotingEstado)}`
                 : "Sin votación activa"}
             </span>
+
+            {privateEvent ? (
+              <span className="event-code-chip">
+                <Star size={13} />
+                Código: {getEventCode(evento)}
+              </span>
+            ): null}
+            
           </div>
 
           <h1>{evento.nombre}</h1>
