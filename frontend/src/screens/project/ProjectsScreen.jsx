@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowRight,
-  Calendar,
   CheckCircle,
   FolderKanban,
   Plus,
   Search,
-  Trophy,
   Users,
   Vote,
   MessageCircle,
 } from "lucide-react";
+
 import { getEquipos } from "../../services/equipoService";
 import { getEventos } from "../../services/eventoService";
 import {
@@ -23,6 +22,8 @@ import {
 import { crearComentario } from "../../services/comentarioService";
 import { getProyectos, getProyectosByEvento } from "../../services/proyectoService";
 import { esOrganizador } from "../../services/sessionService";
+import CommentProjectModal from "./CommentProjectModal";
+
 import "../../styles/projects.css";
 
 function formatDate(value) {
@@ -129,93 +130,6 @@ function AssignProjectModal({ open, onClose, proyecto, eventos, onSubmit }) {
     </div>
   );
 }
-
-function CommentProjectModal({ open, onClose, proyecto, relaciones, onSubmit }) {
-  const [texto, setTexto] = useState("");
-  const [votacionProyectoId, setVotacionProyectoId] = useState("");
-
-  useEffect(() => {
-    if (!open) return;
-
-    setTexto("");
-    setVotacionProyectoId(relaciones?.[0]?.id || "");
-  }, [open, relaciones]);
-
-  if (!open || !proyecto) return null;
-
-  async function submit(e) {
-    e.preventDefault();
-
-    try{
-
-      await onSubmit({ texto });
-      onClose();
-
-    } catch {
-      
-    }
-  }
-
-  return (
-    <div className="project-modal-backdrop">
-      <form className="project-modal" onSubmit={submit}>
-        <h2>Añadir comentario</h2>
-        <p>
-          Añade feedback para el proyecto <strong>{proyecto.nombre}</strong>.
-        </p>
-
-        {relaciones.length === 0 ? (
-          <div className="project-feedback error-box">
-            Este proyecto no está asignado a ninguna votación. Primero asígnalo a una votación.
-          </div>
-        ) : (
-          <>
-            <label className="project-field">
-              <span>Votación</span>
-              <select
-                value={votacionProyectoId}
-                onChange={(e) => setVotacionProyectoId(e.target.value)}
-                required
-              >
-                {relaciones.map((relacion) => (
-                  <option key={relacion.id} value={relacion.id}>
-                    {relacion.votacion?.tipo} + {relacion.votacion?.modalidad}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="project-field">
-              <span>Comentario</span>
-              <textarea
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                placeholder="Escribe un comentario o feedback..."
-                rows="5"
-                required
-              />
-            </label>
-          </>
-        )}
-
-        <div className="project-modal-actions">
-          <button type="button" className="secondary-btn" onClick={onClose}>
-            Cancelar
-          </button>
-
-          <button
-            type="submit"
-            className="primary-btn"
-            disabled={!texto.trim()}
-          >
-            Guardar comentario
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 
 
 function ProjectsScreen() {
@@ -554,52 +468,51 @@ function ProjectsScreen() {
                       </span>
                     )}
                   </td>
+                    <td>
+                      <div className="project-actions-cell">
+                        {!proyecto.asignado && puedeGestionar ? (
+                          <button
+                            type="button"
+                            className="project-assign-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProject(proyecto);
+                            }}
+                          >
+                            Asignar a votación
+                          </button>
+                        ) : null}
 
-  <td>
-    <div className="project-actions-cell">
-      {!proyecto.asignado && puedeGestionar ? (
-        <button
-          type="button"
-          className="project-assign-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedProject(proyecto);
-          }}
-        >
-          Asignar a votación
-        </button>
-      ) : null}
+                        <button
+                          type="button"
+                          className="project-comment-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCommentProject(proyecto);
+                          }}
+                        >
+                          <MessageCircle size={15} />
+                          Comentar
+                        </button>
 
-      <button
-        type="button"
-        className="project-comment-btn"
-        onClick={(e) => {
-          e.stopPropagation();
-          setCommentProject(proyecto);
-        }}
-      >
-        <MessageCircle size={15} />
-        Comentar
-      </button>
-
-      <button
-        type="button"
-        className="project-view-btn"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(
-            proyecto.evento?.id
-              ? `/eventos/${proyecto.evento.id}/proyectos/${proyecto.id}`
-              : `/proyectos/${proyecto.id}`
-          );
-        }}
-      >
-        Ver
-        <ArrowRight size={15} />
-      </button>
-    </div>
-  </td>
-</tr>
+                        <button
+                          type="button"
+                          className="project-view-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(
+                              proyecto.evento?.id
+                                ? `/eventos/${proyecto.evento.id}/proyectos/${proyecto.id}`
+                                : `/proyectos/${proyecto.id}`
+                            );
+                          }}
+                        >
+                          Ver
+                          <ArrowRight size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>

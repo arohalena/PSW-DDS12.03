@@ -9,12 +9,12 @@ import {
   Search,
   ShieldCheck,
   Users,
-  X,
 } from "lucide-react";
-import { getEventos, getEventoByCodigo } from "../../services/eventoService";
+import { getEventos } from "../../services/eventoService";
 import { getProyectosByEvento } from "../../services/proyectoService";
 import { getVotantesPorEvento } from "../../services/votacionService";
 import { esOrganizador } from "../../services/sessionService";
+import EventAccessModal from "./EventAccessModal";
 import "../../styles/events.css";
 
 function formatDate(dateValue) {
@@ -65,116 +65,12 @@ function isPrivateEvent(evento) {
   return Boolean(evento.codigoAccesoPublico || evento.codigoAcceso);
 }
 
-function getEventCode(evento) {
-  return evento.codigoAccesoPublico || evento.codigoAcceso || "";
-}
 
-function hasEventAccess(evento) {
-  if (!isPrivateEvent(evento)) return true;
+function hasEventAccess(evento, puedeGestionarEventos) {
+  if (!isPrivateEvent(evento) || puedeGestionarEventos) return true;
   return localStorage.getItem(`votify_event_access_${evento.id}`) === "true";
 }
 
-function EventAccessModal({ event, onClose, onSuccess }) {
-  const [code, setCode] = useState("");
-  const [error, setError] = useState("");
-  const [checking, setChecking] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-
-    if (!code.trim()) return;
-
-    try {
-      setChecking(true);
-      setError("");
-
-      const expectedCode = getEventCode(event);
-
-      if (expectedCode && code.trim().toUpperCase() === expectedCode.toUpperCase()) {
-        localStorage.setItem(`votify_event_access_${event.id}`, "true");
-        onSuccess();
-        return;
-      }
-
-      const eventoPorCodigo = await getEventoByCodigo(code.trim());
-
-      if (String(eventoPorCodigo.id) === String(event.id)) {
-        localStorage.setItem(`votify_event_access_${event.id}`, "true");
-        onSuccess();
-        return;
-      }
-
-      setError("Código incorrecto. Por favor, verifica e intenta nuevamente.");
-    } catch {
-      setError("Código incorrecto. Por favor, verifica e intenta nuevamente.");
-    } finally {
-      setChecking(false);
-    }
-  }
-
-  return (
-    <div className="event-access-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="event-access-modal">
-        <div className="event-access-modal-header">
-          <div className="event-access-decoration event-access-decoration-one" />
-          <div className="event-access-decoration event-access-decoration-two" />
-
-          <div className="event-access-header-content">
-            <div className="event-access-title-row">
-              <div className="event-access-lock">
-                <Lock size={30} />
-              </div>
-
-              <div>
-                <h2>Acceso Privado</h2>
-                <p>{event.nombre}</p>
-              </div>
-            </div>
-
-            <button className="event-access-close" onClick={onClose} type="button">
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-
-        <form className="event-access-modal-body" onSubmit={handleSubmit}>
-          <div className="event-access-info">
-            <ShieldCheck size={20} />
-            <div>
-              <strong>Evento protegido</strong>
-              <span>Solicita el código al organizador si aún no lo tienes.</span>
-            </div>
-          </div>
-
-          <label className="event-access-field">
-            <span>Ingresa tu código de acceso</span>
-            <input
-              value={code}
-              onChange={(e) => {
-                setCode(e.target.value.toUpperCase());
-                setError("");
-              }}
-              placeholder="HACK2026"
-              className={error ? "event-access-input input-shake" : "event-access-input"}
-              autoFocus
-            />
-          </label>
-
-          {error ? <div className="event-access-error">{error}</div> : null}
-
-          <div className="event-access-actions">
-            <button type="button" className="secondary-btn" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="primary-btn" disabled={!code.trim() || checking}>
-              {checking ? "Verificando..." : "Acceder al Evento"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 function EventsListScreen() {
   const navigate = useNavigate();
@@ -247,8 +143,8 @@ function EventsListScreen() {
     });
   }, [eventos, search, selectedStatus]);
 
-  function handleEventClick(evento) {
-    if (isPrivateEvent(evento) && !hasEventAccess(evento)) {
+  function handleEventClick(evento, puedeGestionarEventos) {
+    if (!hasEventAccess(evento, puedeGestionarEventos)) {
       setSelectedEvent(evento);
       return;
     }
@@ -317,7 +213,7 @@ function EventsListScreen() {
                   <article
                     className="event-card event-card-clickable"
                     key={evento.id}
-                    onClick={() => handleEventClick(evento)}
+                    onClick={() => handleEventClick(evento, puedeGestionarEventos)}
                   >
                     <div className="event-card-header">
                       <div>
@@ -354,7 +250,7 @@ function EventsListScreen() {
 
                     <div className="event-type-row">
                       <span className="event-type-chip">{getTypeLabel(evento.tipo || evento.tipoEvento)}</span>
-                      {privateEvent ? (
+                      {(privateEvent && !hasEventAccess(evento, puedeGestionarEventos)) ? (
                         <span className="event-private-chip">
                           <Lock size={13} />
                           Requiere código
