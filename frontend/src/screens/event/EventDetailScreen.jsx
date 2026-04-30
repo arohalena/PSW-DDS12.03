@@ -91,8 +91,8 @@ function getEventCode(evento) {
   return evento?.codigoAccesoPublico || evento?.codigoAcceso || "";
 }
 
-function hasEventAccess(eventoId, evento) {
-  if (!isPrivateEvent(evento)) return true;
+function hasEventAccess(eventoId, evento, puedeGestionar) {
+  if (!isPrivateEvent(evento) || puedeGestionar) return true;
   return localStorage.getItem(`votify_event_access_${eventoId}`) === "true";
 }
 
@@ -453,7 +453,7 @@ function EventDetailScreen() {
   }
 
   const privateEvent = isPrivateEvent(evento);
-  const canView = hasEventAccess(eventoId, evento);
+  const canView = hasEventAccess(eventoId, evento, puedeGestionar);
 
   if (!canView) {
     return (

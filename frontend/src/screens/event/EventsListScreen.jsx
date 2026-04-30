@@ -69,8 +69,8 @@ function getEventCode(evento) {
   return evento.codigoAccesoPublico || evento.codigoAcceso || "";
 }
 
-function hasEventAccess(evento) {
-  if (!isPrivateEvent(evento)) return true;
+function hasEventAccess(evento, puedeGestionarEventos) {
+  if (!isPrivateEvent(evento) || puedeGestionarEventos) return true;
   return localStorage.getItem(`votify_event_access_${evento.id}`) === "true";
 }
 
@@ -247,8 +247,8 @@ function EventsListScreen() {
     });
   }, [eventos, search, selectedStatus]);
 
-  function handleEventClick(evento) {
-    if (isPrivateEvent(evento) && !hasEventAccess(evento)) {
+  function handleEventClick(evento, puedeGestionarEventos) {
+    if (!hasEventAccess(evento, puedeGestionarEventos)) {
       setSelectedEvent(evento);
       return;
     }
@@ -317,7 +317,7 @@ function EventsListScreen() {
                   <article
                     className="event-card event-card-clickable"
                     key={evento.id}
-                    onClick={() => handleEventClick(evento)}
+                    onClick={() => handleEventClick(evento, puedeGestionarEventos)}
                   >
                     <div className="event-card-header">
                       <div>
@@ -354,7 +354,7 @@ function EventsListScreen() {
 
                     <div className="event-type-row">
                       <span className="event-type-chip">{getTypeLabel(evento.tipo || evento.tipoEvento)}</span>
-                      {privateEvent ? (
+                      {(privateEvent && !hasEventAccess(evento, puedeGestionarEventos)) ? (
                         <span className="event-private-chip">
                           <Lock size={13} />
                           Requiere código
