@@ -153,7 +153,10 @@ function EventAccessModal({ event, onClose, onSuccess }) {
   }
 
   return (
-    <div className="event-access-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="event-access-backdrop"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="event-access-modal">
         <div className="event-access-modal-header">
           <div className="event-access-decoration event-access-decoration-one" />
@@ -206,6 +209,7 @@ function EventAccessModal({ event, onClose, onSuccess }) {
             <button type="button" className="secondary-btn" onClick={onClose}>
               Cancelar
             </button>
+
             <button type="submit" className="primary-btn" disabled={!code.trim() || checking}>
               {checking ? "Verificando..." : "Acceder"}
             </button>
@@ -232,9 +236,7 @@ function ProjectCard({ eventoId, votingId, proyecto, votacionProyecto, votes, vo
             <p>{proyecto.descripcion || "Proyecto participante del evento."}</p>
           </div>
 
-          <span className="event-detail-project-badge">
-            {votes ?? 0} votos
-          </span>
+          <span className="event-detail-project-badge">{votes ?? 0} votos</span>
         </div>
 
         <div className="event-detail-project-meta">
@@ -261,9 +263,11 @@ function ProjectCard({ eventoId, votingId, proyecto, votacionProyecto, votes, vo
             <button
               type="button"
               className="primary-btn"
-              onClick={() =>
-                navigate(`/eventos/${eventoId}/votaciones/${votingId}/proyectos/${proyecto.id}/votar`)
-              }
+              disabled={!votingOpen}
+              onClick={() => {
+                if (!votingOpen) return;
+                navigate(`/eventos/${eventoId}/votaciones/${votingId}/proyectos/${proyecto.id}/votar`);
+              }}
             >
               <Vote size={16} />
               {votingOpen ? "Votar" : "Votación no activa"}
@@ -288,6 +292,11 @@ function EventDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [accessModalOpen, setAccessModalOpen] = useState(false);
   const [createVotingModalOpen, setCreateVotingModalOpen] = useState(false);
+  const [deleteEventModalOpen, setDeleteEventModalOpen] = useState(false);
+  const [deleteVotingModalOpen, setDeleteVotingModalOpen] = useState(false);
+  const [votingToDelete, setVotingToDelete] = useState(null);
+  const [deletingEvent, setDeletingEvent] = useState(false);
+  const [deletingVoting, setDeletingVoting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -373,33 +382,53 @@ function EventDetailScreen() {
     return map;
   }, [votacionProyectos]);
 
-  async function handleDeleteEvento() {
-    const confirmed = window.confirm(
-      "¿Seguro que quieres eliminar este evento? Se eliminarán también sus votaciones asociadas."
-    );
-
-    if (!confirmed) return;
-
+  async function confirmDeleteEvento() {
     try {
+      setDeletingEvent(true);
+      setError("");
+      setSuccess("");
+
       await deleteEvento(eventoId);
-      navigate("/eventos");
+
+      navigate("/eventos", {
+        state: {
+          successMessage:
+            "Evento eliminado correctamente. Los proyectos se han conservado sin evento asignado.",
+        },
+      });
     } catch (err) {
-      alert(err.message || "No se pudo eliminar el evento.");
+      setError(err.message || "No se pudo eliminar el evento.");
+    } finally {
+      setDeletingEvent(false);
+      setDeleteEventModalOpen(false);
     }
   }
 
-  async function handleDeleteVotacion(votacionId) {
-    const confirmed = window.confirm("¿Seguro que quieres eliminar esta votación?");
+  function openDeleteVotingModal(votacion) {
+    setVotingToDelete(votacion);
+    setDeleteVotingModalOpen(true);
+  }
 
-    if (!confirmed) return;
+  async function confirmDeleteVotacion() {
+    if (!votingToDelete) return;
 
     try {
-      await deleteVotacion(votacionId);
+      setDeletingVoting(true);
+      setError("");
+      setSuccess("");
+
+      await deleteVotacion(votingToDelete.id);
+
       setSuccess("Votación eliminada correctamente.");
       setSelectedVotingId("");
+      setVotingToDelete(null);
+      setDeleteVotingModalOpen(false);
+
       await loadEventData();
     } catch (err) {
-      alert(err.message || "No se pudo eliminar la votación.");
+      setError(err.message || "No se pudo eliminar la votación.");
+    } finally {
+      setDeletingVoting(false);
     }
   }
 
@@ -571,7 +600,7 @@ function EventDetailScreen() {
               <button
                 className="danger-btn"
                 type="button"
-                onClick={handleDeleteEvento}
+                onClick={() => setDeleteEventModalOpen(true)}
               >
                 <Trash2 size={17} />
                 Eliminar Evento
@@ -716,7 +745,7 @@ function EventDetailScreen() {
                       <button
                         type="button"
                         className="delete-voting-btn"
-                        onClick={() => handleDeleteVotacion(votacion.id)}
+                        onClick={() => openDeleteVotingModal(votacion)}
                         title="Eliminar votación"
                       >
                         <Trash2 size={15} />
@@ -782,6 +811,108 @@ function EventDetailScreen() {
             await loadEventData();
           }}
         />
+      ) : null}
+
+      {deleteEventModalOpen ? (
+        <div
+          className="delete-event-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setDeleteEventModalOpen(false);
+            }
+          }}
+        >
+          <div className="delete-event-modal">
+            <div className="delete-event-icon">
+              <Trash2 size={30} />
+            </div>
+
+            <h2>Eliminar evento</h2>
+
+            <p>
+              Vas a eliminar <strong>{evento.nombre}</strong>. Se eliminarán sus
+              votaciones, votos, criterios, inscripciones y asignaciones.
+            </p>
+
+            <div className="delete-event-warning">
+              Los proyectos NO se eliminarán. Se conservarán sin evento asignado.
+            </div>
+
+            <div className="delete-event-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => setDeleteEventModalOpen(false)}
+                disabled={deletingEvent}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="danger-btn"
+                onClick={confirmDeleteEvento}
+                disabled={deletingEvent}
+              >
+                <Trash2 size={17} />
+                {deletingEvent ? "Eliminando..." : "Eliminar evento"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteVotingModalOpen ? (
+        <div
+          className="delete-event-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setDeleteVotingModalOpen(false);
+              setVotingToDelete(null);
+            }
+          }}
+        >
+          <div className="delete-event-modal">
+            <div className="delete-event-icon">
+              <Trash2 size={30} />
+            </div>
+
+            <h2>Eliminar votación</h2>
+
+            <p>
+              Vas a eliminar <strong>{votingLabel(votingToDelete)}</strong>. Se eliminarán
+              sus relaciones con proyectos, votos y resultados asociados.
+            </p>
+
+            <div className="delete-event-warning">
+              El evento y los proyectos NO se eliminarán.
+            </div>
+
+            <div className="delete-event-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => {
+                  setDeleteVotingModalOpen(false);
+                  setVotingToDelete(null);
+                }}
+                disabled={deletingVoting}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="danger-btn"
+                onClick={confirmDeleteVotacion}
+                disabled={deletingVoting}
+              >
+                <Trash2 size={17} />
+                {deletingVoting ? "Eliminando..." : "Eliminar votación"}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </main>
   );
