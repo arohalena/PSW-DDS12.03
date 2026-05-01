@@ -14,9 +14,25 @@ import com.Votify.backend.domain.Evento;
 import com.Votify.backend.factory.CreadorEvento;
 import com.Votify.backend.factory.CreadorFeriaInovacion;
 import com.Votify.backend.factory.CreadorHackathonEvento;
+import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.EventoMO;
+import com.Votify.backend.model.ProyectoMO;
+import com.Votify.backend.model.VotacionMO;
+import com.Votify.backend.model.VotacionProyectoMO;
+import com.Votify.backend.model.VotoMO;
+import com.Votify.backend.repository.ComentarioRepository;
+import com.Votify.backend.repository.CompetidorEventoRepository;
+import com.Votify.backend.repository.CriterioEvaluacionRepository;
+import com.Votify.backend.repository.EquipoRepository;
+import com.Votify.backend.repository.EventoOrganizadorRepository;
 import com.Votify.backend.repository.EventoRepository;
-
+import com.Votify.backend.repository.ProyectoRepository;
+import com.Votify.backend.repository.PuntuacionCriterioRepository;
+import com.Votify.backend.repository.VotacionProyectoRepository;
+import com.Votify.backend.repository.VotacionRepository;
+import com.Votify.backend.repository.VotoCriterioRepository;
+import com.Votify.backend.repository.VotoRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,6 +40,17 @@ import lombok.RequiredArgsConstructor;
 public class EventoService extends GenericService<EventoMO> {
     
     private final EventoRepository eventoRepository;
+    private final ProyectoRepository proyectoRepository;
+    private final EquipoRepository equipoRepository;
+    private final CompetidorEventoRepository competidorEventoRepository;
+    private final EventoOrganizadorRepository eventoOrganizadorRepository;
+    private final VotacionRepository votacionRepository;
+    private final VotacionProyectoRepository votacionProyectoRepository;
+    private final VotoRepository votoRepository;
+    private final VotoCriterioRepository votoCriterioRepository;
+    private final PuntuacionCriterioRepository puntuacionCriterioRepository;
+    private final ComentarioRepository comentarioRepository;
+    private final CriterioEvaluacionRepository criterioEvaluacionRepository;
 
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int CODE_LENGTH = 8;
@@ -124,4 +151,46 @@ public class EventoService extends GenericService<EventoMO> {
         }
         return builder.toString();
     }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+        EventoMO evento = eventoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado."));
+
+        for (VotacionMO votacion : votacionRepository.findByEvento_Id(id)) {
+            for (VotacionProyectoMO votacionProyecto : votacionProyectoRepository.findByVotacion_Id(votacion.getId())) {
+                comentarioRepository.deleteAll(comentarioRepository.findByVotacionProyecto_Id(votacionProyecto.getId()));
+                puntuacionCriterioRepository.deleteAll(puntuacionCriterioRepository.findByVotacionProyecto_Id(votacionProyecto.getId()));
+
+                for (VotoMO voto : votoRepository.findByVotacionProyecto_Id(votacionProyecto.getId())) {
+                    votoCriterioRepository.deleteAll(votoCriterioRepository.findByVoto_Id(voto.getId()));
+                    votoRepository.delete(voto);
+                }
+
+                votacionProyectoRepository.delete(votacionProyecto);
+            }
+
+            votacionRepository.delete(votacion);
+        }
+
+        criterioEvaluacionRepository.deleteAll(criterioEvaluacionRepository.findByEvento_IdOrderByOrdenAsc(id));
+        competidorEventoRepository.deleteAll(competidorEventoRepository.findByEvento_Id(id));
+        eventoOrganizadorRepository.deleteAll(eventoOrganizadorRepository.findByEvento_Id(id));
+
+        for (ProyectoMO proyecto : proyectoRepository.findByEvento_Id(id)) {
+            proyecto.setEvento(null);
+            proyectoRepository.save(proyecto);
+        }
+
+        for (EquipoMO equipo : equipoRepository.findByEventoId(id)) {
+            equipo.setEvento(null);
+            equipoRepository.save(equipo);
+        }
+
+        eventoRepository.delete(evento);
+    }
+
+
+
 }

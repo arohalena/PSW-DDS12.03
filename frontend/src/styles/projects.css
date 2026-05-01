@@ -1385,3 +1385,27 @@
     flex-direction: column-reverse;
   }
 }
+
+.project-readonly-field {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.95rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.project-readonly-field span {
+  font-size: 0.86rem;
+  color: #334155;
+  font-weight: 900;
+}
+
+.project-readonly-field strong {
+  color: #0f172a;
+}
+
+.project-readonly-field small {
+  color: #64748b;
+  font-weight: 700;
+}

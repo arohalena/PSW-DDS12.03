@@ -220,13 +220,6 @@ function EventsListScreen() {
                         <h3>{evento.nombre}</h3>
                         <p>{evento.descripcion || "Evento de votación y evaluación de proyectos."}</p>
                       </div>
-
-                      <div className="event-card-badges">
-                        <span className={`event-status ${status.className}`}>
-                          {status.label}
-                        </span>
-                        <ArrowRight className="event-card-arrow" size={20} />
-                      </div>
                     </div>
 
                     <div className="event-card-meta">

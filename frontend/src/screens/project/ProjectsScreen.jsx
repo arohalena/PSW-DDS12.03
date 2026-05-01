@@ -198,8 +198,14 @@ function ProjectFormModal({
               </select>
             </label>
           </div>
-
-          <label className="project-field">
+            {editing ? (
+              <div className="project-readonly-field">
+                <span>Evento actual</span>
+                <strong>{proyecto?.evento?.nombre || "Sin evento asignado"}</strong>
+                <small>Para cambiar el evento usa el botón “Participación”.</small>
+              </div>
+            ) : (
+            <label className="project-field">
             <span>Evento opcional</span>
             <select
               value={form.eventoId}
@@ -220,7 +226,7 @@ function ProjectFormModal({
               ))}
             </select>
           </label>
-
+          )}
           {form.eventoId && !editing ? (
             <div>
               <span className="project-mini-label">Votaciones donde participa *</span>
@@ -257,13 +263,6 @@ function ProjectFormModal({
                   })}
                 </div>
               )}
-            </div>
-          ) : null}
-
-          {editing ? (
-            <div className="project-feedback">
-              Para meter o quitar el proyecto de eventos y votaciones usa el botón
-              “Participación” de la tabla.
             </div>
           ) : null}
 

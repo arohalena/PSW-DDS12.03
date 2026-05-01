@@ -289,6 +289,7 @@ function CreateEventScreen() {
     for (const config of votingConfigs) {
       await createVotacion({
         eventoId: eventoCreado.id,
+        nombre: config.nombre.trim(),
         tipo: config.tipo,
         modalidad: config.modalidad,
         estado: "ABIERTA",
