@@ -177,6 +177,17 @@
   color: #4f46e5;
 }
 
+.event-code-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.42rem 0.75rem;
+  background: #ffedd5;
+  color: #c2410c;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
 .event-type-chip {
   align-self: flex-start;
   margin: 0 1.25rem 1rem;
