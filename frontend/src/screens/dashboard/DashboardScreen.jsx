@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import { getEventos } from "../../services/eventoService";
 import { getProyectos } from "../../services/proyectoService";
-import { getUsuarios } from "../../services/usuarioService";
-import { getVotingToken } from "../../services/sessionService";
+import { getUsuarios, usuarioHasProject } from "../../services/usuarioService";
+import { getVotingToken, getUsuarioLogueado } from "../../services/sessionService";
+
 
 function formatDate(value) {
   if (!value) return "Sin fecha";
@@ -90,8 +91,24 @@ function DashboardScreen() {
   const [proyectos, setProyectos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userHasProject, setUserHasProject] = useState(false);
+
 
   const votingToken = useMemo(() => getVotingToken(), []);
+  const usuario = useMemo(() => getUsuarioLogueado(), []);
+
+  useEffect(() => {
+
+    async function verifyProject() {
+      const result = await usuarioHasProject(usuario.id);
+
+      console.log("USUARIO" + usuario.id + " HAS PROJECT" + result)
+
+      setUserHasProject(result);
+    }
+
+    verifyProject();
+  }, [usuario]);
 
   useEffect(() => {
     async function loadData() {
@@ -145,6 +162,7 @@ function DashboardScreen() {
           <ArrowRight size={22} />
         </Link>
 
+        {userHasProject ? (
         <Link to="/configuracion" className="dashboard-quick-card">
           <div className="dashboard-quick-icon purple">
             <Trophy size={28} />
@@ -155,6 +173,7 @@ function DashboardScreen() {
           </div>
           <ArrowRight size={22} />
         </Link>
+          ) : null}
       </div>
 
       <section className="dashboard-card">
