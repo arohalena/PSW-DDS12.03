@@ -106,6 +106,9 @@ public class ProyectoFacade {
         equipo.setEvento(evento);
         equipo = equipoRepository.save(equipo);
 
+        proyecto.setEquipo(equipo);
+        proyecto = proyectoService.save(proyecto);
+
         if (request.miembrosEmails() != null) {
             for (String email : request.miembrosEmails()) {
                 vincularMiembro(email, evento, equipo);
@@ -249,11 +252,8 @@ public class ProyectoFacade {
             Map<String, Object> rankingEntry = null;
             List<Map<String, Object>> ranking = Collections.emptyList();
 
-            boolean esMulticriterio =
-                relacion.getVotacion().getModalidad().name().equals("MULTICRITERIO")
-                || relacion.getVotacion().getModalidad().name().equals("MULTICRITERIO_PONDERADA");
 
-            if (esMulticriterio && relacion.getVotacion().getEvento() != null) {
+            if (relacion.getVotacion().getEvento() != null) {
                 ranking = rankingService.calcularRanking(
                     relacion.getVotacion().getEvento().getId(),
                     relacion.getVotacion().getId()

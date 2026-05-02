@@ -598,11 +598,11 @@ function MyProjectDashboardScreen() {
                 <>
                   <Trophy size={38} />
                   <span>Posición</span>
-                  <strong>{selectedVotingIsMulti ? posicion : "—"}</strong>
+                  <strong>{posicion}</strong>
                   <small>
-                    {selectedVotingIsMulti && rankingList.length > 0
+                    {rankingList.length > 0
                       ? `entre ${rankingList.length} proyectos`
-                      : "sin ranking multicriterio"}
+                      : "sin ranking todavía"}
                   </small>
                 </>
               ) : (
@@ -633,7 +633,7 @@ function MyProjectDashboardScreen() {
               </div>
               <div>
                 <p>Puntuación final</p>
-                <strong>{hasEvent && selectedVotingIsMulti ? puntuacionFinal : "—"}</strong>
+                <strong>{hasEvent ? puntuacionFinal : "—"}</strong>
               </div>
             </article>
 
@@ -712,7 +712,7 @@ function MyProjectDashboardScreen() {
                 </div>
               </div>
 
-              {hasEvent && selectedVotingIsMulti ? (
+              {hasEvent ? (
                 <div className="my-project-ranking-context">
                   <div>
                     <span>Votación analizada</span>
