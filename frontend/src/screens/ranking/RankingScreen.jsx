@@ -1,13 +1,17 @@
-import { useEffect, useState, useMemo  } from "react";
-import { Trophy, Medal, Award, Filter, Download, TrendingUp, TrendingDown } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Trophy, Medal, Award, Download } from "lucide-react";
 import { getEventos } from "../../services/eventoService";
 import { getVotacionesByEvento } from "../../services/votacionService";
 import { getRanking, getCriteriosByEvento } from "../../services/criterioService";
 import "../../styles/ranking.css";
 
+const MODALIDADES_MULTICRITERIO = ["MULTICRITERIO", "MULTICRITERIO_PONDERADA"];
+
 function RankingScreen() {
   const [eventos, setEventos] = useState([]);
   const [eventoId, setEventoId] = useState("");
+  const [votaciones, setVotaciones] = useState([]);
+  const [votacionId, setVotacionId] = useState("");
   const [ranking, setRanking] = useState([]);
   const [criterios, setCriterios] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -33,27 +37,49 @@ function RankingScreen() {
   useEffect(() => {
     if (!eventoId) return;
 
-    const loadRanking = async () => {
+    const loadVotacionesYCriterios = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const [votaciones, criteriosData] = await Promise.all([
+        const [votacionesData, criteriosData] = await Promise.all([
           getVotacionesByEvento(eventoId),
           getCriteriosByEvento(eventoId),
         ]);
 
         setCriterios(criteriosData);
+        setVotaciones(votacionesData);
 
-        const votacion = votaciones.find((v) => v.tipo === "POPULAR");
-
-        if (!votacion) {
+        if (votacionesData.length > 0) {
+          setVotacionId(votacionesData[0].id);
+        } else {
+          setVotacionId("");
           setRanking([]);
           setSelectedProjectId(null);
-          return;
         }
+      } catch (err) {
+        setError(err.message || "No se pudieron cargar las votaciones");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        const data = await getRanking(eventoId, votacion.id);
+    loadVotacionesYCriterios();
+  }, [eventoId]);
+
+  useEffect(() => {
+    if (!eventoId || !votacionId) {
+      setRanking([]);
+      setSelectedProjectId(null);
+      return;
+    }
+
+    const loadRanking = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getRanking(eventoId, votacionId);
         setRanking(data);
 
         if (data.length > 0) {
@@ -69,7 +95,17 @@ function RankingScreen() {
     };
 
     loadRanking();
-  }, [eventoId]);
+  }, [eventoId, votacionId]);
+
+  const votacionSeleccionada = useMemo(
+    () => votaciones.find((v) => v.id === votacionId) || null,
+    [votaciones, votacionId]
+  );
+
+  const modalidad = votacionSeleccionada?.modalidad ?? null;
+  const esMulticriterio = MODALIDADES_MULTICRITERIO.includes(modalidad);
+  const esSimple = modalidad === "SIMPLE";
+  const esPuntos = modalidad === "PUNTOS";
 
   const selectedProject = useMemo(() => {
     return ranking.find((entry) => entry.proyectoId === selectedProjectId) || ranking[0] || null;
@@ -140,27 +176,87 @@ function RankingScreen() {
     return normalizarSobreCinco(valor).toFixed(1);
   };
 
+  const formatearNumero = (valor) => {
+    const num = Number(valor || 0);
+    return Number.isInteger(num) ? String(num) : num.toFixed(2);
+  };
+
+  const renderPuntuacionPrincipal = (entry) => {
+    if (esSimple) {
+      return <strong>{entry.totalVotos ?? 0}</strong>;
+    }
+    if (esPuntos) {
+      return <strong>{formatearNumero(entry.sumaPuntos ?? entry.puntuacionTotal)}</strong>;
+    }
+    return <strong>{formatearNota(entry.puntuacionTotal)}</strong>;
+  };
+
+  const etiquetaPuntuacion = () => {
+    if (esSimple) return "votos";
+    if (esPuntos) return "pts";
+    return "/5";
+  };
+
+  const etiquetaModalidad = (mod) => {
+    switch (mod) {
+      case "SIMPLE":
+        return "Simple";
+      case "PUNTOS":
+        return "Puntos";
+      case "MULTICRITERIO":
+        return "Multicriterio";
+      case "MULTICRITERIO_PONDERADA":
+        return "Multicriterio ponderada";
+      default:
+        return mod || "";
+    }
+  };
+
   const exportarResultados = () => {
     if (ranking.length === 0) return;
 
-    const headers = [
-      "Posicion",
-      "Proyecto",
-      ...criterios.map((c) => `${c.nombre} (${c.peso}%)`),
-      "Puntuacion total sobre 5",
-      "Total votos",
-    ];
+    let headers;
+    let rows;
 
-    const rows = ranking.map((entry) => [
-      entry.posicion,
-      entry.proyectoNombre,
-      ...criterios.map((criterio) => {
-        const valor = entry.criterios?.find((c) => c.criterioId === criterio.id);
-        return valor?.promedio ?? "";
-      }),
-      entry.puntuacionTotal,
-      entry.totalVotos ?? "",
-    ]);
+    if (esSimple) {
+      headers = ["Posicion", "Proyecto", "Equipo", "Total votos"];
+      rows = ranking.map((entry) => [
+        entry.posicion,
+        entry.proyectoNombre,
+        entry.equipoNombre ?? "",
+        entry.totalVotos ?? 0,
+      ]);
+    } else if (esPuntos) {
+      headers = ["Posicion", "Proyecto", "Equipo", "Suma puntos", "Media puntos", "Total votos"];
+      rows = ranking.map((entry) => [
+        entry.posicion,
+        entry.proyectoNombre,
+        entry.equipoNombre ?? "",
+        entry.sumaPuntos ?? entry.puntuacionTotal ?? 0,
+        entry.mediaPuntos ?? "",
+        entry.totalVotos ?? 0,
+      ]);
+    } else {
+      headers = [
+        "Posicion",
+        "Proyecto",
+        ...criterios.map((c) =>
+          modalidad === "MULTICRITERIO_PONDERADA" ? `${c.nombre} (${c.peso}%)` : c.nombre
+        ),
+        "Puntuacion total sobre 5",
+        "Total votos",
+      ];
+      rows = ranking.map((entry) => [
+        entry.posicion,
+        entry.proyectoNombre,
+        ...criterios.map((criterio) => {
+          const valor = entry.criterios?.find((c) => c.criterioId === criterio.id);
+          return valor?.promedio ?? "";
+        }),
+        entry.puntuacionTotal,
+        entry.totalVotos ?? "",
+      ]);
+    }
 
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
@@ -215,19 +311,41 @@ function RankingScreen() {
             ))}
           </select>
         </label>
+
+        <label className="ranking-selector-field">
+          <span>Votación</span>
+          <select
+            value={votacionId}
+            onChange={(e) => setVotacionId(e.target.value)}
+            disabled={votaciones.length === 0}
+          >
+            {votaciones.length === 0 && <option value="">Sin votaciones</option>}
+            {votaciones.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.nombre} — {v.tipo} · {etiquetaModalidad(v.modalidad)}
+              </option>
+            ))}
+          </select>
+        </label>
       </section>
 
       {error && <div className="feedback-card error-box">{error}</div>}
 
-      {!loading && criterios.length === 0 && (
+      {!loading && votaciones.length === 0 && (
+        <div className="feedback-card warning-box">
+          Este evento todavía no tiene votaciones configuradas.
+        </div>
+      )}
+
+      {!loading && esMulticriterio && criterios.length === 0 && (
         <div className="feedback-card warning-box">
           No hay criterios de evaluación configurados para este evento. Ve a “Criterios” para configurarlos.
         </div>
       )}
 
-      {!loading && criterios.length > 0 && ranking.length === 0 && (
+      {!loading && votacionId && ranking.length === 0 && (
         <div className="feedback-card warning-box">
-          Aún no hay puntuaciones registradas para este evento.
+          Aún no hay puntuaciones registradas para esta votación.
         </div>
       )}
 
@@ -262,9 +380,8 @@ function RankingScreen() {
               </div>
 
               <div className="ranking-list">
-                {ranking.map((entry, index) => {
+                {ranking.map((entry) => {
                   const estaSeleccionado = selectedProject?.proyectoId === entry.proyectoId;
-                  const trendUp = index === 0 || index === 2;
 
                   return (
                     <button
@@ -284,14 +401,19 @@ function RankingScreen() {
 
                       <div className="ranking-item-right">
                         <div className="ranking-score-block">
-                          <strong>{formatearNota(entry.puntuacionTotal)}</strong>
+                          {renderPuntuacionPrincipal(entry)}
+                          <span className="ranking-score-unit">{etiquetaPuntuacion()}</span>
 
-                          <div className="ranking-votes-line">
-                            <span>{entry.totalVotos ?? 0} votos</span>
-                          </div>
+                          {!esSimple && (
+                            <div className="ranking-votes-line">
+                              <span>{entry.totalVotos ?? 0} votos</span>
+                            </div>
+                          )}
                         </div>
 
-                        <span className="ranking-detail-link">Ver Detalle</span>
+                        {esMulticriterio && (
+                          <span className="ranking-detail-link">Ver Detalle</span>
+                        )}
                       </div>
                     </button>
                   );
@@ -299,50 +421,132 @@ function RankingScreen() {
               </div>
             </div>
 
-            <aside className="ranking-detail-card">
-              <div className="ranking-card-header">
-                <div>
-                  <h2>
-                    Proyecto #{selectedProject?.posicion}: {selectedProject?.proyectoNombre}
-                  </h2>
-                  <p>Desglose por criterio</p>
+            {esMulticriterio && (
+              <aside className="ranking-detail-card">
+                <div className="ranking-card-header">
+                  <div>
+                    <h2>
+                      Proyecto #{selectedProject?.posicion}: {selectedProject?.proyectoNombre}
+                    </h2>
+                    <p>Desglose por criterio</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="ranking-detail-body">
-                {selectedProject?.criterios?.map((criterio) => (
-                  <div key={criterio.criterioId} className="ranking-criterion-row">
+                <div className="ranking-detail-body">
+                  {selectedProject?.criterios?.map((criterio) => (
+                    <div key={criterio.criterioId} className="ranking-criterion-row">
+                      <div className="ranking-criterion-head">
+                        <span>
+                          {criterio.criterioNombre}
+                          {modalidad === "MULTICRITERIO_PONDERADA" && criterio.peso != null && (
+                            <small> ({criterio.peso}%)</small>
+                          )}
+                        </span>
+                        <strong>{formatearNota(criterio.promedio)}/5</strong>
+                      </div>
+
+                      <div className="ranking-progress-bar">
+                        <div
+                          className="ranking-progress-fill"
+                          style={{ width: progresoSobreCinco(criterio.promedio) }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="ranking-final-score-box">
                     <div className="ranking-criterion-head">
-                      <span>{criterio.criterioNombre}</span>
-                      <strong>{formatearNota(criterio.promedio)}/5</strong>
+                      <span>Puntuación Final</span>
+                      <strong className="ranking-final-score">
+                        {formatearNota(selectedProject?.puntuacionTotal)}/5
+                      </strong>
                     </div>
 
                     <div className="ranking-progress-bar">
                       <div
                         className="ranking-progress-fill"
-                        style={{ width: progresoSobreCinco(criterio.promedio) }}
+                        style={{ width: progresoSobreCinco(selectedProject?.puntuacionTotal) }}
                       />
                     </div>
                   </div>
-                ))}
+                </div>
+              </aside>
+            )}
 
-                <div className="ranking-final-score-box">
-                  <div className="ranking-criterion-head">
-                    <span>Puntuación Final</span>
-                    <strong className="ranking-final-score">
-                      {formatearNota(selectedProject?.puntuacionTotal)}/5
-                    </strong>
-                  </div>
-
-                  <div className="ranking-progress-bar">
-                    <div
-                      className="ranking-progress-fill"
-                      style={{ width: progresoSobreCinco(selectedProject?.puntuacionTotal) }}
-                    />
+            {esPuntos && selectedProject && (
+              <aside className="ranking-detail-card">
+                <div className="ranking-card-header">
+                  <div>
+                    <h2>
+                      Proyecto #{selectedProject.posicion}: {selectedProject.proyectoNombre}
+                    </h2>
+                    <p>Resumen de puntos</p>
                   </div>
                 </div>
-              </div>
-            </aside>
+
+                <div className="ranking-detail-body">
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>Suma total de puntos</span>
+                      <strong className="ranking-final-score">
+                        {formatearNumero(selectedProject.sumaPuntos ?? selectedProject.puntuacionTotal)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>Media por votante</span>
+                      <strong className="ranking-final-score">
+                        {formatearNumero(selectedProject.mediaPuntos ?? 0)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>Total de votos</span>
+                      <strong className="ranking-final-score">
+                        {selectedProject.totalVotos ?? 0}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            )}
+
+            {esSimple && selectedProject && (
+              <aside className="ranking-detail-card">
+                <div className="ranking-card-header">
+                  <div>
+                    <h2>
+                      Proyecto #{selectedProject.posicion}: {selectedProject.proyectoNombre}
+                    </h2>
+                    <p>Resumen de votación simple</p>
+                  </div>
+                </div>
+
+                <div className="ranking-detail-body">
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>Total de votos</span>
+                      <strong className="ranking-final-score">
+                        {selectedProject.totalVotos ?? 0}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>Votantes activos en el evento</span>
+                      <strong className="ranking-final-score">
+                        {selectedProject.votantesActivos ?? 0}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            )}
           </section>
         </>
       )}
