@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import {
   createProyectoGestionado,
+  deleteProyecto,
   getProyectos,
   meterProyectoEnEvento,
   quitarProyectoDeEvento,
@@ -576,6 +577,7 @@ function ProjectsScreen() {
   const [editingProject, setEditingProject] = useState(null);
   const [participationProject, setParticipationProject] = useState(null);
   const [confirmLeaveProject, setConfirmLeaveProject] = useState(null);
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState(null);
 
   const puedeGestionar = esOrganizador();
 
@@ -735,6 +737,23 @@ function ProjectsScreen() {
       await load();
     } catch (err) {
       setError(err.message || "No se pudo quitar el proyecto del evento.");
+    }
+  }
+
+  async function handleDeleteProject(project) {
+    try {
+      setError("");
+      setSuccess("");
+
+      await deleteProyecto(project.id);
+
+      setConfirmDeleteProject(null);
+      setParticipationProject(null);
+      setSuccess("Proyecto eliminado correctamente.");
+
+      await load();
+    } catch (err) {
+      setError(err.message || "No se pudo eliminar el proyecto.");
     }
   }
 
@@ -908,6 +927,14 @@ function ProjectsScreen() {
                       <Link2 size={15} />
                       Participación
                     </button>
+                    <button
+                      type="button"
+                      className="project-danger-btn"
+                      onClick={() => setConfirmDeleteProject(proyecto)}
+                    >
+                      <Trash2 size={15} />
+                      Eliminar
+                    </button>
                   </div>
                 ) : null}
               </article>
@@ -951,6 +978,14 @@ function ProjectsScreen() {
         warning="El proyecto no se eliminará. Solo saldrá del evento y de sus votaciones."
         onCancel={() => setConfirmLeaveProject(null)}
         onConfirm={() => handleLeaveEvent(confirmLeaveProject)}
+      />
+      <ConfirmModal
+        open={Boolean(confirmDeleteProject)}
+        title="Eliminar proyecto"
+        message={`Vas a eliminar "${confirmDeleteProject?.nombre}".`}
+        warning="Se eliminarán sus comentarios, votos, evaluaciones y relaciones con votaciones. También desaparecerá de los rankings."
+        onCancel={() => setConfirmDeleteProject(null)}
+        onConfirm={() => handleDeleteProject(confirmDeleteProject)}
       />
     </main>
   );

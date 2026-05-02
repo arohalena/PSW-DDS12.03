@@ -28,15 +28,18 @@ import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ProyectoMO;
 import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
+import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.ComentarioRepository;
 import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
 import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.EventoRepository;
 import com.Votify.backend.repository.ProyectoRepository;
+import com.Votify.backend.repository.PuntuacionCriterioRepository;
 import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
+import com.Votify.backend.repository.VotoCriterioRepository;
 import com.Votify.backend.repository.VotoRepository;
 import com.Votify.backend.service.ProyectoService;
 import com.Votify.backend.service.RankingService;
@@ -60,6 +63,10 @@ public class ProyectoFacade {
     private final VotoRepository votoRepository;
     private final RankingService rankingService;
     private final ProyectoRepository proyectoRepository;
+    private final PuntuacionCriterioRepository puntuacionCriterioRepository;
+    private final VotoCriterioRepository votoCriterioRepository;
+
+    
 
     public ProyectoMO crearSimple(ProyectoMO proyecto) {
         if (proyecto.getTipoCategoria() == null) {
@@ -382,5 +389,34 @@ public class ProyectoFacade {
             relacion.setVotacion(votacion);
             votacionProyectoRepository.save(relacion);
         }
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        ProyectoMO proyecto = proyectoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado."));
+
+        for (VotacionProyectoMO votacionProyecto : votacionProyectoRepository.findByProyecto_Id(id)) {
+            comentarioRepository.deleteAll(comentarioRepository.findByVotacionProyecto_Id(votacionProyecto.getId()));
+            puntuacionCriterioRepository.deleteAll(puntuacionCriterioRepository.findByVotacionProyecto_Id(votacionProyecto.getId()));
+
+            for (VotoMO voto : votoRepository.findByVotacionProyecto_Id(votacionProyecto.getId())) {
+                votoCriterioRepository.deleteAll(votoCriterioRepository.findByVoto_Id(voto.getId()));
+                votoRepository.delete(voto);
+            }
+            votacionProyectoRepository.delete(votacionProyecto);
+        }
+
+        comentarioRepository.deleteAll(comentarioRepository.findByProyecto_Id(id));
+
+        EquipoMO equipo = equipoRepository.findByProyecto_Id(id); 
+        if (equipo != null) {
+            equipo.setProyecto(null);
+            equipoRepository.save(equipo);
+        }
+        proyecto.setEvento(null);
+        proyecto.setEquipo(null);
+
+        proyectoService.delete(proyecto.getId());
     }
 }

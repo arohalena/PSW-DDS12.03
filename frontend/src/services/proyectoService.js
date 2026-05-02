@@ -153,3 +153,14 @@ export async function quitarProyectoDeEvento(proyectoId) {
 
   return response.json();
 }
+
+export async function deleteProyecto(id) {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo eliminar el proyecto.");
+  }
+}

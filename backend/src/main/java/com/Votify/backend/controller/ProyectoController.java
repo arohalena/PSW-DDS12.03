@@ -74,4 +74,9 @@ public class ProyectoController extends GenericController<ProyectoMO> {
     public ProyectoMO quitarDeEvento(@PathVariable UUID proyectoId) {
         return proyectoFacade.quitarDeEvento(proyectoId);
     }
+
+    @Override
+    public void delete(@PathVariable UUID id) {
+        proyectoFacade.delete(id);
+    }
 }

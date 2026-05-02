@@ -1409,3 +1409,34 @@
   color: #64748b;
   font-weight: 700;
 }
+
+/* Botón eliminar proyecto */
+
+.project-danger-btn {
+  border: 0;
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.7rem;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-weight: 700;
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.project-danger-btn:hover {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.project-danger-btn:active {
+  transform: scale(0.96);
+}
+
+.project-danger-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
