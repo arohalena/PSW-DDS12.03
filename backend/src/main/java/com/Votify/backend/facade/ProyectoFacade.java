@@ -1,7 +1,11 @@
 package com.Votify.backend.facade;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -29,11 +33,13 @@ import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
 import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.EventoRepository;
+import com.Votify.backend.repository.ProyectoRepository;
 import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
 import com.Votify.backend.repository.VotoRepository;
 import com.Votify.backend.service.ProyectoService;
+import com.Votify.backend.service.RankingService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,6 +58,8 @@ public class ProyectoFacade {
     private final VotacionRepository votacionRepository;
     private final VotacionProyectoRepository votacionProyectoRepository;
     private final VotoRepository votoRepository;
+    private final RankingService rankingService;
+    private final ProyectoRepository proyectoRepository;
 
     public ProyectoMO crearSimple(ProyectoMO proyecto) {
         if (proyecto.getTipoCategoria() == null) {
@@ -183,44 +191,110 @@ public class ProyectoFacade {
     }
 
     public MiProyectoDashboardResponse getMiProyectoDashboard(UUID usuarioId) {
-        CompetidorMO competidor = competidorRepository.findByUsuarioId(usuarioId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "No se ha encontrado un competidor asociado a este usuario."));
+    CompetidorMO competidor = competidorRepository.findByUsuarioId(usuarioId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "No se ha encontrado un competidor asociado a este usuario."
+        ));
 
-        List<CompetidorEventoMO> asignaciones = competidorEventoRepository.findByCompetidorId(competidor.getId());
-        if (asignaciones == null || asignaciones.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "El competidor no está asignado a ningún equipo.");
+    List<CompetidorEventoMO> asignaciones = competidorEventoRepository.findByCompetidorId(competidor.getId());
+
+    Set<UUID> equipoIds = new HashSet<>();
+
+    for (CompetidorEventoMO asignacion : asignaciones) {
+        if (asignacion.getEquipo() != null) {
+            equipoIds.add(asignacion.getEquipo().getId());
+        }
+    }
+
+    List<EquipoMO> equipos = equipoIds.isEmpty()
+        ? Collections.emptyList()
+        : equipoRepository.findAllById(equipoIds);
+
+    List<EventoMO> eventos = eventoRepository.findAll();
+
+    List<ProyectoMO> proyectos = new ArrayList<>();
+
+    for (EquipoMO equipo : equipos) {
+        proyectos.addAll(proyectoRepository.findByEquipo_Id(equipo.getId()));
+
+        if (equipo.getProyecto() != null && proyectos.stream().noneMatch(p -> p.getId().equals(equipo.getProyecto().getId()))) {
+            proyectos.add(equipo.getProyecto());
+        }
+    }
+
+    List<MiProyectoDashboardResponse.ProyectoDashboardItem> proyectosDashboard = new ArrayList<>();
+
+    for (ProyectoMO proyecto : proyectos) {
+        EquipoMO equipo = proyecto.getEquipo();
+
+        if (equipo == null) {
+            equipo = equipos.stream()
+                .filter(e -> e.getProyecto() != null && e.getProyecto().getId().equals(proyecto.getId()))
+                .findFirst()
+                .orElse(null);
         }
 
-        CompetidorEventoMO asignacion = asignaciones.get(0);
-        EquipoMO equipo = asignacion.getEquipo();
-
-        if (equipo == null || equipo.getProyecto() == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "No se ha encontrado un proyecto asociado al equipo del competidor.");
-        }
-
-        ProyectoMO proyecto = equipo.getProyecto();
-        EventoMO evento = equipo.getEvento();
-
+        EventoMO evento = proyecto.getEvento();
         List<ComentarioMO> comentarios = comentarioRepository.findByProyecto_Id(proyecto.getId());
-        List<VotacionProyectoMO> votacionesProyecto = votacionProyectoRepository.findByProyecto_Id(proyecto.getId());
+        List<VotacionProyectoMO> relaciones = votacionProyectoRepository.findByProyecto_Id(proyecto.getId());
 
-        long totalVotos = 0;
-        for (VotacionProyectoMO vp : votacionesProyecto) {
-            totalVotos += votoRepository.countByVotacionProyecto_Id(vp.getId());
+        long totalVotosProyecto = 0;
+        List<MiProyectoDashboardResponse.VotacionDashboardItem> votacionesDashboard = new ArrayList<>();
+
+        for (VotacionProyectoMO relacion : relaciones) {
+            long votos = votoRepository.countByVotacionProyecto_Id(relacion.getId());
+            totalVotosProyecto += votos;
+
+            Map<String, Object> rankingEntry = null;
+            List<Map<String, Object>> ranking = Collections.emptyList();
+
+            boolean esMulticriterio =
+                relacion.getVotacion().getModalidad().name().equals("MULTICRITERIO")
+                || relacion.getVotacion().getModalidad().name().equals("MULTICRITERIO_PONDERADA");
+
+            if (esMulticriterio && relacion.getVotacion().getEvento() != null) {
+                ranking = rankingService.calcularRanking(
+                    relacion.getVotacion().getEvento().getId(),
+                    relacion.getVotacion().getId()
+                );
+
+                rankingEntry = ranking.stream()
+                    .filter(entry -> proyecto.getId().equals(entry.get("proyectoId")))
+                    .findFirst()
+                    .orElse(null);
+            }
+
+            votacionesDashboard.add(new MiProyectoDashboardResponse.VotacionDashboardItem(
+                relacion.getId(),
+                relacion.getVotacion(),
+                votos,
+                rankingEntry,
+                ranking
+            ));
         }
 
-        return new MiProyectoDashboardResponse(
-            usuarioId,
-            competidor.getId(),
+        proyectosDashboard.add(new MiProyectoDashboardResponse.ProyectoDashboardItem(
             proyecto,
             equipo,
             evento,
-            totalVotos,
-            comentarios != null ? comentarios : Collections.emptyList()
-        );
+            totalVotosProyecto,
+            relaciones.size(),
+            0,
+            comentarios != null ? comentarios : Collections.emptyList(),
+            votacionesDashboard
+        ));
     }
+
+    return new MiProyectoDashboardResponse(
+        usuarioId,
+        competidor.getId(),
+        equipos,
+        eventos,
+        proyectos,
+        proyectosDashboard
+    );
+}
 
     private CreadorProyecto elegirCreador(String tipoCategoria) {
         return switch (tipoCategoria) {
