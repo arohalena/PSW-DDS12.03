@@ -1,5 +1,7 @@
 package com.Votify.backend.controller;
 
+import java.util.UUID;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.Votify.backend.dto.CrearEventoRequest;
+import com.Votify.backend.facade.EventoFacade;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.service.EventoService;
 import com.Votify.backend.service.GenericService;
@@ -17,24 +20,19 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/eventos")
 @RequiredArgsConstructor
-public class EventoController extends GenericController<EventoMO>{
-    
+public class EventoController extends GenericController<EventoMO> {
+
     private final EventoService eventoService;
+    private final EventoFacade eventoFacade;
 
     @Override
-    protected GenericService<EventoMO> getService(){
-
+    protected GenericService<EventoMO> getService() {
         return eventoService;
-        
     }
 
-
-    //Uso de DTO a la hora de crear el evento mediante el controlador de REST para simplificar el paso de parámetros
     @PostMapping("/crear")
-    public EventoMO crear(@RequestBody CrearEventoRequest body){
-
-        return eventoService.crear(
-
+    public EventoMO crear(@RequestBody CrearEventoRequest body) {
+        return eventoFacade.crear(
             body.tipo(),
             body.nombre(),
             body.descripcion(),
@@ -42,7 +40,6 @@ public class EventoController extends GenericController<EventoMO>{
             body.fecha_inicio(),
             body.fecha_fin(),
             body.autoVotacion() != null && body.autoVotacion()
-
         );
     }
 
@@ -56,4 +53,8 @@ public class EventoController extends GenericController<EventoMO>{
         return eventoService.buscarPorCodigo(codigo);
     }
 
+    @Override
+    public void delete(@PathVariable UUID id) {
+        eventoFacade.eliminarConCascada(id);
+    }
 }

@@ -12,11 +12,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.Votify.backend.dto.EmitirEvaluacionRequest;
+import com.Votify.backend.dto.EmitirVotoPuntosRequest;
 import com.Votify.backend.dto.EmitirVotoSimpleRequest;
+import com.Votify.backend.facade.VotoFacade;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.VotoService;
-import com.Votify.backend.dto.EmitirVotoPuntosRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class VotoController extends GenericController<VotoMO> {
 
     private final VotoService votoService;
+    private final VotoFacade votoFacade;
 
     @Override
     protected GenericService<VotoMO> getService() {
@@ -49,7 +51,7 @@ public class VotoController extends GenericController<VotoMO> {
 
     @GetMapping("/votacion/{votacionId}/ha-alcanzado-maximo")
     public boolean haAlcanzadoMaximo(@PathVariable UUID votacionId, @RequestParam String token) {
-        return votoService.haAlcanzadoMaximo(votacionId, token);
+        return votoFacade.haAlcanzadoMaximo(votacionId, token);
     }
 
     @GetMapping("/evento/{eventoId}/votantes")
@@ -59,16 +61,16 @@ public class VotoController extends GenericController<VotoMO> {
 
     @PostMapping("/simple")
     public VotoMO votarSimple(@RequestBody EmitirVotoSimpleRequest request) {
-        return votoService.votarSimple(request);
+        return votoFacade.votarSimple(request);
     }
 
     @PostMapping("/multicriterio")
     public VotoMO votarMulticriterio(@RequestBody EmitirEvaluacionRequest request) {
-        return votoService.votarMulticriterio(request);
+        return votoFacade.votarMulticriterio(request);
     }
 
     @PostMapping("/puntos")
     public VotoMO votarPuntos(@RequestBody EmitirVotoPuntosRequest request) {
-    return votoService.votarPuntos(request);
-}
+        return votoFacade.votarPuntos(request);
+    }
 }
