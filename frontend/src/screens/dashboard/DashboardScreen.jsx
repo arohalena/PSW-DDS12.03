@@ -144,7 +144,7 @@ function DashboardScreen() {
     <div className="dashboard-page">
       <div className="dashboard-header">
         <div>
-          <h1>Bienvenido de nuevo 👋</h1>
+          <h1>Bienvenido</h1>
           <p>Aquí está todo lo que necesitas saber</p>
         </div>
 

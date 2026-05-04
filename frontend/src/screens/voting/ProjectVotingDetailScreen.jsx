@@ -120,20 +120,34 @@ function SuccessScreen({
   onBack,
   onResults,
 }) {
-  const total =
-    modalidad === "PUNTOS"
-      ? Number(puntuacion || 0)
-      : criterios.length > 0
-        ? criterios.reduce((acc, criterio) => {
-            const valor = Number(ratings[criterio.id] || 0);
+  const total = useMemo(() => {
+  if (modalidad === "PUNTOS") {
+    return Number(puntuacion || 0);
+  }
 
-            if (modalidad === "MULTICRITERIO_PONDERADA") {
-              return acc + valor * (Number(criterio.peso || 0) / 100);
-            }
+  if (modalidad === "SIMPLE") {
+    return 1;
+  }
 
-            return acc + valor;
-          }, 0) / criterios.length
-        : 1;
+  if (!criterios.length) {
+    return 0;
+  }
+
+  if (modalidad === "MULTICRITERIO_PONDERADA") {
+    return criterios.reduce((acc, criterio) => {
+      const valor = Number(ratings[criterio.id] || 0);
+      const peso = Number(criterio.peso || 0);
+
+      return acc + valor * (peso / 100);
+    }, 0);
+  }
+
+  const suma = criterios.reduce((acc, criterio) => {
+    return acc + Number(ratings[criterio.id] || 0);
+  }, 0);
+
+  return suma / criterios.length;
+  }, [modalidad, criterios, ratings, puntuacion]);
 
   return (
     <main className="vote-success-page">
@@ -193,7 +207,7 @@ function SuccessScreen({
 
             <div className="vote-total-row">
               <span>Puntuación Total:</span>
-              <strong>{total.toFixed(1)}/5.0</strong>
+              <strong>{total.toFixed(2)}/5.00</strong>
             </div>
           </div>
         )}
@@ -220,24 +234,9 @@ function SuccessScreen({
           </div>
         )}
 
-        <div className="vote-note-box">
-          💡 <strong>Nota:</strong> Tu evaluación es definitiva y no puede ser
-          modificada. Si necesitas hacer cambios, contacta al organizador del
-          evento.
-        </div>
-
-        <div className="vote-progress-row">
-          <span>Tu progreso de evaluación</span>
-          <strong>1 de 18 proyectos</strong>
-        </div>
-
-        <div className="vote-progress-bar">
-          <div />
-        </div>
-
         <div className="vote-success-actions">
           <button type="button" className="primary-btn" onClick={onBack}>
-            Volver a Lista de Proyectos
+            Volver al evento
             <ArrowRight size={17} />
           </button>
 
