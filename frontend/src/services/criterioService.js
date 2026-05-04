@@ -129,3 +129,33 @@ export async function getRanking(eventoId, votacionId){
   return response.json();
 
 }
+
+export async function cambiarModoRanking(eventoId, votacionId, usuarioId, modo){
+
+  const response = await fetch(`${RANKING_URL}/evento/${eventoId}/votacion/${votacionId}/modo`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuarioId, modo }),
+  });
+
+  if (!response.ok){
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo cambiar el modo de ranking");
+  }
+
+}
+
+export async function guardarOrdenRanking(eventoId, votacionId, usuarioId, posiciones){
+
+  const response = await fetch(`${RANKING_URL}/evento/${eventoId}/votacion/${votacionId}/orden`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuarioId, posiciones }),
+  });
+
+  if (!response.ok){
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo guardar el orden manual");
+  }
+
+}

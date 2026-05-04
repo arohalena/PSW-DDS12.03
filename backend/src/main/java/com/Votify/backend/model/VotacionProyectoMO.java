@@ -1,5 +1,6 @@
 package com.Votify.backend.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -20,5 +21,8 @@ public class VotacionProyectoMO extends ModeloBaseMO {
     @ManyToOne
     @JoinColumn(name = "proyecto_id", nullable = false)
     private ProyectoMO proyecto;
+
+    @Column(name = "posicion_manual")
+    private Integer posicionManual;
     
 }

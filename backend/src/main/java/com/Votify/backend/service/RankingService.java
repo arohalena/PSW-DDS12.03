@@ -1,6 +1,8 @@
 package com.Votify.backend.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,17 +10,23 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.CriterioEvaluacionMO;
 import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
+import com.Votify.backend.model.ModoRankingMO;
+import com.Votify.backend.model.RolMO;
+import com.Votify.backend.model.TipoVotacionMO;
+import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
 import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.PuntuacionCriterioRepository;
+import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
 import com.Votify.backend.repository.VotoRepository;
@@ -35,6 +43,7 @@ public class RankingService {
     private final VotoRepository votoRepository;
     private final EquipoRepository equipoRepository;
     private final VotacionRepository votacionRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public List<Map<String, Object>> calcularRanking(UUID eventoId, UUID votacionId) {
 
@@ -43,12 +52,124 @@ public class RankingService {
 
         ModalidadVotacionMO modalidad = votacion.getModalidad();
 
-        return switch (modalidad) {
+        List<Map<String, Object>> ranking = switch (modalidad) {
             case SIMPLE -> rankingSimple(eventoId, votacionId);
             case PUNTOS -> rankingPuntos(eventoId, votacionId);
             case MULTICRITERIO -> rankingMulticriterio(eventoId, votacionId, false);
             case MULTICRITERIO_PONDERADA -> rankingMulticriterio(eventoId, votacionId, true);
         };
+
+        ModoRankingMO modo = votacion.getModoRanking() != null ? votacion.getModoRanking() : ModoRankingMO.AUTOMATICO;
+
+        for (Map<String, Object> entry : ranking) {
+            entry.put("modoRanking", modo.name());
+        }
+
+        if (modo == ModoRankingMO.MANUAL) {
+            return aplicarOrdenManual(ranking, votacionId);
+        }
+
+        return ordenarYNumerar(ranking);
+    }
+
+    @Transactional
+    public void cambiarModo(UUID votacionId, UUID usuarioId, ModoRankingMO modo) {
+
+        VotacionMO votacion = votacionRepository.findById(votacionId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la votación."));
+
+        validarPermisoEdicion(votacion, usuarioId);
+
+        if (modo == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Modo de ranking no válido.");
+        }
+
+        votacion.setModoRanking(modo);
+        votacionRepository.save(votacion);
+    }
+
+    @Transactional
+    public void guardarOrdenManual(UUID votacionId, UUID usuarioId, List<Map<String, Object>> posiciones) {
+
+        VotacionMO votacion = votacionRepository.findById(votacionId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la votación."));
+
+        validarPermisoEdicion(votacion, usuarioId);
+
+        if (posiciones == null || posiciones.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se han recibido posiciones.");
+        }
+
+        List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
+        Map<UUID, VotacionProyectoMO> indexById = new HashMap<>();
+        for (VotacionProyectoMO vp : proyectosVotacion) {
+            indexById.put(vp.getId(), vp);
+        }
+
+        for (Map<String, Object> item : posiciones) {
+            Object idRaw = item.get("votacionProyectoId");
+            Object posRaw = item.get("posicion");
+            if (idRaw == null || posRaw == null) continue;
+
+            UUID vpId = UUID.fromString(idRaw.toString());
+            int pos = ((Number) posRaw).intValue();
+
+            VotacionProyectoMO vp = indexById.get(vpId);
+            if (vp == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "El proyecto " + vpId + " no pertenece a esta votación.");
+            }
+            vp.setPosicionManual(pos);
+        }
+
+        votacionProyectoRepository.saveAll(proyectosVotacion);
+
+        if (votacion.getModoRanking() != ModoRankingMO.MANUAL) {
+            votacion.setModoRanking(ModoRankingMO.MANUAL);
+            votacionRepository.save(votacion);
+        }
+    }
+
+    private void validarPermisoEdicion(VotacionMO votacion, UUID usuarioId) {
+
+        if (usuarioId == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Se requiere usuario para editar el ranking.");
+        }
+
+        UsuarioMO usuario = usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario no encontrado."));
+
+        RolMO rol = usuario.getRol();
+
+        if (rol == RolMO.ORGANIZADOR) return;
+
+        if (rol == RolMO.JURADO && votacion.getTipo() == TipoVotacionMO.JURADO) return;
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Solo el organizador o un jurado en votaciones de jurado pueden modificar el ranking.");
+    }
+
+    private List<Map<String, Object>> aplicarOrdenManual(List<Map<String, Object>> ranking, UUID votacionId) {
+
+        List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
+        Map<UUID, Integer> posicionesManuales = new HashMap<>();
+        for (VotacionProyectoMO vp : proyectosVotacion) {
+            if (vp.getPosicionManual() != null) {
+                posicionesManuales.put(vp.getId(), vp.getPosicionManual());
+            }
+        }
+
+        ranking.sort(Comparator.comparingInt(entry -> {
+            UUID vpId = (UUID) entry.get("votacionProyectoId");
+            Integer pos = posicionesManuales.get(vpId);
+            return pos != null ? pos : Integer.MAX_VALUE;
+        }));
+
+        for (int i = 0; i < ranking.size(); i++) {
+            ranking.get(i).put("posicion", i + 1);
+        }
+
+        return ranking;
     }
 
     private List<Map<String, Object>> rankingSimple(UUID eventoId, UUID votacionId) {
@@ -71,7 +192,7 @@ public class RankingService {
             ranking.add(entry);
         }
 
-        return ordenarYNumerar(ranking);
+        return ranking;
     }
 
     private List<Map<String, Object>> rankingPuntos(UUID eventoId, UUID votacionId) {
@@ -107,7 +228,7 @@ public class RankingService {
             ranking.add(entry);
         }
 
-        return ordenarYNumerar(ranking);
+        return ranking;
     }
 
     private List<Map<String, Object>> rankingMulticriterio(UUID eventoId, UUID votacionId, boolean ponderada) {
@@ -159,7 +280,7 @@ public class RankingService {
             ranking.add(entry);
         }
 
-        return ordenarYNumerar(ranking);
+        return ranking;
     }
 
     private Map<String, Object> baseEntry(VotacionProyectoMO vp, long votantesActivos) {

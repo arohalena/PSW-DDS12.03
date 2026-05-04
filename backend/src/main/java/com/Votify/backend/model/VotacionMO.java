@@ -50,6 +50,10 @@ public class VotacionMO extends ModeloBaseMO {
     @Column(nullable = false)
     private EstadoVotacionMO estado;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "modo_ranking", nullable = false)
+    private ModoRankingMO modoRanking = ModoRankingMO.AUTOMATICO;
+
     @Transient
     @JsonProperty("estadoActual")
     public EstadoVotacionMO getEstadoActual() {

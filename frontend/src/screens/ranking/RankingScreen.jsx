@@ -1,8 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
-import { Trophy, Medal, Award, Download } from "lucide-react";
+import { Trophy, Medal, Award, Download, ArrowUp, ArrowDown, Save } from "lucide-react";
 import { getEventos } from "../../services/eventoService";
 import { getVotacionesByEvento } from "../../services/votacionService";
-import { getRanking, getCriteriosByEvento } from "../../services/criterioService";
+import {
+  getRanking,
+  getCriteriosByEvento,
+  cambiarModoRanking,
+  guardarOrdenRanking,
+} from "../../services/criterioService";
+import { getUsuarioLogueado } from "../../services/sessionService";
 import "../../styles/ranking.css";
 
 const MODALIDADES_MULTICRITERIO = ["MULTICRITERIO", "MULTICRITERIO_PONDERADA"];
@@ -17,6 +23,23 @@ function RankingScreen() {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [modo, setModo] = useState("AUTOMATICO");
+  const [ordenSucio, setOrdenSucio] = useState(false);
+  const [guardandoOrden, setGuardandoOrden] = useState(false);
+  const [aviso, setAviso] = useState("");
+
+  const usuario = useMemo(() => getUsuarioLogueado(), []);
+  const votacionSeleccionada = useMemo(
+    () => votaciones.find((v) => v.id === votacionId) || null,
+    [votaciones, votacionId]
+  );
+
+  const puedeEditar = useMemo(() => {
+    if (!usuario || !votacionSeleccionada) return false;
+    if (usuario.rol === "ORGANIZADOR") return true;
+    if (usuario.rol === "JURADO" && votacionSeleccionada.tipo === "JURADO") return true;
+    return false;
+  }, [usuario, votacionSeleccionada]);
 
   useEffect(() => {
     const loadEventos = async () => {
@@ -81,11 +104,14 @@ function RankingScreen() {
 
         const data = await getRanking(eventoId, votacionId);
         setRanking(data);
+        setOrdenSucio(false);
 
         if (data.length > 0) {
           setSelectedProjectId(data[0].proyectoId);
+          setModo(data[0].modoRanking || "AUTOMATICO");
         } else {
           setSelectedProjectId(null);
+          setModo("AUTOMATICO");
         }
       } catch (err) {
         setError(err.message || "No se pudo cargar el ranking");
@@ -96,11 +122,6 @@ function RankingScreen() {
 
     loadRanking();
   }, [eventoId, votacionId]);
-
-  const votacionSeleccionada = useMemo(
-    () => votaciones.find((v) => v.id === votacionId) || null,
-    [votaciones, votacionId]
-  );
 
   const modalidad = votacionSeleccionada?.modalidad ?? null;
   const esMulticriterio = MODALIDADES_MULTICRITERIO.includes(modalidad);
@@ -134,6 +155,65 @@ function RankingScreen() {
     if (values.length === 0) return "—";
     return `${values[0]}%`;
   }, [ranking]);
+
+  const handleCambiarModo = async (nuevoModo) => {
+    if (!puedeEditar || nuevoModo === modo) return;
+
+    try {
+      setError("");
+      setAviso("");
+      await cambiarModoRanking(eventoId, votacionId, usuario.id, nuevoModo);
+      setModo(nuevoModo);
+      const data = await getRanking(eventoId, votacionId);
+      setRanking(data);
+      setOrdenSucio(false);
+      setAviso(
+        nuevoModo === "MANUAL"
+          ? "Modo manual activado. Reordena con las flechas y pulsa Guardar."
+          : "Modo automático activado. El ranking se ordena por puntuación."
+      );
+    } catch (err) {
+      setError(err.message || "No se pudo cambiar el modo");
+    }
+  };
+
+  const moverPosicion = (index, delta) => {
+    const nuevoIndex = index + delta;
+    if (nuevoIndex < 0 || nuevoIndex >= ranking.length) return;
+
+    const copia = [...ranking];
+    const [item] = copia.splice(index, 1);
+    copia.splice(nuevoIndex, 0, item);
+    copia.forEach((entry, i) => {
+      entry.posicion = i + 1;
+    });
+    setRanking(copia);
+    setOrdenSucio(true);
+  };
+
+  const handleGuardarOrden = async () => {
+    if (!puedeEditar) return;
+
+    try {
+      setGuardandoOrden(true);
+      setError("");
+      setAviso("");
+
+      const posiciones = ranking.map((entry, i) => ({
+        votacionProyectoId: entry.votacionProyectoId,
+        posicion: i + 1,
+      }));
+
+      await guardarOrdenRanking(eventoId, votacionId, usuario.id, posiciones);
+      setOrdenSucio(false);
+      setAviso("Orden manual guardado correctamente.");
+      setModo("MANUAL");
+    } catch (err) {
+      setError(err.message || "No se pudo guardar el orden");
+    } finally {
+      setGuardandoOrden(false);
+    }
+  };
 
   const getPositionBadge = (posicion) => {
     if (posicion === 1) {
@@ -279,6 +359,8 @@ function RankingScreen() {
     );
   }
 
+  const enModoManual = modo === "MANUAL";
+
   return (
     <main className="ranking-page">
       <header className="ranking-header">
@@ -329,6 +411,59 @@ function RankingScreen() {
         </label>
       </section>
 
+      {puedeEditar && ranking.length > 0 && (
+        <section className="ranking-mode-bar" style={{
+          display: "flex",
+          gap: "12px",
+          alignItems: "center",
+          padding: "12px 16px",
+          background: "#f5f5f7",
+          borderRadius: "8px",
+          marginBottom: "12px",
+          flexWrap: "wrap",
+        }}>
+          <span style={{ fontWeight: 600 }}>Modo de ranking:</span>
+
+          <button
+            type="button"
+            className={`primary-btn ${modo === "AUTOMATICO" ? "" : "ranking-action-btn"}`}
+            onClick={() => handleCambiarModo("AUTOMATICO")}
+            disabled={modo === "AUTOMATICO"}
+          >
+            Automático
+          </button>
+
+          <button
+            type="button"
+            className={`primary-btn ${modo === "MANUAL" ? "" : "ranking-action-btn"}`}
+            onClick={() => handleCambiarModo("MANUAL")}
+            disabled={modo === "MANUAL"}
+          >
+            Manual
+          </button>
+
+          {enModoManual && (
+            <button
+              type="button"
+              className="primary-btn ranking-action-btn"
+              onClick={handleGuardarOrden}
+              disabled={!ordenSucio || guardandoOrden}
+              style={{ marginLeft: "auto" }}
+            >
+              <Save size={16} />
+              {guardandoOrden ? "Guardando..." : "Guardar orden"}
+            </button>
+          )}
+
+          <span style={{ flexBasis: "100%", fontSize: "0.85rem", color: "#666" }}>
+            {enModoManual
+              ? "En modo manual el orden lo deciden el jurado/organizador. Las puntuaciones siguen mostrándose pero no determinan la posición."
+              : "En modo automático el orden se calcula a partir de las puntuaciones de los votos."}
+          </span>
+        </section>
+      )}
+
+      {aviso && <div className="feedback-card">{aviso}</div>}
       {error && <div className="feedback-card error-box">{error}</div>}
 
       {!loading && votaciones.length === 0 && (
@@ -376,19 +511,19 @@ function RankingScreen() {
           <section className="ranking-main-grid">
             <div className="ranking-list-card">
               <div className="ranking-card-header">
-                <h2>Ranking General</h2>
+                <h2>Ranking General {enModoManual && <small style={{ fontWeight: 400, color: "#888" }}>(orden manual)</small>}</h2>
               </div>
 
               <div className="ranking-list">
-                {ranking.map((entry) => {
+                {ranking.map((entry, index) => {
                   const estaSeleccionado = selectedProject?.proyectoId === entry.proyectoId;
 
                   return (
-                    <button
+                    <div
                       key={entry.proyectoId}
-                      type="button"
                       className={`ranking-list-item ${estaSeleccionado ? "selected" : ""}`}
                       onClick={() => setSelectedProjectId(entry.proyectoId)}
+                      style={{ cursor: "pointer" }}
                     >
                       <div className="ranking-item-left">
                         {getPositionBadge(entry.posicion)}
@@ -411,11 +546,34 @@ function RankingScreen() {
                           )}
                         </div>
 
-                        {esMulticriterio && (
+                        {esMulticriterio && !enModoManual && (
                           <span className="ranking-detail-link">Ver Detalle</span>
                         )}
+
+                        {puedeEditar && enModoManual && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginLeft: "12px" }}>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); moverPosicion(index, -1); }}
+                              disabled={index === 0}
+                              title="Subir"
+                              style={{ padding: "4px", cursor: index === 0 ? "not-allowed" : "pointer" }}
+                            >
+                              <ArrowUp size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); moverPosicion(index, 1); }}
+                              disabled={index === ranking.length - 1}
+                              title="Bajar"
+                              style={{ padding: "4px", cursor: index === ranking.length - 1 ? "not-allowed" : "pointer" }}
+                            >
+                              <ArrowDown size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
