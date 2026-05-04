@@ -77,5 +77,11 @@ public class VotacionMO extends ModeloBaseMO {
 
         return EstadoVotacionMO.ABIERTA;
     }
-    
+
+    @Column(nullable = false)
+    private boolean comentariosActivos;
+
+    @Column(nullable = false)
+    private boolean comentarioObligatorio;
+
 }

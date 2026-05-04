@@ -76,6 +76,8 @@ function createVotingConfig() {
     tipo: "POPULAR",
     modalidad: "SIMPLE",
     maxSelecciones: 1,
+    comentariosActivos: true,
+    comentarioObligatorio: true,
     criteria: [],
   };
 }
@@ -296,6 +298,8 @@ function CreateEventScreen() {
         maxSelecciones: Number(config.maxSelecciones || 1),
         inicio: toOffsetDateTime(formData.fecha_inicio),
         fin: toOffsetDateTime(formData.fecha_fin),
+        comentariosActivos: config.comentariosActivos,
+        comentarioObligatorio: config.comentariosActivos ? config.comentarioObligatorio : false,
         criterios: needsCriteria(config.modalidad)
           ? config.criteria
               .filter((criterion) => criterion.nombre.trim())
@@ -592,6 +596,43 @@ function CreateEventScreen() {
                           })
                         }
                       />
+                    </label>
+                  </div>
+                  
+                  <div className="voting-comments-config">
+                    <label className="voting-toggle-row">
+                      <input
+                        type="checkbox"
+                        checked={config.comentariosActivos}
+                        onChange={(event) =>
+                          updateVotingConfig(config.id, {
+                            comentariosActivos: event.target.checked,
+                            comentarioObligatorio: event.target.checked
+                              ? config.comentarioObligatorio
+                              : false,
+                          })
+                        }
+                      />
+                      <div>
+                        <strong>Permitir comentarios</strong>
+                        <span>Los votantes podrán dejar feedback al votar.</span>
+                      </div>
+                    </label>
+                    <label className={`voting-toggle-row ${!config.comentariosActivos ? "disabled" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={config.comentarioObligatorio}
+                        disabled={!config.comentariosActivos}
+                        onChange={(event) =>
+                          updateVotingConfig(config.id, {
+                            comentarioObligatorio: event.target.checked,
+                          })
+                        }
+                      />
+                      <div>
+                        <strong>Comentario obligatorio</strong>
+                        <span>El voto no se podrá enviar sin comentario.</span>
+                      </div>
                     </label>
                   </div>
 

@@ -402,6 +402,10 @@ function ProjectVotingDetailScreen() {
   const esPuntos = modalidad === "PUNTOS";
   const esMulticriterio = modalidad === "MULTICRITERIO";
   const esPonderada = modalidad === "MULTICRITERIO_PONDERADA";
+  const comentariosActivos = votacion?.comentariosActivos !== false;
+  const comentarioObligatorio = votacion?.comentarioObligatorio === true;
+  const comentarioCumplido =
+  !comentariosActivos || !comentarioObligatorio || comentario.trim().length > 0;
 
   const puedeVotar =
     !esJurado || usuario?.rol === "JURADO" || usuario?.rol === "ORGANIZADOR";
@@ -420,7 +424,7 @@ function ProjectVotingDetailScreen() {
       !yaVotado &&
       !haAlcanzadoMaximo &&
       admiteVotos &&
-      comentario.trim().length > 0;
+      comentarioCumplido;
 
     const canSubmitMulti =
       !!votacionProyectoId &&
@@ -428,7 +432,7 @@ function ProjectVotingDetailScreen() {
       !yaVotado &&
       !haAlcanzadoMaximo &&
       admiteVotos &&
-      comentario.trim().length > 0 &&
+      comentarioCumplido &&
       (esSimple ||
         esPuntos ||
         ((esMulticriterio || esPonderada) && allRated));
@@ -466,6 +470,11 @@ function ProjectVotingDetailScreen() {
   }
 
   async function submitVote() {
+
+    if (!comentarioCumplido) {
+    setError("El comentario es obligatorio en esta votación.");
+    return;
+    }
     try {
       setVoting(true);
       setError("");
@@ -474,7 +483,7 @@ function ProjectVotingDetailScreen() {
         await votarProyectoSimple(
           votacionProyectoId,
           token,
-          comentario.trim(),
+          comentariosActivos ? comentario.trim() : "",
           usuario?.id
         );
       }
@@ -485,7 +494,7 @@ function ProjectVotingDetailScreen() {
           anonTokenHash: token,
           usuarioId: usuario?.id,
           puntuacion: Number(puntuacion),
-          comentario: comentario.trim(),
+          comentario: comentariosActivos ? comentario.trim() : "",
         });
       }
 
@@ -494,11 +503,11 @@ function ProjectVotingDetailScreen() {
           votacionProyectoId,
           anonTokenHash: token,
           usuarioId: usuario?.id,
-          comentario: comentario.trim(),
+          comentario: comentariosActivos ? comentario.trim() : "",
           puntuaciones: criterios.map((criterio) => ({
             criterioId: criterio.id,
             puntuacion: Number(ratings[criterio.id]),
-            comentario: comentariosCriterio[criterio.id] || "",
+            comentario: comentariosActivos ? comentariosCriterio[criterio.id] || "" : "",
           })),
         });
       }
@@ -696,6 +705,7 @@ function ProjectVotingDetailScreen() {
                   }
                 />
 
+                {comentariosActivos ? (
                 <textarea
                   rows={3}
                   value={comentariosCriterio[criterio.id] || ""}
@@ -708,13 +718,18 @@ function ProjectVotingDetailScreen() {
                   }
                   placeholder="Comentario opcional para este criterio..."
                 />
+                ) : null}
+
               </article>
             ))}
           </div>
         )}
 
+        {comentariosActivos ? (
         <label className="voting-selector-field vote-comment-field">
-          <span>Comentario obligatorio</span>
+          <span>
+            Comentario {comentarioObligatorio ? "obligatorio" : "opcional"}
+          </span>
           <textarea
             rows={5}
             value={comentario}
@@ -723,6 +738,11 @@ function ProjectVotingDetailScreen() {
             placeholder="Escribe tu valoración del proyecto"
           />
         </label>
+        ) : (
+          <div className="vote-comments-disabled">
+            Esta votación no permite comentarios.
+          </div>
+        )}
 
         <div className="vote-action-row">
           <button

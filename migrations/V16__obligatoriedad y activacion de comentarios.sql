@@ -1,0 +1,5 @@
+ALTER TABLE votacion
+ADD COLUMN IF NOT EXISTS comentarios_activos BOOLEAN NOT NULL DEFAULT true;
+
+ALTER TABLE votacion
+ADD COLUMN IF NOT EXISTS comentario_obligatorio BOOLEAN NOT NULL DEFAULT true;

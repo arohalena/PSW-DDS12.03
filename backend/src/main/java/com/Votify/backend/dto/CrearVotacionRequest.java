@@ -18,5 +18,7 @@ public record CrearVotacionRequest (
     OffsetDateTime inicio,
     OffsetDateTime fin,
     EstadoVotacionMO estado,
+    Boolean comentariosActivos,
+    Boolean comentarioObligatorio,
     List<CriterioEvaluacionRequest> criterios
 ) {}

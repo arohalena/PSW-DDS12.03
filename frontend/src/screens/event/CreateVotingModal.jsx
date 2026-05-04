@@ -83,6 +83,8 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
     maxSelecciones: 1,
     inicio: ahoraLocal(),
     fin: ahoraMas7DiasLocal(),
+    comentariosActivos: true,
+    comentarioObligatorio: true,
     criteria: [],
   });
 
@@ -216,6 +218,8 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
         maxSelecciones: Number(config.maxSelecciones || 1),
         inicio: inicio.toISOString(),
         fin: fin.toISOString(),
+        comentariosActivos: config.comentariosActivos,
+        comentarioObligatorio: config.comentariosActivos ? config.comentarioObligatorio : false,
         criterios: needsCriteria(config.modalidad)
           ? config.criteria
               .filter((criterion) => criterion.nombre.trim())
@@ -313,6 +317,42 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
                 onChange={(event) => updateConfig({ fin: event.target.value })}
               />
             </label>
+          </div>
+          
+          <div className="voting-comments-config">
+            <label className="voting-toggle-row">
+              <input
+                type="checkbox"
+                checked={config.comentariosActivos}
+                onChange={(e) => 
+                  updateConfig({ 
+                    comentariosActivos: e.target.checked,
+                    comentarioObligatorio: e.target.checked ? config.comentarioObligatorio : false,
+                  })
+                }
+              />
+              <div>
+                <strong>Permitir comentarios</strong>
+                <span>Los votantes podrán dejar feedback al votar</span>
+              </div>
+            </label>
+
+            <label className={`voting-toggle-row ${!config.comentariosActivos ? "disabled" : ""}`}>
+              <input
+                type="checkbox"
+                checked={config.comentarioObligatorio}
+                disabled={!config.comentariosActivos}
+                onChange={(e) =>
+                  updateConfig({
+                    comentarioObligatorio: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <strong>Comentario obligatorio</strong>
+                <span>El voto no se podrá enviar sin comentario.</span>
+              </div>
+              </label>
           </div>
 
           <div>

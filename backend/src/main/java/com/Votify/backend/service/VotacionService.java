@@ -91,6 +91,8 @@ public class VotacionService extends GenericService<VotacionMO> {
         votacion.setMaxSelecciones(request.maxSelecciones());
         votacion.setInicio(request.inicio());
         votacion.setFin(request.fin());
+        votacion.setComentariosActivos(request.comentariosActivos() == null || request.comentariosActivos());
+        votacion.setComentarioObligatorio(votacion.isComentariosActivos() && request.comentarioObligatorio() != null && request.comentarioObligatorio());
         votacion.setNombre(request.nombre().trim());
         votacion.setEstado(request.estado() != null ?
             request.estado() : EstadoVotacionMO.PENDIENTE);

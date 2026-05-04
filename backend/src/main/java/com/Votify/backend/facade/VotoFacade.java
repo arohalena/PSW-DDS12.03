@@ -64,13 +64,12 @@ public class VotoFacade {
     @Transactional
     public VotoMO votarSimple(EmitirVotoSimpleRequest request) {
         validarRequestBase(request.votacionProyectoId(), request.anonTokenHash());
-        if (request.comentario() == null || request.comentario().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El comentario es obligatorio.");
-        }
 
         VotacionProyectoMO vp = obtenerVotacionProyecto(request.votacionProyectoId());
         VotacionMO votacion = vp.getVotacion();
         exigirModalidad(votacion, ModalidadVotacionMO.SIMPLE);
+
+        validarComentarios(votacion, request.comentario());
 
         UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
         validarEstadoYFechas(votacion);
@@ -100,6 +99,8 @@ public class VotoFacade {
         VotacionMO votacion = vp.getVotacion();
         exigirModalidad(votacion, ModalidadVotacionMO.PUNTOS);
 
+        validarComentarios(votacion, request.comentario());
+
         UsuarioMO usuario = validarJuradoSiHaceFalta(votacion, request.usuarioId());
         validarEstadoYFechas(votacion);
         validarAutoVotacion(votacion, vp, request.usuarioId());
@@ -122,12 +123,11 @@ public class VotoFacade {
     @Transactional
     public VotoMO votarMulticriterio(EmitirEvaluacionRequest request) {
         validarRequestBase(request.votacionProyectoId(), request.anonTokenHash());
-        if (request.comentario() == null || request.comentario().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El comentario es obligatorio.");
-        }
 
         VotacionProyectoMO vp = obtenerVotacionProyecto(request.votacionProyectoId());
         VotacionMO votacion = vp.getVotacion();
+
+        validarComentarios(votacion, request.comentario());
 
         if (votacion.getModalidad() != ModalidadVotacionMO.MULTICRITERIO &&
             votacion.getModalidad() != ModalidadVotacionMO.MULTICRITERIO_PONDERADA) {
@@ -204,7 +204,7 @@ public class VotoFacade {
             puntuacionCriterioRepository.save(pc);
 
             PuntuacionCriterioRequest pr = puntuacionesRequestMap.get(c.getId());
-            if (pr != null && pr.comentario() != null && !pr.comentario().isBlank()) {
+            if (votacion.isComentariosActivos() && pr != null && pr.comentario() != null && !pr.comentario().isBlank()) {
                 ComentarioMO com = new ComentarioMO();
                 com.setAnonTokenHash(request.anonTokenHash());
                 com.setVotacionProyecto(vp);
@@ -304,11 +304,26 @@ public class VotoFacade {
     }
 
     private void guardarComentarioGlobal(VotacionProyectoMO vp, String anonTokenHash, String texto) {
+        if (!vp.getVotacion().isComentariosActivos()) return;
+        if (texto == null || texto.isBlank()) return;
         ComentarioMO comentario = new ComentarioMO();
         comentario.setAnonTokenHash(anonTokenHash);
         comentario.setVotacionProyecto(vp);
         comentario.setProyecto(vp.getProyecto());
         comentario.setTexto(texto.trim());
         comentarioRepository.save(comentario);
+    }
+
+    private void validarComentarios(VotacionMO votacion, String comentario){
+        if(!votacion.isComentariosActivos()){
+            if(comentario != null && !comentario.isBlank()){
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Esta votación no permite comentarios");
+            }
+        }
+        if(votacion.isComentarioObligatorio()){
+            if(comentario == null || comentario.isBlank()){
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El comentario es obligatorio para esta votación");
+            }
+        }
     }
 }
