@@ -115,6 +115,30 @@ function votingSubtitle(votacion) {
   return `${tipo} · ${modalidad} · Máx. ${votacion?.maxSelecciones || 1}`;
 }
 
+function getVotingCommentsLabel(votacion) {
+  if (votacion?.comentariosActivos === false) {
+    return "Comentarios desactivados";
+  }
+
+  if (votacion?.comentarioObligatorio === true) {
+    return "Comentario obligatorio";
+  }
+
+  return "Comentario opcional";
+}
+
+function getVotingCommentsClass(votacion) {
+  if (votacion?.comentariosActivos === false) {
+    return "comments-disabled";
+  }
+
+  if (votacion?.comentarioObligatorio === true) {
+    return "comments-required";
+  }
+
+  return "comments-optional";
+}
+
 function EventAccessModal({ event, onClose, onSuccess }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -701,6 +725,11 @@ function EventDetailScreen() {
                     </div>
 
                     <small>{votingSubtitle(votacion)}</small>
+                    <div className="voting-comments-badges">
+                      <span className={`voting-comments-chip ${getVotingCommentsClass(votacion)}`}>
+                        {getVotingCommentsLabel(votacion)}
+                      </span>
+                    </div>
                     <small>Inicio: {formatDate(getVotingStart(votacion))}</small>
                     <small>Fin: {formatDate(getVotingEnd(votacion))}</small>
                   </button>

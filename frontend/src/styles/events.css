@@ -2304,3 +2304,34 @@
 .voting-toggle-row.disabled {
   opacity: 0.55;
 }
+.voting-comments-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.35rem 0;
+}
+
+.voting-comments-chip {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.voting-comments-chip.comments-required {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.voting-comments-chip.comments-optional {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.voting-comments-chip.comments-disabled {
+  background: #f1f5f9;
+  color: #64748b;
+}
