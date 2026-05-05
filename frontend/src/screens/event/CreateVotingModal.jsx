@@ -184,8 +184,8 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
         return "Esta modalidad necesita al menos un criterio.";
       }
 
-      if (config.modalidad === "MULTICRITERIO_PONDERADA" && totalPeso > 100) {
-        return `La suma de pesos no puede superar el 100%. Ahora suma ${totalPeso}%.`;
+      if (config.modalidad === "MULTICRITERIO_PONDERADA" && totalPeso !== 100) {
+        return `La suma de pesos de los criterios deben sumar 100%. Ahora suman ${totalPeso}%.`;
       }
     }
 
@@ -388,7 +388,7 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
 
               {config.modalidad === "MULTICRITERIO_PONDERADA" ? (
                 <div className={`criteria-weight-alert ${totalPeso > 100 ? "error" : "success"}`}>
-                  Peso total: {totalPeso}%. Máximo permitido: 100%.
+                  Peso actual: {totalPeso}%. Los porcentajes tienen que sumar 100%.
                 </div>
               ) : null}
 
