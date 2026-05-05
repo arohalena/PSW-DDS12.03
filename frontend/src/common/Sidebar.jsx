@@ -66,13 +66,6 @@ function Sidebar() {
           })}
         </nav>
       </div>
-
-      <div className="sidebar-footer">
-        <div className="sidebar-link sidebar-link-disabled">
-          <Settings size={19} />
-          <span>Configuración</span>
-        </div>
-      </div>
     </aside>
   );
 }
