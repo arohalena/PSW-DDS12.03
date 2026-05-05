@@ -40,10 +40,10 @@ public class AuthService {
 
     public AuthResponse login(AuthLoginRequest request) {
         UsuarioMO usuario = usuarioRepository.findByEmail(request.email())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario incorrecto."));
 
         if (!usuario.getPassword().equals(request.password())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Credenciales incorrectas.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Contraseña incorrecta.");
         }
 
         return new AuthResponse(

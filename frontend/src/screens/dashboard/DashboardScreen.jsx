@@ -235,16 +235,6 @@ function DashboardScreen() {
           )}
         </div>
       </section>
-
-      <section className="dashboard-card">
-        <div className="dashboard-card-header">
-          <div>
-            <h2>Actividad reciente</h2>
-            <p>Resumen visual de actividad del sistema.</p>
-          </div>
-          <Clock size={20} />
-        </div>
-      </section>
     </div>
   );
 }
