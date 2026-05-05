@@ -419,4 +419,22 @@ public class ProyectoFacade {
 
         proyectoService.delete(proyecto.getId());
     }
+
+    public java.util.List<ProyectoMO> findAll() {
+
+        return proyectoService.findAll();
+
+    }
+
+    public ProyectoMO findById(UUID id) {
+
+        return proyectoService.findById(id);
+
+    }
+
+    public java.util.List<ProyectoMO> findByEvento_Id(UUID eventoId) {
+
+        return proyectoService.findByEvento_Id(eventoId);
+        
+    }
 }

@@ -1,7 +1,9 @@
 package com.Votify.backend.controller;
 
+import java.util.List;
 import java.util.UUID;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,22 +14,24 @@ import org.springframework.web.bind.annotation.RestController;
 import com.Votify.backend.dto.CrearEventoRequest;
 import com.Votify.backend.facade.EventoFacade;
 import com.Votify.backend.model.EventoMO;
-import com.Votify.backend.service.EventoService;
-import com.Votify.backend.service.GenericService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/eventos")
 @RequiredArgsConstructor
-public class EventoController extends GenericController<EventoMO> {
+public class EventoController {
 
-    private final EventoService eventoService;
     private final EventoFacade eventoFacade;
 
-    @Override
-    protected GenericService<EventoMO> getService() {
-        return eventoService;
+    @GetMapping
+    public List<EventoMO> getAll() {
+        return eventoFacade.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public EventoMO getById(@PathVariable UUID id) {
+        return eventoFacade.findById(id);
     }
 
     @PostMapping("/crear")
@@ -45,15 +49,15 @@ public class EventoController extends GenericController<EventoMO> {
 
     @GetMapping("/generar-codigo")
     public String generarCodigo() {
-        return eventoService.generarCodigoAccesoPublico();
+        return eventoFacade.generarCodigoAccesoPublico();
     }
 
     @GetMapping("/codigo/{codigo}")
     public EventoMO getByCodigo(@PathVariable String codigo) {
-        return eventoService.buscarPorCodigo(codigo);
+        return eventoFacade.buscarPorCodigo(codigo);
     }
 
-    @Override
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable UUID id) {
         eventoFacade.eliminarConCascada(id);
     }

@@ -326,4 +326,32 @@ public class VotoFacade {
             }
         }
     }
+
+    public java.util.List<VotoMO> findAll() {
+        return votoService.findAll();
+    }
+
+    public VotoMO findById(UUID id) {
+        return votoService.findById(id);
+    }
+
+    public void delete(UUID id) {
+        votoService.delete(id);
+    }
+
+    public java.util.List<VotoMO> findByVotacionProyecto_Id(UUID votacionProyectoId) {
+        return votoService.findByVotacionProyecto_Id(votacionProyectoId);
+    }
+
+    public long contarVotosPorVotacionProyecto(UUID votacionProyectoId) {
+        return votoService.contarVotosPorVotacionProyecto(votacionProyectoId);
+    }
+
+    public boolean yaHaVotado(UUID votacionProyectoId, String token) {
+        return votoService.yaHaVotado(votacionProyectoId, token);
+    }
+
+    public long contarVotantesUnicos(UUID eventoId) {
+        return votoService.contarVotantesUnicos(eventoId);
+    }
 }

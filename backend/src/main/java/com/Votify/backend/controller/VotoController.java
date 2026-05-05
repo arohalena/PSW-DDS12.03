@@ -3,6 +3,7 @@ package com.Votify.backend.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,37 +17,44 @@ import com.Votify.backend.dto.EmitirVotoPuntosRequest;
 import com.Votify.backend.dto.EmitirVotoSimpleRequest;
 import com.Votify.backend.facade.VotoFacade;
 import com.Votify.backend.model.VotoMO;
-import com.Votify.backend.service.GenericService;
-import com.Votify.backend.service.VotoService;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/votos")
-public class VotoController extends GenericController<VotoMO> {
+public class VotoController {
 
-    private final VotoService votoService;
     private final VotoFacade votoFacade;
 
-    @Override
-    protected GenericService<VotoMO> getService() {
-        return votoService;
+    @GetMapping
+    public List<VotoMO> getAll() {
+        return votoFacade.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public VotoMO getById(@PathVariable UUID id) {
+        return votoFacade.findById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable UUID id) {
+        votoFacade.delete(id);
     }
 
     @GetMapping("/votacion-proyecto/{votacionProyectoId}")
     public List<VotoMO> findByVotacionProyecto_Id(@PathVariable UUID votacionProyectoId) {
-        return votoService.findByVotacionProyecto_Id(votacionProyectoId);
+        return votoFacade.findByVotacionProyecto_Id(votacionProyectoId);
     }
 
     @GetMapping("/votacion-proyecto/{votacionProyectoId}/count")
     public long countByVotacionProyecto(@PathVariable UUID votacionProyectoId) {
-        return votoService.contarVotosPorVotacionProyecto(votacionProyectoId);
+        return votoFacade.contarVotosPorVotacionProyecto(votacionProyectoId);
     }
 
     @GetMapping("/votacion-proyecto/{votacionProyectoId}/ya-votado")
     public boolean yaHaVotado(@PathVariable UUID votacionProyectoId, @RequestParam String token) {
-        return votoService.yaHaVotado(votacionProyectoId, token);
+        return votoFacade.yaHaVotado(votacionProyectoId, token);
     }
 
     @GetMapping("/votacion/{votacionId}/ha-alcanzado-maximo")
@@ -56,7 +64,7 @@ public class VotoController extends GenericController<VotoMO> {
 
     @GetMapping("/evento/{eventoId}/votantes")
     public long contarVotantesPorEvento(@PathVariable UUID eventoId) {
-        return votoService.contarVotantesUnicos(eventoId);
+        return votoFacade.contarVotantesUnicos(eventoId);
     }
 
     @PostMapping("/simple")

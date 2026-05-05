@@ -17,27 +17,29 @@ import com.Votify.backend.dto.MiProyectoDashboardResponse;
 import com.Votify.backend.dto.ProyectoGestionRequest;
 import com.Votify.backend.facade.ProyectoFacade;
 import com.Votify.backend.model.ProyectoMO;
-import com.Votify.backend.service.GenericService;
-import com.Votify.backend.service.ProyectoService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/proyectos")
 @RequiredArgsConstructor
-public class ProyectoController extends GenericController<ProyectoMO> {
+public class ProyectoController {
 
-    private final ProyectoService proyectoService;
     private final ProyectoFacade proyectoFacade;
 
-    @Override
-    protected GenericService<ProyectoMO> getService() {
-        return proyectoService;
+    @GetMapping
+    public List<ProyectoMO> getAll() {
+        return proyectoFacade.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public ProyectoMO getById(@PathVariable UUID id) {
+        return proyectoFacade.findById(id);
     }
 
     @GetMapping("/evento/{eventoId}")
     public List<ProyectoMO> getByEvento_Id(@PathVariable UUID eventoId) {
-        return proyectoService.findByEvento_Id(eventoId);
+        return proyectoFacade.findByEvento_Id(eventoId);
     }
 
     @PostMapping("/crear")
@@ -75,7 +77,7 @@ public class ProyectoController extends GenericController<ProyectoMO> {
         return proyectoFacade.quitarDeEvento(proyectoId);
     }
 
-    @Override
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable UUID id) {
         proyectoFacade.delete(id);
     }

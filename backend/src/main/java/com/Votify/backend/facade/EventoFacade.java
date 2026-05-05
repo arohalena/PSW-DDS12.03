@@ -131,4 +131,28 @@ public class EventoFacade {
 
         eventoService.delete(evento.getId());
     }
+
+    public java.util.List<EventoMO> findAll() {
+
+        return eventoService.findAll();
+        
+    }
+
+    public EventoMO findById(UUID id) {
+
+        return eventoService.findById(id);
+
+    }
+
+    public String generarCodigoAccesoPublico() {
+
+        return eventoService.generarCodigoAccesoPublico();
+
+    }
+
+    public EventoMO buscarPorCodigo(String codigo) {
+
+        return eventoService.buscarPorCodigo(codigo);
+
+    }
 }
