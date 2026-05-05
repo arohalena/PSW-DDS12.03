@@ -387,7 +387,7 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
               </div>
 
               {config.modalidad === "MULTICRITERIO_PONDERADA" ? (
-                <div className={`criteria-weight-alert ${totalPeso > 100 ? "error" : "success"}`}>
+                <div className={`criteria-weight-alert ${totalPeso === 100 ? "success" : "error"}`}>
                   Peso actual: {totalPeso}%. Los porcentajes tienen que sumar 100%.
                 </div>
               ) : null}
