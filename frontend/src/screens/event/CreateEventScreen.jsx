@@ -255,7 +255,7 @@ function CreateEventScreen() {
           const total = validCriteria.reduce((sum, criterion) => sum + Number(criterion.peso || 0), 0);
           const zeroWeight = config.criteria.filter((criterion) => Number(criterion.peso) == 0);
 
-          if (zeroWeight) {
+          if (zeroWeight.length > 0) {
             return "No puede haber un criterio con peso 0%";
           }
 
