@@ -179,18 +179,22 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
 
     if (needsCriteria(config.modalidad)) {
       const validCriteria = config.criteria.filter((criterion) => criterion.nombre.trim());
-      const zeroWeight = config.criteria.filter((criterion) => Number(criterion.peso) == 0);
+      const zeroWeight = config.criteria.filter((criterion) => criterion.peso == 0);
 
       if (validCriteria.length === 0) {
         return "Esta modalidad necesita al menos un criterio.";
       }
 
-      if (totalPeso !== 100) {
-        return `La suma de pesos de los criterios deben sumar 100%. Ahora suman ${totalPeso}%.`;
-      }
+      if (config.modalidad === "MULTICRITERIO_PONDERADA") {
 
-      if (zeroWeight) {
-        return "No puede haber un criterio con peso 0%";
+        if (totalPeso !== 100) {
+          return `La suma de pesos de los criterios deben sumar 100%. Ahora suman ${totalPeso}%.`;
+        }
+
+        /*if (zeroWeight) {
+          return "No puede haber un criterio con peso 0%";
+        }*/
+
       }
     }
 
