@@ -18,9 +18,16 @@ import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.VotacionMO;
+import com.Votify.backend.model.VotacionProyectoMO;
+import com.Votify.backend.model.VotoMO;
+import com.Votify.backend.repository.ComentarioRepository;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
 import com.Votify.backend.repository.EventoRepository;
+import com.Votify.backend.repository.PuntuacionCriterioRepository;
+import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
+import com.Votify.backend.repository.VotoCriterioRepository;
+import com.Votify.backend.repository.VotoRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +38,12 @@ public class VotacionService extends GenericService<VotacionMO> {
     private final VotacionRepository votacionRepository;
     private final EventoRepository eventoRepository;
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
-    private final EventoService eventoService;
+
+    private final VotacionProyectoRepository votacionProyectoRepository;
+    private final ComentarioRepository comentarioRepository;
+    private final PuntuacionCriterioRepository puntuacionCriterioRepository;
+    private final VotoRepository votoRepository;
+    private final VotoCriterioRepository votoCriterioRepository;
 
     @Override
     protected JpaRepository<VotacionMO, UUID> getRepository() {
@@ -91,6 +103,8 @@ public class VotacionService extends GenericService<VotacionMO> {
         votacion.setMaxSelecciones(request.maxSelecciones());
         votacion.setInicio(request.inicio());
         votacion.setFin(request.fin());
+        votacion.setComentariosActivos(request.comentariosActivos() == null || request.comentariosActivos());
+        votacion.setComentarioObligatorio(votacion.isComentariosActivos() && request.comentarioObligatorio() != null && request.comentarioObligatorio());
         votacion.setNombre(request.nombre().trim());
         votacion.setEstado(request.estado() != null ?
             request.estado() : EstadoVotacionMO.PENDIENTE);
@@ -245,5 +259,34 @@ public class VotacionService extends GenericService<VotacionMO> {
 
         return cambios;
         
-    }    
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+        VotacionMO votacion = votacionRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada."));
+
+        for (VotacionProyectoMO votacionProyecto : votacionProyectoRepository.findByVotacion_Id(id)) {
+            comentarioRepository.deleteAll(
+                comentarioRepository.findByVotacionProyecto_Id(votacionProyecto.getId())
+            );
+
+            puntuacionCriterioRepository.deleteAll(
+                puntuacionCriterioRepository.findByVotacionProyecto_Id(votacionProyecto.getId())
+            );
+
+            for (VotoMO voto : votoRepository.findByVotacionProyecto_Id(votacionProyecto.getId())) {
+                votoCriterioRepository.deleteAll(
+                    votoCriterioRepository.findByVoto_Id(voto.getId())
+                );
+
+                votoRepository.delete(voto);
+            }
+
+            votacionProyectoRepository.delete(votacionProyecto);
+        }
+
+        votacionRepository.delete(votacion);
+    }
 }

@@ -1440,3 +1440,128 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.project-vote-select-field {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0 0.75rem;
+}
+
+.project-vote-select-field span {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #475569;
+}
+
+.project-vote-select-field select {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.85rem;
+  background: #ffffff;
+  padding: 0 0.85rem;
+  font: inherit;
+  color: #111827;
+}
+.mock-project-hero-main {
+  min-height: unset;
+  padding-bottom: 1.35rem;
+}
+
+.mock-project-meta-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mock-project-hero-main > *:last-child,
+.mock-project-score-card > *:last-child,
+.mock-card > *:last-child {
+  margin-bottom: 0;
+}
+
+.mock-selected-voting {
+  padding: 0.85rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.mock-selected-voting span {
+  display: block;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 900;
+  margin-bottom: 0.25rem;
+}
+
+.mock-selected-voting strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.mock-voting-row-button {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.16s ease;
+}
+
+.mock-voting-row-button:hover {
+  border-color: #a5b4fc;
+  background: #f8faff;
+}
+
+.mock-voting-row-button.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.mock-voting-row-button.active svg {
+  color: #6366f1;
+}
+
+.project-vote-select-field {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.project-vote-select-field span {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #475569;
+}
+
+.project-vote-select-field select {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.85rem;
+  background: #ffffff;
+  padding: 0 0.85rem;
+  font: inherit;
+  color: #111827;
+}
+.mock-project-hero {
+  align-items: flex-start;
+}
+
+.mock-project-hero-main,
+.mock-project-score-card {
+  height: auto;
+  align-self: start;
+}
+
+.mock-project-hero-main {
+  padding-bottom: 1.25rem !important;
+  min-height: 0 !important;
+}
+
+.mock-project-hero-main p {
+  margin-bottom: 0;
+}
+
+.mock-project-meta-grid {
+  margin-top: 1rem;
+}

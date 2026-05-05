@@ -429,3 +429,12 @@
     grid-template-columns: 1fr;
   }
 }
+.vote-comments-disabled {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  font-weight: 700;
+}

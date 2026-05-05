@@ -120,20 +120,34 @@ function SuccessScreen({
   onBack,
   onResults,
 }) {
-  const total =
-    modalidad === "PUNTOS"
-      ? Number(puntuacion || 0)
-      : criterios.length > 0
-        ? criterios.reduce((acc, criterio) => {
-            const valor = Number(ratings[criterio.id] || 0);
+  const total = useMemo(() => {
+  if (modalidad === "PUNTOS") {
+    return Number(puntuacion || 0);
+  }
 
-            if (modalidad === "MULTICRITERIO_PONDERADA") {
-              return acc + valor * (Number(criterio.peso || 0) / 100);
-            }
+  if (modalidad === "SIMPLE") {
+    return 1;
+  }
 
-            return acc + valor;
-          }, 0) / criterios.length
-        : 1;
+  if (!criterios.length) {
+    return 0;
+  }
+
+  if (modalidad === "MULTICRITERIO_PONDERADA") {
+    return criterios.reduce((acc, criterio) => {
+      const valor = Number(ratings[criterio.id] || 0);
+      const peso = Number(criterio.peso || 0);
+
+      return acc + valor * (peso / 100);
+    }, 0);
+  }
+
+  const suma = criterios.reduce((acc, criterio) => {
+    return acc + Number(ratings[criterio.id] || 0);
+  }, 0);
+
+  return suma / criterios.length;
+  }, [modalidad, criterios, ratings, puntuacion]);
 
   return (
     <main className="vote-success-page">
@@ -193,7 +207,7 @@ function SuccessScreen({
 
             <div className="vote-total-row">
               <span>Puntuación Total:</span>
-              <strong>{total.toFixed(1)}/5.0</strong>
+              <strong>{total.toFixed(2)}/5.00</strong>
             </div>
           </div>
         )}
@@ -220,24 +234,9 @@ function SuccessScreen({
           </div>
         )}
 
-        <div className="vote-note-box">
-          💡 <strong>Nota:</strong> Tu evaluación es definitiva y no puede ser
-          modificada. Si necesitas hacer cambios, contacta al organizador del
-          evento.
-        </div>
-
-        <div className="vote-progress-row">
-          <span>Tu progreso de evaluación</span>
-          <strong>1 de 18 proyectos</strong>
-        </div>
-
-        <div className="vote-progress-bar">
-          <div />
-        </div>
-
         <div className="vote-success-actions">
           <button type="button" className="primary-btn" onClick={onBack}>
-            Volver a Lista de Proyectos
+            Volver al evento
             <ArrowRight size={17} />
           </button>
 
@@ -402,6 +401,10 @@ function ProjectVotingDetailScreen() {
   const esPuntos = modalidad === "PUNTOS";
   const esMulticriterio = modalidad === "MULTICRITERIO";
   const esPonderada = modalidad === "MULTICRITERIO_PONDERADA";
+  const comentariosActivos = votacion?.comentariosActivos !== false;
+  const comentarioObligatorio = votacion?.comentarioObligatorio === true;
+  const comentarioCumplido =
+  !comentariosActivos || !comentarioObligatorio || comentario.trim().length > 0;
 
   const puedeVotar =
     !esJurado || usuario?.rol === "JURADO" || usuario?.rol === "ORGANIZADOR";
@@ -420,7 +423,7 @@ function ProjectVotingDetailScreen() {
       !yaVotado &&
       !haAlcanzadoMaximo &&
       admiteVotos &&
-      comentario.trim().length > 0;
+      comentarioCumplido;
 
     const canSubmitMulti =
       !!votacionProyectoId &&
@@ -428,7 +431,7 @@ function ProjectVotingDetailScreen() {
       !yaVotado &&
       !haAlcanzadoMaximo &&
       admiteVotos &&
-      comentario.trim().length > 0 &&
+      comentarioCumplido &&
       (esSimple ||
         esPuntos ||
         ((esMulticriterio || esPonderada) && allRated));
@@ -466,6 +469,11 @@ function ProjectVotingDetailScreen() {
   }
 
   async function submitVote() {
+
+    if (!comentarioCumplido) {
+    setError("El comentario es obligatorio en esta votación.");
+    return;
+    }
     try {
       setVoting(true);
       setError("");
@@ -474,7 +482,7 @@ function ProjectVotingDetailScreen() {
         await votarProyectoSimple(
           votacionProyectoId,
           token,
-          comentario.trim(),
+          comentariosActivos ? comentario.trim() : "",
           usuario?.id
         );
       }
@@ -485,7 +493,7 @@ function ProjectVotingDetailScreen() {
           anonTokenHash: token,
           usuarioId: usuario?.id,
           puntuacion: Number(puntuacion),
-          comentario: comentario.trim(),
+          comentario: comentariosActivos ? comentario.trim() : "",
         });
       }
 
@@ -494,11 +502,11 @@ function ProjectVotingDetailScreen() {
           votacionProyectoId,
           anonTokenHash: token,
           usuarioId: usuario?.id,
-          comentario: comentario.trim(),
+          comentario: comentariosActivos ? comentario.trim() : "",
           puntuaciones: criterios.map((criterio) => ({
             criterioId: criterio.id,
             puntuacion: Number(ratings[criterio.id]),
-            comentario: comentariosCriterio[criterio.id] || "",
+            comentario: comentariosActivos ? comentariosCriterio[criterio.id] || "" : "",
           })),
         });
       }
@@ -696,6 +704,7 @@ function ProjectVotingDetailScreen() {
                   }
                 />
 
+                {comentariosActivos ? (
                 <textarea
                   rows={3}
                   value={comentariosCriterio[criterio.id] || ""}
@@ -708,13 +717,18 @@ function ProjectVotingDetailScreen() {
                   }
                   placeholder="Comentario opcional para este criterio..."
                 />
+                ) : null}
+
               </article>
             ))}
           </div>
         )}
 
+        {comentariosActivos ? (
         <label className="voting-selector-field vote-comment-field">
-          <span>Comentario obligatorio</span>
+          <span>
+            Comentario {comentarioObligatorio ? "obligatorio" : "opcional"}
+          </span>
           <textarea
             rows={5}
             value={comentario}
@@ -723,6 +737,11 @@ function ProjectVotingDetailScreen() {
             placeholder="Escribe tu valoración del proyecto"
           />
         </label>
+        ) : (
+          <div className="vote-comments-disabled">
+            Esta votación no permite comentarios.
+          </div>
+        )}
 
         <div className="vote-action-row">
           <button

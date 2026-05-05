@@ -4,10 +4,7 @@ import {
   ArrowLeft,
   BarChart3,
   Calendar,
-  ExternalLink,
-  Github,
   MessageCircle,
-  Presentation,
   Star,
   Trophy,
   Users,
@@ -23,24 +20,8 @@ import {
   getVotacionProyectosByVotacion,
   getVotacionesByEvento,
 } from "../../services/votacionService";
+import { getRanking } from "../../services/criterioService";
 import "../../styles/projects.css";
-
-function formatDate(value) {
-  if (!value) return "Sin fecha";
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function getEventStart(evento) {
-  return evento?.fecha_inicio || evento?.fechaInicio || evento?.inicio;
-}
-
-function getEventEnd(evento) {
-  return evento?.fecha_fin || evento?.fechaFin || evento?.fin;
-}
 
 function initials(name = "", email = "") {
   const base = name || email || "P";
@@ -60,6 +41,10 @@ function getCategoryLabel(category) {
   return category || "Proyecto";
 }
 
+function votingLabel(votacion) {
+  return votacion?.nombre || `${votacion?.tipo || "Votación"} + ${votacion?.modalidad || ""}`;
+}
+
 function ProjectDetailScreen() {
   const { eventoId, proyectoId, projectId } = useParams();
   const navigate = useNavigate();
@@ -71,9 +56,11 @@ function ProjectDetailScreen() {
   const [miembros, setMiembros] = useState([]);
   const [votacionesProyecto, setVotacionesProyecto] = useState([]);
   const [comentarios, setComentarios] = useState([]);
-  const [totalVotos, setTotalVotos] = useState(0);
+  const [voteCountsByRelation, setVoteCountsByRelation] = useState({});
+  const [rankingByVotingId, setRankingByVotingId] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedVotingId, setSelectedVotingId] = useState("");
 
   const eventoFinalId = eventoId || proyecto?.evento?.id || evento?.id;
 
@@ -98,9 +85,14 @@ function ProjectDetailScreen() {
         }
 
         const equipoEncontrado =
+          proyectoEncontrado.equipo ||
+          equiposData.find(
+            (item) => String(item.id) === String(proyectoEncontrado.equipo?.id)
+          ) ||
           equiposData.find(
             (item) => String(item.proyecto?.id) === String(idProyecto)
-          ) || null;
+          ) ||
+          null;
 
         const effectiveEventoId =
           eventoId ||
@@ -124,10 +116,15 @@ function ProjectDetailScreen() {
         if (effectiveEventoId) {
           const asignacionesEvento = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-          const miembrosEquipo = asignacionesEvento
-            .filter((asignacion) => String(asignacion.equipo?.id) === String(equipoEncontrado?.id))
-            .map((asignacion) => asignacion.competidor)
-            .filter(Boolean);
+          const miembrosEquipo = equipoEncontrado
+            ? asignacionesEvento
+                .filter(
+                  (asignacion) =>
+                    String(asignacion.equipo?.id) === String(equipoEncontrado.id)
+                )
+                .map((asignacion) => asignacion.competidor)
+                .filter(Boolean)
+            : [];
 
           setMiembros(miembrosEquipo);
 
@@ -147,12 +144,36 @@ function ProjectDetailScreen() {
 
           setVotacionesProyecto(relaciones);
 
-          let votos = 0;
+          const counts = {};
+          const rankings = {};
           for (const relacion of relaciones) {
-            votos += Number(await getConteoVotos(relacion.id).catch(() => 0));
+            counts[relacion.id] = Number(await getConteoVotos(relacion.id).catch(() => 0));
+            if (relacion.votacion?.id) {
+              rankings[relacion.votacion.id] = await getRanking(
+                effectiveEventoId,
+                relacion.votacion.id
+              ).catch(() => []);
+            }
           }
 
-          setTotalVotos(votos);
+          setVoteCountsByRelation(counts);
+          setRankingByVotingId(rankings);
+          setSelectedVotingId((current) => {
+            if (
+              current &&
+              relaciones.some((relacion) => String(relacion.votacion?.id) === String(current))
+            ) {
+              return current;
+            }
+
+            return relaciones[0]?.votacion?.id || "";
+          });
+        } else {
+          setMiembros([]);
+          setVotacionesProyecto([]);
+          setVoteCountsByRelation({});
+          setRankingByVotingId({});
+          setSelectedVotingId("");
         }
       } catch (err) {
         setError(err.message || "No se pudo cargar el proyecto.");
@@ -164,10 +185,79 @@ function ProjectDetailScreen() {
     if (idProyecto) load();
   }, [idProyecto, eventoId]);
 
-  const promedioMock = useMemo(() => {
-    if (votacionesProyecto.length === 0) return "—";
-    return totalVotos > 0 ? "4.6" : "—";
-  }, [totalVotos, votacionesProyecto]);
+  const selectedVotingRelation = useMemo(() => {
+    return (
+      votacionesProyecto.find(
+        (relacion) => String(relacion.votacion?.id) === String(selectedVotingId)
+      ) ||
+      votacionesProyecto[0] ||
+      null
+    );
+  }, [votacionesProyecto, selectedVotingId]);
+
+  const selectedVoting = selectedVotingRelation?.votacion || null;
+  const selectedVotes = selectedVotingRelation
+  ? voteCountsByRelation[selectedVotingRelation.id] || 0
+  : 0;
+
+const selectedRankingEntry = useMemo(() => {
+  if (!selectedVoting?.id || !proyecto?.id) return null;
+
+  const ranking = rankingByVotingId[selectedVoting.id] || [];
+
+  return (
+    ranking.find((entry) => String(entry.proyectoId) === String(proyecto.id)) ||
+    null
+  );
+}, [rankingByVotingId, selectedVoting, proyecto]);
+
+function formatScore(value) {
+  const num = Number(value || 0);
+  return Number.isInteger(num) ? String(num) : num.toFixed(2);
+}
+
+function formatFive(value) {
+  const num = Number(value || 0);
+  return Math.min(Math.max(num, 0), 5).toFixed(1);
+}
+
+const selectedScoreLabel = useMemo(() => {
+  if (!selectedVoting) return "—";
+
+  if (selectedVoting.modalidad === "SIMPLE") {
+    return String(selectedRankingEntry?.totalVotos ?? selectedVotes);
+  }
+
+  if (selectedVoting.modalidad === "PUNTOS") {
+    return formatScore(
+      selectedRankingEntry?.mediaPuntos ??
+        selectedRankingEntry?.puntuacionTotal ??
+        0
+    );
+  }
+
+  return selectedRankingEntry?.puntuacionTotal !== undefined
+    ? formatFive(selectedRankingEntry.puntuacionTotal)
+    : "—";
+}, [selectedVoting, selectedRankingEntry, selectedVotes]);
+
+const selectedScoreText = useMemo(() => {
+  if (!selectedVoting) return "Sin votación";
+
+  if (selectedVoting.modalidad === "SIMPLE") return "Votos";
+  if (selectedVoting.modalidad === "PUNTOS") return "Media /10";
+  if (selectedVoting.modalidad === "MULTICRITERIO") return "Media /5";
+  if (selectedVoting.modalidad === "MULTICRITERIO_PONDERADA") return "Ponderada /5";
+
+  return "Puntuación";
+}, [selectedVoting]);
+
+  const totalVotos = useMemo(() => {
+    return Object.values(voteCountsByRelation).reduce(
+      (sum, value) => sum + Number(value || 0),
+      0
+    );
+  }, [voteCountsByRelation]);
 
   if (loading) {
     return (
@@ -226,20 +316,24 @@ function ProjectDetailScreen() {
               <span>Equipo</span>
               <strong>{equipo?.nombre || "Sin equipo"}</strong>
             </div>
-
           </div>
         </div>
 
         <aside className="mock-project-score-card">
           <div className="mock-score-ring">
-            <strong>{promedioMock}</strong>
-            <span>Puntuación</span>
+            <strong>{selectedScoreLabel}</strong>
+            <span>{selectedScoreText}</span>
+          </div>
+
+          <div className="mock-selected-voting">
+            <span>Votación seleccionada</span>
+            <strong>{selectedVoting ? votingLabel(selectedVoting) : "Sin votación"}</strong>
           </div>
 
           <div className="mock-score-stats">
             <div>
               <strong>{totalVotos}</strong>
-              <span>Votos</span>
+              <span>Total votos</span>
             </div>
             <div>
               <strong>{miembros.length}</strong>
@@ -251,34 +345,54 @@ function ProjectDetailScreen() {
             </div>
           </div>
 
+          {votacionesProyecto.length > 1 ? (
+            <label className="project-vote-select-field">
+              <span>Elegir votación</span>
+              <select
+                value={selectedVotingId}
+                onChange={(e) => setSelectedVotingId(e.target.value)}
+              >
+                {votacionesProyecto.map((relacion) => (
+                  <option key={relacion.id} value={relacion.votacion?.id}>
+                    {votingLabel(relacion.votacion)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
           <button
             type="button"
             className="primary-btn full-width-btn"
-            disabled={!eventoFinalId}
+            disabled={!eventoFinalId || votacionesProyecto.length === 0}
             onClick={() => {
-  const votacionId = votacionesProyecto[0]?.votacion?.id;
+              const votacionId =
+                selectedVotingId || votacionesProyecto[0]?.votacion?.id;
 
-  if (!votacionId) {
-    alert("Este proyecto no está asignado a ninguna votación.");
-    return;
-  }
+              if (!votacionId) {
+                alert("Este proyecto no está asignado a ninguna votación.");
+                return;
+              }
 
-  navigate(
-    `/eventos/${eventoFinalId}/votaciones/${votacionId}/proyectos/${proyecto.id}/votar`
-  );
-}}
+              navigate(
+                `/eventos/${eventoFinalId}/votaciones/${votacionId}/proyectos/${proyecto.id}/votar`
+              );
+            }}
           >
             <Vote size={17} />
             Votar por este proyecto
           </button>
 
-          {votacionesProyecto[0]?.votacion?.id ? (
+          {votacionesProyecto.length > 0 ? (
             <button
               type="button"
               className="secondary-btn full-width-btn"
-              onClick={() =>
-                navigate(`/eventos/${eventoFinalId}/votaciones/${votacionesProyecto[0].votacion.id}/resultados`)
-              }
+              onClick={() => {
+                const votacionId =
+                  selectedVotingId || votacionesProyecto[0]?.votacion?.id;
+
+                navigate(`/eventos/${eventoFinalId}/votaciones/${votacionId}/resultados`);
+              }}
             >
               <BarChart3 size={17} />
               Ver resultados
@@ -295,13 +409,16 @@ function ProjectDetailScreen() {
             <div className="mock-team-avatar">{initials(equipo?.nombre)}</div>
             <div>
               <strong>{equipo?.nombre || "Sin equipo asignado"}</strong>
-              <span>{miembros.length} miembro{miembros.length === 1 ? "" : "s"} registrados</span>
+              <span>
+                {miembros.length} miembro{miembros.length === 1 ? "" : "s"} registrado
+                {miembros.length === 1 ? "" : "s"}
+              </span>
             </div>
           </div>
 
           <div className="mock-members-list">
             {miembros.length === 0 ? (
-              <p className="project-muted">No hay competidores asignados al equipo.</p>
+              <p className="project-muted">No hay competidores asignados al equipo en este evento.</p>
             ) : (
               miembros.map((miembro) => (
                 <div className="mock-member-row" key={miembro.id}>
@@ -323,15 +440,28 @@ function ProjectDetailScreen() {
             {votacionesProyecto.length === 0 ? (
               <p className="project-muted">Este proyecto todavía no está asignado a ninguna votación.</p>
             ) : (
-              votacionesProyecto.map((relacion) => (
-                <div className="mock-voting-row" key={relacion.id}>
-                  <div>
-                    <strong>{relacion.votacion?.tipo} + {relacion.votacion?.modalidad}</strong>
-                    <span>Máximo {relacion.votacion?.maxSelecciones || 1} selección/es</span>
-                  </div>
-                  <Star size={18} />
-                </div>
-              ))
+              votacionesProyecto.map((relacion) => {
+                const active =
+                  String(relacion.votacion?.id) === String(selectedVotingId);
+
+                return (
+                  <button
+                    type="button"
+                    className={`mock-voting-row mock-voting-row-button ${active ? "active" : ""}`}
+                    key={relacion.id}
+                    onClick={() => setSelectedVotingId(relacion.votacion?.id || "")}
+                  >
+                    <div>
+                      <strong>{votingLabel(relacion.votacion)}</strong>
+                      <span>
+                        {relacion.votacion?.tipo} · {relacion.votacion?.modalidad} ·{" "}
+                        {voteCountsByRelation[relacion.id] || 0} votos
+                      </span>
+                    </div>
+                    <Star size={18} />
+                  </button>
+                );
+              })
             )}
           </div>
         </article>

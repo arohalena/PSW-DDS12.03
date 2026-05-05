@@ -19,6 +19,8 @@ export async function createVotacion(votacion) {
     maxSelecciones: Number(votacion.maxSelecciones || 1),
     inicio: votacion.inicio || null,
     fin: votacion.fin || null,
+    comentariosActivos: votacion.comentariosActivos,
+    comentarioObligatorio: votacion.comentariosActivos ? votacion.comentarioObligatorio : false,
     criterios: votacion.criterios || [],
   };
 
