@@ -60,11 +60,11 @@ public class VotacionService extends GenericService<VotacionMO> {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El evento es requerido");
         }
         if (request.nombre() == null || request.nombre().isBlank()) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la votación es requerido");
-}
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la votación es requerido");
+        }
         EventoMO evento = eventoRepository.findById(request.eventoId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado"));
-        
+
         if (request.tipo() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tipo de votación es requerido");
         }
@@ -93,6 +93,10 @@ public class VotacionService extends GenericService<VotacionMO> {
 
             if (criteriosExistentes.isEmpty()) {
                 validarCriterios(request.criterios(), esPonderada);
+            } else if (esPonderada) {
+                // si ya existen criterios y la nueva votación es ponderada,
+                // validamos que los pesos del request sumen 100 antes de aplicarlos
+                validarCriterios(request.criterios(), true);
             }
         }
 
@@ -132,6 +136,22 @@ public class VotacionService extends GenericService<VotacionMO> {
                     criterio.setOrden(orden++);
 
                     criterioEvaluacionRepository.save(criterio);
+                }
+            } else if (!criteriosExistentes.isEmpty() && esPonderada && request.criterios() != null) {
+                // ya existían criterios (probablemente con peso=1 de una votación MULTICRITERIO previa)
+                // actualizamos sus pesos según los enviados en el request, emparejando por nombre
+                for (CriterioEvaluacionRequest criterioReq : request.criterios()) {
+                    if (criterioReq.nombre() == null || criterioReq.peso() == null) continue;
+
+                    String nombreReq = criterioReq.nombre().trim();
+
+                    criteriosExistentes.stream()
+                        .filter(c -> c.getNombre().equalsIgnoreCase(nombreReq))
+                        .findFirst()
+                        .ifPresent(c -> {
+                            c.setPeso(criterioReq.peso().intValue());
+                            criterioEvaluacionRepository.save(c);
+                        });
                 }
             }
         }
