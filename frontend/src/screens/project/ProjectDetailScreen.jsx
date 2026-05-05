@@ -114,19 +114,42 @@ function ProjectDetailScreen() {
         setComentarios(comentariosData || []);
 
         if (effectiveEventoId) {
-          const asignacionesEvento = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+          let asignacionesEquipo = [];
 
-          const miembrosEquipo = equipoEncontrado
-            ? asignacionesEvento
-                .filter(
-                  (asignacion) =>
-                    String(asignacion.equipo?.id) === String(equipoEncontrado.id)
-                )
-                .map((asignacion) => asignacion.competidor)
-                .filter(Boolean)
-            : [];
+if (equipoEncontrado?.id) {
+  const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-          setMiembros(miembrosEquipo);
+  asignacionesEquipo = asignacionesEventoActual.filter(
+    (asignacion) =>
+      String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+  );
+
+  if (asignacionesEquipo.length === 0) {
+    const todasAsignaciones = [];
+
+    await Promise.all(
+      (eventosData || []).map(async (eventoItem) => {
+        const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
+        todasAsignaciones.push(...asignaciones);
+      })
+    );
+
+    asignacionesEquipo = todasAsignaciones.filter(
+      (asignacion) =>
+        String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+    );
+  }
+}
+
+const miembrosEquipo = asignacionesEquipo
+  .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
+  .filter(Boolean)
+  .filter(
+    (competidor, index, array) =>
+      array.findIndex((item) => String(item.id) === String(competidor.id)) === index
+  );
+
+setMiembros(miembrosEquipo);
 
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
           const relaciones = [];
