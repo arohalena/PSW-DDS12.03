@@ -253,6 +253,11 @@ function CreateEventScreen() {
 
         if (config.modalidad === "MULTICRITERIO_PONDERADA") {
           const total = validCriteria.reduce((sum, criterion) => sum + Number(criterion.peso || 0), 0);
+          const zeroWeight = config.criteria.filter((criterion) => Number(criterion.peso) == 0);
+
+          if (zeroWeight) {
+            return "No puede haber un criterio con peso 0%";
+          }
 
           if (total !== 100) {
             return `La votación "${config.nombre}" es ponderada y sus pesos deben sumar 100%. Ahora suman ${total}%.`;
