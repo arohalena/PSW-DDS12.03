@@ -116,40 +116,40 @@ function ProjectDetailScreen() {
         if (effectiveEventoId) {
           let asignacionesEquipo = [];
 
-if (equipoEncontrado?.id) {
-  const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+        if (equipoEncontrado?.id) {
+          const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-  asignacionesEquipo = asignacionesEventoActual.filter(
-    (asignacion) =>
-      String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
-  );
+          asignacionesEquipo = asignacionesEventoActual.filter(
+            (asignacion) =>
+              String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+          );
 
-  if (asignacionesEquipo.length === 0) {
-    const todasAsignaciones = [];
+          if (asignacionesEquipo.length === 0) {
+            const todasAsignaciones = [];
 
-    await Promise.all(
-      (eventosData || []).map(async (eventoItem) => {
-        const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
-        todasAsignaciones.push(...asignaciones);
-      })
-    );
+            await Promise.all(
+              (eventosData || []).map(async (eventoItem) => {
+                const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
+                todasAsignaciones.push(...asignaciones);
+              })
+            );
 
-    asignacionesEquipo = todasAsignaciones.filter(
-      (asignacion) =>
-        String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
-    );
-  }
-}
+            asignacionesEquipo = todasAsignaciones.filter(
+              (asignacion) =>
+                String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+            );
+          }
+        }
 
-const miembrosEquipo = asignacionesEquipo
-  .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
-  .filter(Boolean)
-  .filter(
-    (competidor, index, array) =>
-      array.findIndex((item) => String(item.id) === String(competidor.id)) === index
-  );
+        const miembrosEquipo = asignacionesEquipo
+          .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
+          .filter(Boolean)
+          .filter(
+            (competidor, index, array) =>
+              array.findIndex((item) => String(item.id) === String(competidor.id)) === index
+          );
 
-setMiembros(miembrosEquipo);
+        setMiembros(miembrosEquipo);
 
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
           const relaciones = [];
