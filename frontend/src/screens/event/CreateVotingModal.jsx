@@ -189,7 +189,7 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
         return `La suma de pesos de los criterios deben sumar 100%. Ahora suman ${totalPeso}%.`;
       }
 
-      if (zeroWeight) {
+      if (zeroWeight.length > 0) {
         return "No puede haber un criterio con peso 0%";
       }
     }
