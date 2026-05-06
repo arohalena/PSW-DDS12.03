@@ -57,15 +57,7 @@ public class EventoService extends GenericService<EventoMO> {
     }
 
     public EventoMO crearDesdeDominio(Evento dominio) {
-        EventoMO entidad = new EventoMO();
-        entidad.setNombre(dominio.getNombre());
-        entidad.setCodigoAccesoPublico(dominio.getCodigoAccesoPublico());
-        entidad.setDescripcion(dominio.getDescripcion());
-        entidad.setTipoEvento(dominio.tipo());
-        entidad.setFecha_inicio(dominio.getFechaInicio());
-        entidad.setFecha_fin(dominio.getFechaFin());
-        entidad.setAutoVotacion(dominio.isAutoVotacion());
-        return save(entidad);
+        return save(EventoMO.desdeDominio(dominio));
     }
 
     public String generarCodigoAccesoPublico() {

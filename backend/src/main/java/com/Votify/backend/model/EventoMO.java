@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.Votify.backend.domain.Evento;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -38,5 +40,21 @@ public class EventoMO extends ModeloBaseMO {
 
     @Column(name = "auto_votacion", nullable = false)
     private boolean autoVotacion = false;
+
+    //Refactor del método para EventoService que son setters de la entidad
+    //por lo que se mueve aquí
+    public static EventoMO desdeDominio(Evento dominio) {
+
+        EventoMO mo = new EventoMO();
+        mo.setNombre(dominio.getNombre());
+        mo.setCodigoAccesoPublico(dominio.getCodigoAccesoPublico());
+        mo.setDescripcion(dominio.getDescripcion());
+        mo.setTipoEvento(dominio.tipo());
+        mo.setFecha_inicio(dominio.getFechaInicio());
+        mo.setFecha_fin(dominio.getFechaFin());
+        mo.setAutoVotacion(dominio.isAutoVotacion());
+        return mo;
+
+    }
 
 }
