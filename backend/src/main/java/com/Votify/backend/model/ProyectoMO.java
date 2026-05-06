@@ -38,5 +38,16 @@ public class ProyectoMO extends ModeloBaseMO {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "tipo_proyecto", nullable = false)
     private TipoCategoriaMO tipoCategoria;
+
+    //Refactorizado método trasladado a la propia entidad en lugar de estar en el service
+    public void actualizarDatos(String nombre, String descripcion, String categoria, EquipoMO equipo, EventoMO evento) {
+
+        this.nombre = nombre.trim();
+        this.descripcion = descripcion;
+        this.tipoCategoria = TipoCategoriaMO.valueOf(categoria);
+        this.equipo = equipo;
+        this.evento = evento;
+
+    }
     
 }

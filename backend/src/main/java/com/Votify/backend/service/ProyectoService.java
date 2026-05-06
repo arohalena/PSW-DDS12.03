@@ -104,13 +104,8 @@ public class ProyectoService extends GenericService<ProyectoMO> {
         return proyectoRepository.save(entidad);
     }
 
-    public ProyectoMO guardarConDatos(ProyectoMO proyecto, String nombre, String descripcion,
-                                       String categoria, EquipoMO equipo, EventoMO evento) {
-        proyecto.setNombre(nombre.trim());
-        proyecto.setDescripcion(descripcion);
-        proyecto.setTipoCategoria(TipoCategoriaMO.valueOf(categoria));
-        proyecto.setEquipo(equipo);
-        proyecto.setEvento(evento);
+    public ProyectoMO guardarConDatos(ProyectoMO proyecto, String nombre, String descripcion, String categoria, EquipoMO equipo, EventoMO evento) {
+        proyecto.actualizarDatos(nombre, descripcion, categoria, equipo, evento);
         return proyectoRepository.save(proyecto);
     }
 
