@@ -3,7 +3,9 @@ package com.Votify.backend.service;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.RolMO;
 import com.Votify.backend.model.UsuarioMO;
@@ -59,6 +61,12 @@ public class UsuarioService  extends GenericService<UsuarioMO>{
                 .map(c -> !competidorEventoRepository.findByCompetidorId(c.getId()).isEmpty())
                 .orElse(false);
 
+    }
+    public UsuarioMO obtener(UUID id) {
+
+        return usuarioRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario no encontrado."));
+            
     }
 }
 

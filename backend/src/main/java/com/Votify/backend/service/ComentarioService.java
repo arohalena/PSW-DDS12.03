@@ -12,6 +12,7 @@ import com.Votify.backend.dto.ComentarioRequest;
 import com.Votify.backend.model.ComentarioMO;
 import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.model.ProyectoMO;
+import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.repository.ComentarioRepository;
 import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
@@ -90,6 +91,19 @@ public class ComentarioService extends GenericService<ComentarioMO>{
 
         return comentario;
 
+    }
+
+    public void guardarComentarioGlobal(VotacionProyectoMO vp, String anonTokenHash, String texto) {
+        if (vp == null || vp.getVotacion() == null) return;
+        if (!vp.getVotacion().isComentariosActivos()) return;
+        if (texto == null || texto.isBlank()) return;
+
+        ComentarioMO comentario = new ComentarioMO();
+        comentario.setAnonTokenHash(anonTokenHash);
+        comentario.setVotacionProyecto(vp);
+        comentario.setProyecto(vp.getProyecto());
+        comentario.setTexto(texto.trim());
+        comentarioRepository.save(comentario);
     }
     
 }

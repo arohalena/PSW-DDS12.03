@@ -119,4 +119,8 @@ public class CompetidorEventoService {
     public void eliminarTodasDeEvento(UUID eventoId) {
         competidorEventoRepository.deleteAll(competidorEventoRepository.findByEventoId(eventoId));
     }
+
+    public boolean esMiembroDeEquipo(UUID competidorId, UUID equipoId) {
+        return competidorEventoRepository.existsByCompetidor_IdAndEquipo_Id(competidorId, equipoId);
+    }
 }

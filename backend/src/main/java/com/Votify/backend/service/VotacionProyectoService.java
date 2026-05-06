@@ -101,4 +101,9 @@ public class VotacionProyectoService extends GenericService<VotacionProyectoMO> 
             votacionProyectoRepository.save(relacion);
         }
     }
+
+    public VotacionProyectoMO obtener(UUID id) {
+        return votacionProyectoRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la opción de votación."));
+    }
 }
