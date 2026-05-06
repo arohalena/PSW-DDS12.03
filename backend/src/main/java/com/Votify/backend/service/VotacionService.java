@@ -187,98 +187,42 @@ public class VotacionService extends GenericService<VotacionMO> {
 
     @Transactional
     public VotacionMO abrir(UUID id) {
-
         VotacionMO v = findById(id);
-
-        v.setEstado(EstadoVotacionMO.ABIERTA);
-
+        v.abrir();
         return votacionRepository.save(v);
-
     }
 
     @Transactional
     public VotacionMO pausar(UUID id) {
-
         VotacionMO v = findById(id);
-
-        if (v.getEstado() == EstadoVotacionMO.CERRADA) {
-
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                 "No se puede pausar una votación cerrada."
-                );
-
-        }
-
-        v.setEstado(EstadoVotacionMO.PAUSADA);
+        v.pausar();
         return votacionRepository.save(v);
-
     }
 
     @Transactional
     public VotacionMO reanudar(UUID id) {
-
         VotacionMO v = findById(id);
-
-        if (v.getEstado() != EstadoVotacionMO.PAUSADA) {
-
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                 "Solo se puede reanudar una votación pausada."
-                );
-
-        }
-
-        v.setEstado(EstadoVotacionMO.ABIERTA);
+        v.reanudar();
         return votacionRepository.save(v);
-
     }
 
     @Transactional
     public VotacionMO cerrar(UUID id) {
-
         VotacionMO v = findById(id);
-
-        v.setEstado(EstadoVotacionMO.CERRADA);
-
+        v.cerrar();
         return votacionRepository.save(v);
-
     }
 
     @Transactional
     public int aplicarTransicionesAutomaticas() {
-
-        OffsetDateTime ahora = OffsetDateTime.now();
-
         int cambios = 0;
-
         for (VotacionMO v : votacionRepository.findAll()) {
-
-            EstadoVotacionMO actual = v.getEstado();
-
-            if (v.getFin() != null && ahora.isAfter(v.getFin())
-                    && actual != EstadoVotacionMO.CERRADA) {
-
-                v.setEstado(EstadoVotacionMO.CERRADA);
+            if (v.aplicarTransicionPorFechas()) {
                 votacionRepository.save(v);
-
                 cambios++;
-                continue;
-            }
-
-            if (actual == EstadoVotacionMO.PENDIENTE
-                    && v.getInicio() != null
-                    && !ahora.isBefore(v.getInicio())
-                    && (v.getFin() == null || ahora.isBefore(v.getFin()))) {
-
-                v.setEstado(EstadoVotacionMO.ABIERTA);
-                votacionRepository.save(v);
-
-                cambios++;
-
             }
         }
-
         return cambios;
-        
     }
 
     @Override

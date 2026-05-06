@@ -4,6 +4,8 @@ import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -54,10 +56,15 @@ public class VotacionMO extends ModeloBaseMO {
     @Column(name = "modo_ranking", nullable = false)
     private ModoRankingMO modoRanking = ModoRankingMO.AUTOMATICO;
 
+    @Column(nullable = false)
+    private boolean comentariosActivos;
+
+    @Column(nullable = false)
+    private boolean comentarioObligatorio;
+
     @Transient
     @JsonProperty("estadoActual")
     public EstadoVotacionMO getEstadoActual() {
-
         if (estado == EstadoVotacionMO.CERRADA) {
             return EstadoVotacionMO.CERRADA;
         }
@@ -82,10 +89,48 @@ public class VotacionMO extends ModeloBaseMO {
         return EstadoVotacionMO.ABIERTA;
     }
 
-    @Column(nullable = false)
-    private boolean comentariosActivos;
+    //Transiciones de estado
 
-    @Column(nullable = false)
-    private boolean comentarioObligatorio;
+    public void abrir() {
+        this.estado = EstadoVotacionMO.ABIERTA;
+    }
 
+    public void pausar() {
+        if (this.estado == EstadoVotacionMO.CERRADA) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "No se puede pausar una votación cerrada.");
+        }
+        this.estado = EstadoVotacionMO.PAUSADA;
+    }
+
+    public void reanudar() {
+        if (this.estado != EstadoVotacionMO.PAUSADA) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Solo se puede reanudar una votación pausada.");
+        }
+        this.estado = EstadoVotacionMO.ABIERTA;
+    }
+
+    public void cerrar() {
+        this.estado = EstadoVotacionMO.CERRADA;
+    }
+
+    public boolean aplicarTransicionPorFechas() {
+        OffsetDateTime ahora = OffsetDateTime.now();
+
+        if (fin != null && ahora.isAfter(fin) && estado != EstadoVotacionMO.CERRADA) {
+            this.estado = EstadoVotacionMO.CERRADA;
+            return true;
+        }
+
+        if (estado == EstadoVotacionMO.PENDIENTE
+                && inicio != null
+                && !ahora.isBefore(inicio)
+                && (fin == null || ahora.isBefore(fin))) {
+            this.estado = EstadoVotacionMO.ABIERTA;
+            return true;
+        }
+
+        return false;
+    }
 }
