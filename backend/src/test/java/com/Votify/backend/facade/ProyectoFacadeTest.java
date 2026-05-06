@@ -1,7 +1,6 @@
 package com.Votify.backend.facade;
 
 import java.util.Collections;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,49 +11,43 @@ import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.Votify.backend.domain.Proyecto;
 import com.Votify.backend.dto.CrearProyectoRequest;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ProyectoMO;
 import com.Votify.backend.model.TipoCategoriaMO;
-import com.Votify.backend.repository.ComentarioRepository;
-import com.Votify.backend.repository.CompetidorEventoRepository;
-import com.Votify.backend.repository.CompetidorRepository;
-import com.Votify.backend.repository.EquipoRepository;
-import com.Votify.backend.repository.EventoRepository;
-import com.Votify.backend.repository.ProyectoRepository;
-import com.Votify.backend.repository.PuntuacionCriterioRepository;
-import com.Votify.backend.repository.UsuarioRepository;
-import com.Votify.backend.repository.VotacionProyectoRepository;
-import com.Votify.backend.repository.VotacionRepository;
-import com.Votify.backend.repository.VotoCriterioRepository;
-import com.Votify.backend.repository.VotoRepository;
+import com.Votify.backend.service.ComentarioService;
+import com.Votify.backend.service.CompetidorEventoService;
+import com.Votify.backend.service.CompetidorService;
+import com.Votify.backend.service.EquipoService;
+import com.Votify.backend.service.EventoService;
 import com.Votify.backend.service.ProyectoService;
 import com.Votify.backend.service.RankingService;
+import com.Votify.backend.service.VotacionProyectoService;
+import com.Votify.backend.service.VotacionService;
+import com.Votify.backend.service.VotoService;
 
 @ExtendWith(MockitoExtension.class)
 class ProyectoFacadeTest {
 
     @Mock private ProyectoService proyectoService;
-    @Mock private EventoRepository eventoRepository;
-    @Mock private EquipoRepository equipoRepository;
-    @Mock private CompetidorRepository competidorRepository;
-    @Mock private CompetidorEventoRepository competidorEventoRepository;
-    @Mock private UsuarioRepository usuarioRepository;
-    @Mock private ComentarioRepository comentarioRepository;
-    @Mock private VotacionRepository votacionRepository;
-    @Mock private VotacionProyectoRepository votacionProyectoRepository;
-    @Mock private VotoRepository votoRepository;
+    @Mock private EventoService eventoService;
+    @Mock private EquipoService equipoService;
+    @Mock private CompetidorService competidorService;
+    @Mock private CompetidorEventoService competidorEventoService;
+    @Mock private VotacionService votacionService;
+    @Mock private VotacionProyectoService votacionProyectoService;
+    @Mock private VotoService votoService;
+    @Mock private ComentarioService comentarioService;
     @Mock private RankingService rankingService;
-    @Mock private ProyectoRepository proyectoRepository;
-    @Mock private PuntuacionCriterioRepository puntuacionCriterioRepository;
-    @Mock private VotoCriterioRepository votoCriterioRepository;
 
     @InjectMocks private ProyectoFacade proyectoFacade;
 
@@ -70,18 +63,27 @@ class ProyectoFacadeTest {
         entrada.setTipoCategoria(TipoCategoriaMO.IA);
         entrada.setEvento(evento);
 
-        when(eventoRepository.findById(eventoId)).thenReturn(Optional.of(evento));
-        when(proyectoService.save(any(ProyectoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(eventoService.obtener(eventoId)).thenReturn(evento);
+        when(proyectoService.crearDesdeDominio(any(Proyecto.class), any(EventoMO.class)))
+            .thenAnswer(inv -> {
+                Proyecto d = inv.getArgument(0);
+                EventoMO ev = inv.getArgument(1);
+                ProyectoMO p = new ProyectoMO();
+                p.setNombre(d.getNombre());
+                p.setDescripcion(d.getDescripcion());
+                p.setTipoCategoria(d.categoria());
+                p.setEvento(ev);
+                return p;
+            });
 
         ProyectoMO resultado = proyectoFacade.crearSimple(entrada);
 
-        ArgumentCaptor<ProyectoMO> captor = ArgumentCaptor.forClass(ProyectoMO.class);
-        verify(proyectoService).save(captor.capture());
-        ProyectoMO guardado = captor.getValue();
-        assertThat(guardado.getTipoCategoria()).isEqualTo(TipoCategoriaMO.IA);
-        assertThat(guardado.getNombre()).isEqualTo("EcoIA");
-        assertThat(guardado.getEvento()).isSameAs(evento);
-        assertThat(resultado).isSameAs(guardado);
+        ArgumentCaptor<Proyecto> captor = ArgumentCaptor.forClass(Proyecto.class);
+        verify(proyectoService).crearDesdeDominio(captor.capture(), any(EventoMO.class));
+        assertThat(captor.getValue().categoria()).isEqualTo(TipoCategoriaMO.IA);
+        assertThat(resultado.getTipoCategoria()).isEqualTo(TipoCategoriaMO.IA);
+        assertThat(resultado.getNombre()).isEqualTo("EcoIA");
+        assertThat(resultado.getEvento()).isSameAs(evento);
     }
 
     @Test
@@ -96,36 +98,45 @@ class ProyectoFacadeTest {
         entrada.setTipoCategoria(TipoCategoriaMO.SOSTENIBILIDAD);
         entrada.setEvento(evento);
 
-        when(eventoRepository.findById(eventoId)).thenReturn(Optional.of(evento));
-        when(proyectoService.save(any(ProyectoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(eventoService.obtener(eventoId)).thenReturn(evento);
+        when(proyectoService.crearDesdeDominio(any(), any())).thenAnswer(inv -> {
+            Proyecto d = inv.getArgument(0);
+            ProyectoMO p = new ProyectoMO();
+            p.setTipoCategoria(d.categoria());
+            return p;
+        });
 
         proyectoFacade.crearSimple(entrada);
 
-        ArgumentCaptor<ProyectoMO> captor = ArgumentCaptor.forClass(ProyectoMO.class);
-        verify(proyectoService).save(captor.capture());
-        assertThat(captor.getValue().getTipoCategoria()).isEqualTo(TipoCategoriaMO.SOSTENIBILIDAD);
+        ArgumentCaptor<Proyecto> captor = ArgumentCaptor.forClass(Proyecto.class);
+        verify(proyectoService).crearDesdeDominio(captor.capture(), any());
+        assertThat(captor.getValue().categoria()).isEqualTo(TipoCategoriaMO.SOSTENIBILIDAD);
     }
 
     @Test
-    void crearSimple_sinTipoCategoria_lanza400YNoPersiste() {
+    void crearSimple_sinTipoCategoria_propagaErrorDelService() {
         ProyectoMO entrada = new ProyectoMO();
         entrada.setNombre("X");
         entrada.setTipoCategoria(null);
+
+        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se reconoce el tipo de proyecto deseado."))
+            .when(proyectoService).validarTipoCategoria(null);
 
         assertThatThrownBy(() -> proyectoFacade.crearSimple(entrada))
             .isInstanceOf(ResponseStatusException.class)
             .hasMessageContaining("tipo de proyecto");
 
-        verifyNoInteractions(proyectoService);
-        verifyNoInteractions(eventoRepository);
+        verify(proyectoService, never()).crearDesdeDominio(any(), any());
     }
 
     @Test
-    void crearConEquipo_categoriaInvalida_lanza400() {
+    void crearConEquipo_categoriaInvalida_propagaErrorDelService() {
         UUID eventoId = UUID.randomUUID();
         EventoMO evento = new EventoMO();
         evento.setId(eventoId);
-        when(eventoRepository.findById(eventoId)).thenReturn(Optional.of(evento));
+        when(eventoService.obtener(eventoId)).thenReturn(evento);
+        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "La categoría es obligatoria."))
+            .when(proyectoService).validarCategoriaTexto("  ");
 
         CrearProyectoRequest request = new CrearProyectoRequest(
             "Proyecto", "Desc", "  ", "Equipo", Collections.emptyList(), eventoId
@@ -133,15 +144,16 @@ class ProyectoFacadeTest {
 
         assertThatThrownBy(() -> proyectoFacade.crearConEquipo(request))
             .isInstanceOf(ResponseStatusException.class)
-            .hasMessageContaining("categor");  // sin tilde
+            .hasMessageContaining("categor");
 
-        verifyNoInteractions(proyectoService);
+        verify(proyectoService, never()).crearDesdeDominio(any(), any());
     }
 
     @Test
     void crearConEquipo_eventoNoEncontrado_lanza404() {
         UUID eventoId = UUID.randomUUID();
-        // sin stub: Mockito devuelve Optional.empty() por defecto
+        when(eventoService.obtener(eventoId))
+            .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado."));
 
         CrearProyectoRequest request = new CrearProyectoRequest(
             "Proyecto", "Desc", "IA", "Equipo", Collections.emptyList(), eventoId
@@ -151,7 +163,7 @@ class ProyectoFacadeTest {
             .isInstanceOf(ResponseStatusException.class)
             .hasMessageContaining("Evento");
 
-        verifyNoInteractions(proyectoService);
+        verify(proyectoService, never()).crearDesdeDominio(any(), any());
     }
 
     @Test
@@ -165,18 +177,19 @@ class ProyectoFacadeTest {
         entrada.setTipoCategoria(TipoCategoriaMO.IA);
         entrada.setEvento(evento);
 
-        // sin stub: findById devuelve Optional.empty()
+        when(eventoService.obtener(eventoId))
+            .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado."));
 
         assertThatThrownBy(() -> proyectoFacade.crearSimple(entrada))
             .isInstanceOf(ResponseStatusException.class)
             .hasMessageContaining("Evento");
 
-        verify(proyectoService, never()).save(any());
+        verify(proyectoService, never()).crearDesdeDominio(any(), any());
     }
 
     @Test
     void findAll_delegaEnProyectoService() {
-        when(proyectoService.findAll()).thenReturn(java.util.Collections.emptyList());
+        when(proyectoService.findAll()).thenReturn(Collections.emptyList());
 
         proyectoFacade.findAll();
 
