@@ -60,12 +60,9 @@ public class VotoFacade {
         votoService.validarAutoVotacion(votacion, vp, request.usuarioId());
         votoService.validarMaximoYDuplicado(votacion, vp, request.anonTokenHash());
 
-        VotoMO voto = new VotoMO();
-        voto.setVotacionProyecto(vp);
-        voto.setAnonTokenHash(request.anonTokenHash());
-        voto.setUsuario(usuario);
-        voto.setPuntuacionTotal(BigDecimal.ONE);
-        VotoMO guardado = votoService.save(voto);
+        VotoMO guardado = votoService.save(
+            new VotoMO(vp, request.anonTokenHash(), usuario, BigDecimal.ONE)
+        );
 
         comentarioService.guardarComentarioGlobal(vp, request.anonTokenHash(), request.comentario());
 
@@ -89,12 +86,9 @@ public class VotoFacade {
         votoService.validarAutoVotacion(votacion, vp, request.usuarioId());
         votoService.validarMaximoYDuplicado(votacion, vp, request.anonTokenHash());
 
-        VotoMO voto = new VotoMO();
-        voto.setVotacionProyecto(vp);
-        voto.setAnonTokenHash(request.anonTokenHash());
-        voto.setUsuario(usuario);
-        voto.setPuntuacionTotal(BigDecimal.valueOf(request.puntuacion()));
-        VotoMO guardado = votoService.save(voto);
+        VotoMO guardado = votoService.save(
+            new VotoMO(vp, request.anonTokenHash(), usuario, BigDecimal.valueOf(request.puntuacion()))
+        );
 
         if (request.comentario() != null && !request.comentario().isBlank()) {
             comentarioService.guardarComentarioGlobal(vp, request.anonTokenHash(), request.comentario());
@@ -161,12 +155,9 @@ public class VotoFacade {
             total = total.divide(BigDecimal.valueOf(criterios.size()), 2, RoundingMode.HALF_UP);
         }
 
-        VotoMO voto = new VotoMO();
-        voto.setVotacionProyecto(vp);
-        voto.setAnonTokenHash(request.anonTokenHash());
-        voto.setPuntuacionTotal(total);
-        voto.setUsuario(usuario);
-        VotoMO guardado = votoService.save(voto);
+        VotoMO guardado = votoService.save(
+            new VotoMO(vp, request.anonTokenHash(), usuario, total)
+        );
 
         for (CriterioEvaluacionMO c : criterios) {
             VotoCriterioMO vc = new VotoCriterioMO();
