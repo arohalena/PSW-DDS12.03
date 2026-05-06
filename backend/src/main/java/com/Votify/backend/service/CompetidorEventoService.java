@@ -97,4 +97,10 @@ public class CompetidorEventoService {
             .map(CompetidorEventoMO::getCompetidor)
             .collect(java.util.stream.Collectors.toList());
     }
+
+    public void eliminarTodasDeEvento(UUID eventoId) {
+        competidorEventoRepository.deleteAll(
+            competidorEventoRepository.findByEventoId(eventoId)
+        );
+    }
 }

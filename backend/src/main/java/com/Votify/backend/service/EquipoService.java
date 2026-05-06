@@ -1,11 +1,12 @@
 package com.Votify.backend.service;
 
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.EquipoMO;
@@ -59,6 +60,14 @@ public class EquipoService extends GenericService<EquipoMO> {
 
     public List<EquipoMO> getEquiposPorEvento(UUID eventoId) {
         return equipoRepository.findByEventoId(eventoId);
+    }
+
+    @Transactional
+    public void desvincularDeEvento(UUID eventoId) {
+        for (EquipoMO equipo : equipoRepository.findByEventoId(eventoId)) {
+            equipo.setEvento(null);
+            equipoRepository.save(equipo);
+        }
     }
 
 }

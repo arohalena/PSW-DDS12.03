@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.EquipoMO;
@@ -15,6 +16,7 @@ import com.Votify.backend.model.TipoCategoriaMO;
 import com.Votify.backend.repository.ProyectoRepository;
 
 import lombok.RequiredArgsConstructor;
+
 
 @Service
 @RequiredArgsConstructor
@@ -51,5 +53,13 @@ public class ProyectoService extends GenericService<ProyectoMO> {
         proyecto.setEquipo(equipo);
         proyecto.setEvento(evento);
         return proyectoRepository.save(proyecto);
+    }
+
+    @Transactional
+    public void desvincularDeEvento(UUID eventoId) {
+        for (ProyectoMO proyecto : proyectoRepository.findByEvento_Id(eventoId)) {
+            proyecto.setEvento(null);
+            proyectoRepository.save(proyecto);
+        }
     }
 }

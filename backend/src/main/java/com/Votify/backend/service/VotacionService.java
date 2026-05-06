@@ -309,4 +309,11 @@ public class VotacionService extends GenericService<VotacionMO> {
 
         votacionRepository.delete(votacion);
     }
+
+    @Transactional
+    public void eliminarTodasDeEvento(UUID eventoId) {
+        for (VotacionMO v : votacionRepository.findByEvento_Id(eventoId)) {
+            delete(v.getId());
+        }
+    }
 }
