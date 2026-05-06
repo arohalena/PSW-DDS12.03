@@ -22,14 +22,38 @@ import com.Votify.backend.dto.CrearProyectoRequest;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ProyectoMO;
 import com.Votify.backend.model.TipoCategoriaMO;
+import com.Votify.backend.repository.ComentarioRepository;
+import com.Votify.backend.repository.CompetidorEventoRepository;
+import com.Votify.backend.repository.CompetidorRepository;
+import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.EventoRepository;
+import com.Votify.backend.repository.ProyectoRepository;
+import com.Votify.backend.repository.PuntuacionCriterioRepository;
+import com.Votify.backend.repository.UsuarioRepository;
+import com.Votify.backend.repository.VotacionProyectoRepository;
+import com.Votify.backend.repository.VotacionRepository;
+import com.Votify.backend.repository.VotoCriterioRepository;
+import com.Votify.backend.repository.VotoRepository;
 import com.Votify.backend.service.ProyectoService;
+import com.Votify.backend.service.RankingService;
 
 @ExtendWith(MockitoExtension.class)
 class ProyectoFacadeTest {
 
     @Mock private ProyectoService proyectoService;
     @Mock private EventoRepository eventoRepository;
+    @Mock private EquipoRepository equipoRepository;
+    @Mock private CompetidorRepository competidorRepository;
+    @Mock private CompetidorEventoRepository competidorEventoRepository;
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private ComentarioRepository comentarioRepository;
+    @Mock private VotacionRepository votacionRepository;
+    @Mock private VotacionProyectoRepository votacionProyectoRepository;
+    @Mock private VotoRepository votoRepository;
+    @Mock private RankingService rankingService;
+    @Mock private ProyectoRepository proyectoRepository;
+    @Mock private PuntuacionCriterioRepository puntuacionCriterioRepository;
+    @Mock private VotoCriterioRepository votoCriterioRepository;
 
     @InjectMocks private ProyectoFacade proyectoFacade;
 
@@ -108,7 +132,7 @@ class ProyectoFacadeTest {
 
         assertThatThrownBy(() -> proyectoFacade.crearConEquipo(request))
             .isInstanceOf(ResponseStatusException.class)
-            .hasMessageContaining("categoría");
+            .hasMessageContaining("categor");  // sin tilde
 
         verifyNoInteractions(proyectoService);
     }
@@ -116,7 +140,7 @@ class ProyectoFacadeTest {
     @Test
     void crearConEquipo_eventoNoEncontrado_lanza404() {
         UUID eventoId = UUID.randomUUID();
-        when(eventoRepository.findById(eventoId)).thenReturn(Optional.empty());
+        // sin stub: Mockito devuelve Optional.empty() por defecto
 
         CrearProyectoRequest request = new CrearProyectoRequest(
             "Proyecto", "Desc", "IA", "Equipo", Collections.emptyList(), eventoId

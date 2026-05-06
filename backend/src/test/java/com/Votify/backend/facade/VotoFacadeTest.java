@@ -29,16 +29,30 @@ import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.ComentarioRepository;
+import com.Votify.backend.repository.CompetidorEventoRepository;
+import com.Votify.backend.repository.CompetidorRepository;
+import com.Votify.backend.repository.EquipoRepository;
+import com.Votify.backend.repository.PuntuacionCriterioRepository;
+import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
+import com.Votify.backend.repository.VotoCriterioRepository;
+import com.Votify.backend.service.CriterioEvaluacionService;
 import com.Votify.backend.service.VotoService;
 
 @ExtendWith(MockitoExtension.class)
 class VotoFacadeTest {
 
     @Mock private VotoService votoService;
+    @Mock private CriterioEvaluacionService criterioEvaluacionService;
     @Mock private VotacionProyectoRepository votacionProyectoRepository;
+    @Mock private VotoCriterioRepository votoCriterioRepository;
+    @Mock private PuntuacionCriterioRepository puntuacionCriterioRepository;
     @Mock private ComentarioRepository comentarioRepository;
-    
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private CompetidorRepository competidorRepository;
+    @Mock private EquipoRepository equipoRepository;
+    @Mock private CompetidorEventoRepository competidorEventoRepository;
+
     @InjectMocks private VotoFacade votoFacade;
 
     private UUID vpId;
@@ -46,7 +60,6 @@ class VotoFacadeTest {
     private VotacionMO votacion;
 
     @BeforeEach
-    @SuppressWarnings("unused")
     void setUp() {
         vpId = UUID.randomUUID();
 
@@ -71,7 +84,6 @@ class VotoFacadeTest {
 
     @Test
     void votarSimple_caminoFeliz_guardaVotoYDelegaEnVotoService() {
-        // given
         when(votacionProyectoRepository.findById(vpId)).thenReturn(Optional.of(vp));
         when(votoService.contarVotosEmitidosEnVotacion(any(), eq("token123"))).thenReturn(0L);
         when(votoService.yaHaVotado(vpId, "token123")).thenReturn(false);
@@ -79,14 +91,12 @@ class VotoFacadeTest {
 
         EmitirVotoSimpleRequest req = new EmitirVotoSimpleRequest(vpId, "token123", null, null);
 
-        // when
         VotoMO resultado = votoFacade.votarSimple(req);
 
-        // then
         assertThat(resultado).isNotNull();
         assertThat(resultado.getAnonTokenHash()).isEqualTo("token123");
         verify(votoService).save(any(VotoMO.class));
-        verify(comentarioRepository, never()).save(any()); // sin comentario
+        verify(comentarioRepository, never()).save(any());
     }
 
     @Test
@@ -110,7 +120,7 @@ class VotoFacadeTest {
 
         assertThatThrownBy(() -> votoFacade.votarSimple(req))
             .isInstanceOf(ResponseStatusException.class)
-            .hasMessageContaining("Ya habías votado");
+            .hasMessageContaining("Ya hab");  // sin tilde, evita problema de encoding
 
         verify(votoService, never()).save(any());
     }
