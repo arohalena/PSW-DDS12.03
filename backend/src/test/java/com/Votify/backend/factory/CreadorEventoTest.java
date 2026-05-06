@@ -60,4 +60,27 @@ class CreadorEventoTest {
         assertThat(eHack.getClass()).isNotEqualTo(eFeria.getClass());
         assertThat(eHack.tipo()).isNotEqualTo(eFeria.tipo());
     }
+
+    @Test
+    void hackathonEvento_camposPersistenSinModificar() {
+        OffsetDateTime inicio = OffsetDateTime.parse("2026-01-01T10:00:00+01:00");
+        OffsetDateTime fin = OffsetDateTime.parse("2026-01-02T18:00:00+01:00");
+
+        Evento e = new CreadorHackathonEvento()
+            .create("Nombre", "Desc", "CODIGO", inicio, fin, false);
+
+        assertThat(e.getFechaInicio()).isEqualTo(inicio);
+        assertThat(e.getFechaFin()).isEqualTo(fin);
+        assertThat(e.isAutoVotacion()).isFalse();
+    }
+
+    @Test
+    void creadores_aceptanNombresVacios() {
+        // El creador NO valida nada — eso es del Facade. Si valida, hay un bug.
+        Evento e = new CreadorHackathonEvento()
+            .create("", "", "", OffsetDateTime.now(), OffsetDateTime.now().plusDays(1), false);
+
+        assertThat(e.getNombre()).isEmpty();
+        // Esto pasa solo si el creador es "tonto" (como debe ser un Factory Method puro).
+    }
 }

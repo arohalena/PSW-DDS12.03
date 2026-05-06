@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -151,5 +152,46 @@ class ProyectoFacadeTest {
             .hasMessageContaining("Evento");
 
         verifyNoInteractions(proyectoService);
+    }
+
+    @Test
+    void crearSimple_eventoNoEncontrado_lanza404() {
+        UUID eventoId = UUID.randomUUID();
+        EventoMO evento = new EventoMO();
+        evento.setId(eventoId);
+
+        ProyectoMO entrada = new ProyectoMO();
+        entrada.setNombre("X");
+        entrada.setTipoCategoria(TipoCategoriaMO.IA);
+        entrada.setEvento(evento);
+
+        // sin stub: findById devuelve Optional.empty()
+
+        assertThatThrownBy(() -> proyectoFacade.crearSimple(entrada))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("Evento");
+
+        verify(proyectoService, never()).save(any());
+    }
+
+    @Test
+    void findAll_delegaEnProyectoService() {
+        when(proyectoService.findAll()).thenReturn(java.util.Collections.emptyList());
+
+        proyectoFacade.findAll();
+
+        verify(proyectoService).findAll();
+    }
+
+    @Test
+    void findById_delegaEnProyectoService() {
+        UUID id = UUID.randomUUID();
+        ProyectoMO p = new ProyectoMO();
+        when(proyectoService.findById(id)).thenReturn(p);
+
+        ProyectoMO resultado = proyectoFacade.findById(id);
+
+        assertThat(resultado).isSameAs(p);
+        verify(proyectoService).findById(id);
     }
 }

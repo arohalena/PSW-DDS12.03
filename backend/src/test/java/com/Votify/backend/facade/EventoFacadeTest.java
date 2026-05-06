@@ -124,4 +124,65 @@ class EventoFacadeTest {
 
         verifyNoInteractions(eventoService);
     }
+
+    @Test
+    void crear_codigoNullSeAcepta() {
+        OffsetDateTime inicio = OffsetDateTime.now();
+        OffsetDateTime fin = inicio.plusDays(1);
+        when(eventoService.normalizarOCrearCodigo(any())).thenReturn(null);
+        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EventoMO resultado = eventoFacade.crear("HACKATHON", "n", "d", null, inicio, fin, false);
+
+        assertThat(resultado.getCodigoAccesoPublico()).isNull();
+    }
+
+    @Test
+    void crear_descripcionVacia_lanza400() {
+        OffsetDateTime inicio = OffsetDateTime.now();
+        OffsetDateTime fin = inicio.plusDays(1);
+
+        assertThatThrownBy(() -> eventoFacade.crear(
+            "HACKATHON", "Nombre", "  ", "c", inicio, fin, false
+        )).isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("descripci"); // sin tilde
+
+        verifyNoInteractions(eventoService);
+    }
+
+    @Test
+    void crear_fechasNull_lanza400() {
+        assertThatThrownBy(() -> eventoFacade.crear(
+            "HACKATHON", "n", "d", "c", null, null, false
+        )).isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("fechas");
+
+        verifyNoInteractions(eventoService);
+    }
+
+    @Test
+    void crear_tipoMinusculasFunciona() {
+        OffsetDateTime inicio = OffsetDateTime.now();
+        OffsetDateTime fin = inicio.plusDays(1);
+        when(eventoService.normalizarOCrearCodigo(any())).thenReturn("X");
+        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        eventoFacade.crear("hackathon", "n", "d", "c", inicio, fin, false);
+
+        ArgumentCaptor<EventoMO> captor = ArgumentCaptor.forClass(EventoMO.class);
+        verify(eventoService).save(captor.capture());
+        assertThat(captor.getValue().getTipoEvento()).isEqualTo(TipoEventoMO.HACKATHON);
+    }
+
+    @Test
+    void crear_tipoConEspacios_funciona() {
+        OffsetDateTime inicio = OffsetDateTime.now();
+        OffsetDateTime fin = inicio.plusDays(1);
+        when(eventoService.normalizarOCrearCodigo(any())).thenReturn("X");
+        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        eventoFacade.crear("  HACKATHON  ", "n", "d", "c", inicio, fin, false);
+
+        verify(eventoService).save(any());
+    }
 }
