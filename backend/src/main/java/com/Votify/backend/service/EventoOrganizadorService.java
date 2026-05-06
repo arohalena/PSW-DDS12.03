@@ -35,4 +35,10 @@ public class EventoOrganizadorService extends GenericService<EventoOrganizadorMO
         return eventoOrganizadorRepository.findByOrganizador_Id(organizadorId);
 
     }
+
+    public void eliminarTodasDeEvento(UUID eventoId) {
+        eventoOrganizadorRepository.deleteAll(
+            eventoOrganizadorRepository.findByEvento_Id(eventoId)
+        );
+    }
 }

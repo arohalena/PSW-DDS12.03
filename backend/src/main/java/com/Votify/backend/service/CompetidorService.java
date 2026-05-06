@@ -1,6 +1,7 @@
 package com.Votify.backend.service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -79,6 +80,22 @@ public class CompetidorService extends GenericService<CompetidorMO> {
         } catch (Exception e ) {
             throw new RuntimeException("Error al obtener competidor mediante usuario id: " + e.getMessage());
         }
+    }
+
+    public CompetidorMO obtenerPorUsuarioId(UUID usuarioId) {
+
+        return competidorRepository.findByUsuarioId(usuarioId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No se ha encontrado un competidor asociado a este usuario."
+            ));
+
+    }
+
+    public Optional<CompetidorMO> findByUsuarioIdOpt(UUID usuarioId) {
+
+        return competidorRepository.findByUsuarioId(usuarioId);
+        
     }
 }
 

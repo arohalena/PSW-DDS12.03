@@ -1,6 +1,7 @@
 package com.Votify.backend.service;
 
 import java.security.SecureRandom;
+import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.Votify.backend.domain.Evento;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.repository.EventoRepository;
 
@@ -32,6 +34,30 @@ public class EventoService extends GenericService<EventoMO> {
     public EventoMO obtener(UUID id) {
         return eventoRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado."));
+    }
+
+    public void validarDatosCreacion(String tipo, String nombre, String descripcion,
+                                      OffsetDateTime fechaInicio, OffsetDateTime fechaFin) {
+        if (tipo == null || tipo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se reconoce el tipo de evento deseado.");
+        }
+        if (nombre == null || nombre.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del evento es obligatorio.");
+        }
+        if (descripcion == null || descripcion.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La descripción del evento es obligatoria.");
+        }
+        if (fechaInicio == null || fechaFin == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las fechas de inicio y fin son obligatorias.");
+        }
+        if (fechaFin.isBefore(fechaInicio)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "La fecha de fin no puede ser anterior a la fecha de inicio.");
+        }
+    }
+
+    public EventoMO crearDesdeDominio(Evento dominio) {
+        return save(EventoMO.desdeDominio(dominio));
     }
 
     public String generarCodigoAccesoPublico() {

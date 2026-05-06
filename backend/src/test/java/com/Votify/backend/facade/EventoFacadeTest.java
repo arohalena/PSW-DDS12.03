@@ -12,63 +12,70 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.Votify.backend.domain.Evento;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.TipoEventoMO;
-import com.Votify.backend.repository.ComentarioRepository;
-import com.Votify.backend.repository.CompetidorEventoRepository;
-import com.Votify.backend.repository.CriterioEvaluacionRepository;
-import com.Votify.backend.repository.EquipoRepository;
-import com.Votify.backend.repository.EventoOrganizadorRepository;
-import com.Votify.backend.repository.ProyectoRepository;
-import com.Votify.backend.repository.PuntuacionCriterioRepository;
-import com.Votify.backend.repository.VotacionProyectoRepository;
-import com.Votify.backend.repository.VotacionRepository;
-import com.Votify.backend.repository.VotoCriterioRepository;
-import com.Votify.backend.repository.VotoRepository;
+import com.Votify.backend.service.CompetidorEventoService;
+import com.Votify.backend.service.CriterioEvaluacionService;
+import com.Votify.backend.service.EquipoService;
+import com.Votify.backend.service.EventoOrganizadorService;
 import com.Votify.backend.service.EventoService;
+import com.Votify.backend.service.ProyectoService;
+import com.Votify.backend.service.VotacionService;
 
 @ExtendWith(MockitoExtension.class)
 class EventoFacadeTest {
 
     @Mock private EventoService eventoService;
-    @Mock private ProyectoRepository proyectoRepository;
-    @Mock private EquipoRepository equipoRepository;
-    @Mock private CompetidorEventoRepository competidorEventoRepository;
-    @Mock private EventoOrganizadorRepository eventoOrganizadorRepository;
-    @Mock private VotacionRepository votacionRepository;
-    @Mock private VotacionProyectoRepository votacionProyectoRepository;
-    @Mock private VotoRepository votoRepository;
-    @Mock private VotoCriterioRepository votoCriterioRepository;
-    @Mock private PuntuacionCriterioRepository puntuacionCriterioRepository;
-    @Mock private ComentarioRepository comentarioRepository;
-    @Mock private CriterioEvaluacionRepository criterioEvaluacionRepository;
+    @Mock private VotacionService votacionService;
+    @Mock private CriterioEvaluacionService criterioEvaluacionService;
+    @Mock private CompetidorEventoService competidorEventoService;
+    @Mock private EventoOrganizadorService eventoOrganizadorService;
+    @Mock private ProyectoService proyectoService;
+    @Mock private EquipoService equipoService;
 
     @InjectMocks private EventoFacade eventoFacade;
+
+    /** Helper: hace que crearDesdeDominio devuelva un EventoMO equivalente al dominio recibido. */
+    private void mockCrearDesdeDominioEcho() {
+        when(eventoService.crearDesdeDominio(any())).thenAnswer(inv -> {
+            Evento d = inv.getArgument(0);
+            EventoMO mo = new EventoMO();
+            mo.setNombre(d.getNombre());
+            mo.setDescripcion(d.getDescripcion());
+            mo.setCodigoAccesoPublico(d.getCodigoAccesoPublico());
+            mo.setTipoEvento(d.tipo());
+            mo.setFecha_inicio(d.getFechaInicio());
+            mo.setFecha_fin(d.getFechaFin());
+            mo.setAutoVotacion(d.isAutoVotacion());
+            return mo;
+        });
+    }
 
     @Test
     void crear_tipoHackathon_delegaEnFabricaYPersisteConTipoCorrecto() {
         OffsetDateTime inicio = OffsetDateTime.now();
         OffsetDateTime fin = inicio.plusDays(2);
         when(eventoService.normalizarOCrearCodigo(any())).thenReturn("ABC");
-        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+        mockCrearDesdeDominioEcho();
 
         EventoMO resultado = eventoFacade.crear(
             "HACKATHON", "Hackathon UPV", "Descripcion", "ABC", inicio, fin, true
         );
 
-        ArgumentCaptor<EventoMO> captor = ArgumentCaptor.forClass(EventoMO.class);
-        verify(eventoService).save(captor.capture());
-        EventoMO guardado = captor.getValue();
+        ArgumentCaptor<Evento> captor = ArgumentCaptor.forClass(Evento.class);
+        verify(eventoService).crearDesdeDominio(captor.capture());
+        Evento dominio = captor.getValue();
 
-        assertThat(guardado.getTipoEvento()).isEqualTo(TipoEventoMO.HACKATHON);
-        assertThat(guardado.getNombre()).isEqualTo("Hackathon UPV");
-        assertThat(guardado.isAutoVotacion()).isTrue();
-        assertThat(resultado).isSameAs(guardado);
+        assertThat(dominio.tipo()).isEqualTo(TipoEventoMO.HACKATHON);
+        assertThat(dominio.getNombre()).isEqualTo("Hackathon UPV");
+        assertThat(dominio.isAutoVotacion()).isTrue();
+        assertThat(resultado.getTipoEvento()).isEqualTo(TipoEventoMO.HACKATHON);
+        assertThat(resultado.getNombre()).isEqualTo("Hackathon UPV");
     }
 
     @Test
@@ -76,13 +83,13 @@ class EventoFacadeTest {
         OffsetDateTime inicio = OffsetDateTime.now();
         OffsetDateTime fin = inicio.plusDays(3);
         when(eventoService.normalizarOCrearCodigo(any())).thenReturn(null);
-        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+        mockCrearDesdeDominioEcho();
 
         eventoFacade.crear("FERIA_INOVACION", "Feria", "Desc", null, inicio, fin, false);
 
-        ArgumentCaptor<EventoMO> captor = ArgumentCaptor.forClass(EventoMO.class);
-        verify(eventoService).save(captor.capture());
-        assertThat(captor.getValue().getTipoEvento()).isEqualTo(TipoEventoMO.FERIA_INOVACION);
+        ArgumentCaptor<Evento> captor = ArgumentCaptor.forClass(Evento.class);
+        verify(eventoService).crearDesdeDominio(captor.capture());
+        assertThat(captor.getValue().tipo()).isEqualTo(TipoEventoMO.FERIA_INOVACION);
     }
 
     @Test
@@ -96,33 +103,7 @@ class EventoFacadeTest {
         )).isInstanceOf(ResponseStatusException.class)
           .hasMessageContaining("tipo de evento");
 
-        verify(eventoService, never()).save(any());
-    }
-
-    @Test
-    void crear_nombreVacio_lanza400() {
-        OffsetDateTime inicio = OffsetDateTime.now();
-        OffsetDateTime fin = inicio.plusDays(1);
-
-        assertThatThrownBy(() -> eventoFacade.crear(
-            "HACKATHON", "  ", "d", "c", inicio, fin, false
-        )).isInstanceOf(ResponseStatusException.class)
-          .hasMessageContaining("nombre");
-
-        verifyNoInteractions(eventoService);
-    }
-
-    @Test
-    void crear_fechaFinAntesQueInicio_lanza400() {
-        OffsetDateTime inicio = OffsetDateTime.now();
-        OffsetDateTime fin = inicio.minusDays(1);
-
-        assertThatThrownBy(() -> eventoFacade.crear(
-            "HACKATHON", "n", "d", "c", inicio, fin, false
-        )).isInstanceOf(ResponseStatusException.class)
-          .hasMessageContaining("fecha de fin");
-
-        verifyNoInteractions(eventoService);
+        verify(eventoService, never()).crearDesdeDominio(any());
     }
 
     @Test
@@ -130,7 +111,7 @@ class EventoFacadeTest {
         OffsetDateTime inicio = OffsetDateTime.now();
         OffsetDateTime fin = inicio.plusDays(1);
         when(eventoService.normalizarOCrearCodigo(any())).thenReturn(null);
-        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+        mockCrearDesdeDominioEcho();
 
         EventoMO resultado = eventoFacade.crear("HACKATHON", "n", "d", null, inicio, fin, false);
 
@@ -138,40 +119,17 @@ class EventoFacadeTest {
     }
 
     @Test
-    void crear_descripcionVacia_lanza400() {
-        OffsetDateTime inicio = OffsetDateTime.now();
-        OffsetDateTime fin = inicio.plusDays(1);
-
-        assertThatThrownBy(() -> eventoFacade.crear(
-            "HACKATHON", "Nombre", "  ", "c", inicio, fin, false
-        )).isInstanceOf(ResponseStatusException.class)
-        .hasMessageContaining("descripci"); // sin tilde
-
-        verifyNoInteractions(eventoService);
-    }
-
-    @Test
-    void crear_fechasNull_lanza400() {
-        assertThatThrownBy(() -> eventoFacade.crear(
-            "HACKATHON", "n", "d", "c", null, null, false
-        )).isInstanceOf(ResponseStatusException.class)
-        .hasMessageContaining("fechas");
-
-        verifyNoInteractions(eventoService);
-    }
-
-    @Test
     void crear_tipoMinusculasFunciona() {
         OffsetDateTime inicio = OffsetDateTime.now();
         OffsetDateTime fin = inicio.plusDays(1);
         when(eventoService.normalizarOCrearCodigo(any())).thenReturn("X");
-        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+        mockCrearDesdeDominioEcho();
 
         eventoFacade.crear("hackathon", "n", "d", "c", inicio, fin, false);
 
-        ArgumentCaptor<EventoMO> captor = ArgumentCaptor.forClass(EventoMO.class);
-        verify(eventoService).save(captor.capture());
-        assertThat(captor.getValue().getTipoEvento()).isEqualTo(TipoEventoMO.HACKATHON);
+        ArgumentCaptor<Evento> captor = ArgumentCaptor.forClass(Evento.class);
+        verify(eventoService).crearDesdeDominio(captor.capture());
+        assertThat(captor.getValue().tipo()).isEqualTo(TipoEventoMO.HACKATHON);
     }
 
     @Test
@@ -179,10 +137,26 @@ class EventoFacadeTest {
         OffsetDateTime inicio = OffsetDateTime.now();
         OffsetDateTime fin = inicio.plusDays(1);
         when(eventoService.normalizarOCrearCodigo(any())).thenReturn("X");
-        when(eventoService.save(any(EventoMO.class))).thenAnswer(inv -> inv.getArgument(0));
+        mockCrearDesdeDominioEcho();
 
         eventoFacade.crear("  HACKATHON  ", "n", "d", "c", inicio, fin, false);
 
-        verify(eventoService).save(any());
+        verify(eventoService).crearDesdeDominio(any());
+    }
+
+    @Test
+    void crear_propagaErrorDeValidacionDelService() {
+        OffsetDateTime inicio = OffsetDateTime.now();
+        OffsetDateTime fin = inicio.plusDays(1);
+        org.mockito.Mockito.doThrow(new ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST, "El nombre del evento es obligatorio."))
+            .when(eventoService).validarDatosCreacion(any(), any(), any(), any(), any());
+
+        assertThatThrownBy(() -> eventoFacade.crear(
+            "HACKATHON", "  ", "d", "c", inicio, fin, false
+        )).isInstanceOf(ResponseStatusException.class)
+          .hasMessageContaining("nombre");
+
+        verify(eventoService, never()).crearDesdeDominio(any());
     }
 }

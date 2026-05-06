@@ -1,11 +1,13 @@
 package com.Votify.backend.service;
 
-import java.util.UUID;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.EquipoMO;
@@ -28,6 +30,19 @@ public class EquipoService extends GenericService<EquipoMO> {
     @Override
     protected JpaRepository<EquipoMO, UUID> getRepository() {
         return equipoRepository;
+    }
+
+    public EquipoMO obtener(UUID id) {
+        return equipoRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado."));
+    }
+
+    public List<EquipoMO> findAllByIds(Collection<UUID> ids) {
+        return equipoRepository.findAllById(ids);
+    }
+
+    public EquipoMO findByProyectoId(UUID proyectoId) {
+        return equipoRepository.findByProyecto_Id(proyectoId);
     }
 
     public EquipoMO crear(EquipoMO equipo) {
@@ -61,4 +76,11 @@ public class EquipoService extends GenericService<EquipoMO> {
         return equipoRepository.findByEventoId(eventoId);
     }
 
+    @Transactional
+    public void desvincularDeEvento(UUID eventoId) {
+        for (EquipoMO equipo : equipoRepository.findByEventoId(eventoId)) {
+            equipo.setEvento(null);
+            equipoRepository.save(equipo);
+        }
+    }
 }
