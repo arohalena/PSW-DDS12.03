@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.CompetidorEventoMO;
@@ -15,6 +16,7 @@ import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
 import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.EventoRepository;
+import com.Votify.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,38 +28,25 @@ public class CompetidorEventoService {
     private final CompetidorRepository competidorRepository;
     private final EventoRepository eventoRepository;
     private final EquipoRepository equipoRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public void asignarCompetidorAEquipoEnEvento(UUID competidorId, UUID eventoId, UUID equipoId) {
         if (competidorEventoRepository.existsByCompetidorIdAndEventoId(competidorId, eventoId)) {
-            throw new ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "El competidor ya está asignado a un equipo en este evento."
-            );
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "El competidor ya está asignado a un equipo en este evento.");
         }
 
         CompetidorMO competidor = competidorRepository.findById(competidorId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "No se ha encontrado el competidor."
-            ));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado el competidor."));
 
         EventoMO evento = eventoRepository.findById(eventoId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "No se ha encontrado el evento."
-            ));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado el evento."));
 
         EquipoMO equipo = equipoRepository.findById(equipoId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "No se ha encontrado el equipo."
-            ));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado el equipo."));
 
         if (equipo.getEvento() == null || !equipo.getEvento().getId().equals(eventoId)) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "El equipo no pertenece al evento indicado."
-            );
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo no pertenece al evento indicado.");
         }
 
         CompetidorEventoMO relacion = new CompetidorEventoMO();
@@ -66,6 +55,39 @@ public class CompetidorEventoService {
         relacion.setEquipo(equipo);
 
         competidorEventoRepository.save(relacion);
+    }
+
+    @Transactional
+    public void vincularMiembroPorEmail(String email, EventoMO evento, EquipoMO equipo) {
+        if (email == null) return;
+        String emailLimpio = email.trim().toLowerCase();
+        if (emailLimpio.isEmpty()) return;
+
+        CompetidorMO competidor = competidorRepository.findByEmailIgnoreCase(emailLimpio)
+            .orElseGet(() -> {
+                CompetidorMO nuevo = new CompetidorMO();
+                nuevo.setNombre(emailLimpio.split("@")[0]);
+                nuevo.setEmail(emailLimpio);
+                nuevo.setPassword(UUID.randomUUID().toString());
+                usuarioRepository.findByEmail(emailLimpio).ifPresent(nuevo::setUsuario);
+                return competidorRepository.save(nuevo);
+            });
+
+        if (competidor.getUsuario() == null) {
+            usuarioRepository.findByEmail(emailLimpio)
+                .ifPresent(u -> {
+                    competidor.setUsuario(u);
+                    competidorRepository.save(competidor);
+                });
+        }
+
+        if (!competidorEventoRepository.existsByCompetidorIdAndEventoId(competidor.getId(), evento.getId())) {
+            CompetidorEventoMO asignacion = new CompetidorEventoMO();
+            asignacion.setCompetidor(competidor);
+            asignacion.setEvento(evento);
+            asignacion.setEquipo(equipo);
+            competidorEventoRepository.save(asignacion);
+        }
     }
 
     public List<CompetidorEventoMO> getAsignacionesPorEvento(UUID eventoId) {
@@ -82,12 +104,8 @@ public class CompetidorEventoService {
 
     public void eliminarAsignacion(UUID id) {
         if (!competidorEventoRepository.existsById(id)) {
-            throw new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "No se ha encontrado la asignación."
-            );
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la asignación.");
         }
-
         competidorEventoRepository.deleteById(id);
     }
 
@@ -99,8 +117,6 @@ public class CompetidorEventoService {
     }
 
     public void eliminarTodasDeEvento(UUID eventoId) {
-        competidorEventoRepository.deleteAll(
-            competidorEventoRepository.findByEventoId(eventoId)
-        );
+        competidorEventoRepository.deleteAll(competidorEventoRepository.findByEventoId(eventoId));
     }
 }

@@ -80,6 +80,16 @@ public class CompetidorService extends GenericService<CompetidorMO> {
             throw new RuntimeException("Error al obtener competidor mediante usuario id: " + e.getMessage());
         }
     }
+
+    public CompetidorMO obtenerPorUsuarioId(UUID usuarioId) {
+
+        return competidorRepository.findByUsuarioId(usuarioId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No se ha encontrado un competidor asociado a este usuario."
+            ));
+            
+    }
 }
 
 

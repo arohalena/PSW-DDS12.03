@@ -316,4 +316,28 @@ public class VotacionService extends GenericService<VotacionMO> {
             delete(v.getId());
         }
     }
+
+    public void validarVotacionesDelEvento(List<UUID> votacionIds, UUID eventoId) {
+
+        if (votacionIds == null || votacionIds.isEmpty()) {
+
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Si eliges un evento, debes elegir al menos una votación.");
+
+        }
+
+        for (UUID votacionId : votacionIds) {
+
+            VotacionMO votacion = votacionRepository.findById(votacionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada."));
+
+            if (!votacion.getEvento().getId().equals(eventoId)) {
+                
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Todas las votaciones deben pertenecer al evento seleccionado.");
+            }
+
+        }
+        
+    }
 }

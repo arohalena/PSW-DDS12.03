@@ -1,5 +1,6 @@
 package com.Votify.backend.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +30,19 @@ public class EquipoService extends GenericService<EquipoMO> {
     @Override
     protected JpaRepository<EquipoMO, UUID> getRepository() {
         return equipoRepository;
+    }
+
+    public EquipoMO obtener(UUID id) {
+        return equipoRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado."));
+    }
+
+    public List<EquipoMO> findAllByIds(Collection<UUID> ids) {
+        return equipoRepository.findAllById(ids);
+    }
+
+    public EquipoMO findByProyectoId(UUID proyectoId) {
+        return equipoRepository.findByProyecto_Id(proyectoId);
     }
 
     public EquipoMO crear(EquipoMO equipo) {
@@ -69,5 +83,4 @@ public class EquipoService extends GenericService<EquipoMO> {
             equipoRepository.save(equipo);
         }
     }
-
 }
