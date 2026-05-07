@@ -56,14 +56,41 @@ public class VotacionService extends GenericService<VotacionMO> {
 
     @Transactional
     public VotacionMO crear(CrearVotacionRequest request) {
+        validarRequestCreacion(request);
+
+        EventoMO evento = eventoRepository.findById(request.eventoId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado"));
+
+        validarFechas(request.inicio(), request.fin());
+        
+        boolean esMulticriterio = esModalidadMulticriterio(request.modalidad());
+        //un poco overkill imo
+        boolean esPonderada = esModalidadPonderada(request.modalidad());
+
+        if (esMulticriterio) {
+            List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
+                .findByEvento_IdOrderByOrdenAsc(evento.getId());
+
+            if (criteriosExistentes.isEmpty() || esPonderada) {
+                validarCriterios(request.criterios(), esPonderada);
+            } 
+
+            sincronizarCriterios(evento, request, esPonderada, criteriosExistentes);
+        }
+
+        VotacionMO guardada = votacionRepository.save(construirVotacion(request, evento));
+
+        return guardada;
+    }
+
+    private void validarRequestCreacion(CrearVotacionRequest request) {
         if (request.eventoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El evento es requerido");
         }
+
         if (request.nombre() == null || request.nombre().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la votación es requerido");
         }
-        EventoMO evento = eventoRepository.findById(request.eventoId())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado"));
 
         if (request.tipo() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tipo de votación es requerido");
@@ -72,34 +99,39 @@ public class VotacionService extends GenericService<VotacionMO> {
         if (request.modalidad() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La modalidad de votación es requerida");
         }
+    }
 
-        OffsetDateTime inicio = request.inicio();
-        OffsetDateTime fin = request.fin();
-
+    private void validarFechas(OffsetDateTime inicio, OffsetDateTime fin) {
         if (inicio != null && fin != null && inicio.isAfter(fin)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de fin debe ser posterior a la fecha de inicio");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "La fecha de fin debe ser posterior a la fecha de inicio");
+        }
+    }
+
+    private boolean esModalidadMulticriterio(ModalidadVotacionMO modalidad) {
+        return modalidad == ModalidadVotacionMO.MULTICRITERIO || modalidad == ModalidadVotacionMO.MULTICRITERIO_PONDERADA;
+    }
+
+    private boolean esModalidadPonderada(ModalidadVotacionMO modalidad) {
+        return modalidad == ModalidadVotacionMO.MULTICRITERIO_PONDERADA;
+    }
+
+    private void sincronizarCriterios(EventoMO evento, CrearVotacionRequest request, boolean esPonderada, List<CriterioEvaluacionMO> criteriosExistentes) {
+        if (request.criterios() == null) {
+            return;
         }
 
-        boolean esMulticriterio =
-            request.modalidad() == ModalidadVotacionMO.MULTICRITERIO ||
-            request.modalidad() == ModalidadVotacionMO.MULTICRITERIO_PONDERADA;
-
-        boolean esPonderada =
-            request.modalidad() == ModalidadVotacionMO.MULTICRITERIO_PONDERADA;
-
-        if (esMulticriterio) {
-            List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
-                .findByEvento_IdOrderByOrdenAsc(evento.getId());
-
-            if (criteriosExistentes.isEmpty()) {
-                validarCriterios(request.criterios(), esPonderada);
-            } else if (esPonderada) {
-                // si ya existen criterios y la nueva votación es ponderada,
-                // validamos que los pesos del request sumen 100 antes de aplicarlos
-                validarCriterios(request.criterios(), true);
-            }
+        if (criteriosExistentes.isEmpty()) {
+            crearCriterios(evento, request.criterios(), esPonderada);
+            return;
         }
 
+        if (esPonderada) {
+            actualizarPesosDeCriterios(request.criterios(), criteriosExistentes);
+        }
+    }
+
+    private VotacionMO construirVotacion(CrearVotacionRequest request, EventoMO evento) {
         VotacionMO votacion = new VotacionMO();
         votacion.setEvento(evento);
         votacion.setTipo(request.tipo());
@@ -108,55 +140,44 @@ public class VotacionService extends GenericService<VotacionMO> {
         votacion.setInicio(request.inicio());
         votacion.setFin(request.fin());
         votacion.setComentariosActivos(request.comentariosActivos() == null || request.comentariosActivos());
-        votacion.setComentarioObligatorio(votacion.isComentariosActivos() && request.comentarioObligatorio() != null && request.comentarioObligatorio());
+        votacion.setComentarioObligatorio( votacion.isComentariosActivos() && request.comentarioObligatorio() != null
+                && request.comentarioObligatorio());
         votacion.setNombre(request.nombre().trim());
-        votacion.setEstado(request.estado() != null ?
-            request.estado() : EstadoVotacionMO.PENDIENTE);
+        votacion.setEstado(request.estado() != null ? request.estado() : EstadoVotacionMO.PENDIENTE);
+        return votacion;
+    }
 
-        VotacionMO guardada = votacionRepository.save(votacion);
+    private void crearCriterios(EventoMO evento, List<CriterioEvaluacionRequest> criterios, boolean esPonderada) {
+        int orden = 1;
 
-        if (esMulticriterio) {
-            List<CriterioEvaluacionMO> criteriosExistentes = criterioEvaluacionRepository
-                .findByEvento_IdOrderByOrdenAsc(evento.getId());
+        for (CriterioEvaluacionRequest criterioReq : criterios) {
+            CriterioEvaluacionMO criterio = new CriterioEvaluacionMO();
+            criterio.setEvento(evento);
+            criterio.setNombre(criterioReq.nombre().trim());
+            criterio.setDescripcion(criterioReq.descripcion());
 
-            if (criteriosExistentes.isEmpty() && request.criterios() != null) {
-                int orden = 1;
+            BigDecimal peso = esPonderada ? criterioReq.peso() : BigDecimal.ONE;
+            criterio.setPeso(peso.intValue());
+            criterio.setOrden(orden++);
 
-                for (CriterioEvaluacionRequest criterioReq : request.criterios()) {
-                    CriterioEvaluacionMO criterio = new CriterioEvaluacionMO();
-                    criterio.setEvento(evento);
-                    criterio.setNombre(criterioReq.nombre().trim());
-                    criterio.setDescripcion(criterioReq.descripcion());
-
-                    BigDecimal peso = esPonderada
-                        ? criterioReq.peso()
-                        : BigDecimal.ONE;
-
-                    criterio.setPeso(peso.intValue());
-                    criterio.setOrden(orden++);
-
-                    criterioEvaluacionRepository.save(criterio);
-                }
-            } else if (!criteriosExistentes.isEmpty() && esPonderada && request.criterios() != null) {
-                // ya existían criterios (probablemente con peso=1 de una votación MULTICRITERIO previa)
-                // actualizamos sus pesos según los enviados en el request, emparejando por nombre
-                for (CriterioEvaluacionRequest criterioReq : request.criterios()) {
-                    if (criterioReq.nombre() == null || criterioReq.peso() == null) continue;
-
-                    String nombreReq = criterioReq.nombre().trim();
-
-                    criteriosExistentes.stream()
-                        .filter(c -> c.getNombre().equalsIgnoreCase(nombreReq))
-                        .findFirst()
-                        .ifPresent(c -> {
-                            c.setPeso(criterioReq.peso().intValue());
-                            criterioEvaluacionRepository.save(c);
-                        });
-                }
-            }
+            criterioEvaluacionRepository.save(criterio);
         }
+    }
 
-        return guardada;
+    private void actualizarPesosDeCriterios(List<CriterioEvaluacionRequest> criteriosRequest, List<CriterioEvaluacionMO> criteriosExistentes) {
+        for (CriterioEvaluacionRequest criterioReq : criteriosRequest) {
+            if (criterioReq.nombre() == null || criterioReq.peso() == null) continue;
+
+            String nombreReq = criterioReq.nombre().trim();
+
+            criteriosExistentes.stream()
+                .filter(c -> c.getNombre().equalsIgnoreCase(nombreReq))
+                .findFirst()
+                .ifPresent(c -> {
+                    c.setPeso(criterioReq.peso().intValue());
+                    criterioEvaluacionRepository.save(c);
+                });
+        }
     }
 
     private void validarCriterios(List<CriterioEvaluacionRequest> criterios, boolean ponderada) {
