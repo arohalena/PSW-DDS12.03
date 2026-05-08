@@ -45,6 +45,8 @@ public class RankingService {
     private final VotacionRepository votacionRepository;
     private final UsuarioRepository usuarioRepository;
 
+    private static final double PRECISION_REDONDEO = 100.0;
+
     public List<Map<String, Object>> calcularRanking(UUID eventoId, UUID votacionId) {
 
         VotacionMO votacion = votacionRepository.findById(votacionId)
@@ -220,9 +222,9 @@ public class RankingService {
             double mediaPuntos = totalVotos > 0 ? sumaPuntos / totalVotos : 0;
 
             entry.put("totalVotos", totalVotos);
-            entry.put("sumaPuntos", Math.round(sumaPuntos * 100.0) / 100.0);
-            entry.put("mediaPuntos", Math.round(mediaPuntos * 100.0) / 100.0);
-            entry.put("puntuacionTotal", Math.round(sumaPuntos * 100.0) / 100.0);
+            entry.put("sumaPuntos", Math.round(sumaPuntos * PRECISION_REDONDEO) / PRECISION_REDONDEO);
+            entry.put("mediaPuntos", Math.round(mediaPuntos * PRECISION_REDONDEO) / PRECISION_REDONDEO);
+            entry.put("puntuacionTotal", Math.round(sumaPuntos * PRECISION_REDONDEO) / PRECISION_REDONDEO);
             entry.put("criterios", new ArrayList<>());
 
             ranking.add(entry);
@@ -255,7 +257,7 @@ public class RankingService {
                 double avg = promedio != null ? promedio : 0;
 
                 double aporte = ponderada
-                    ? avg * criterio.getPeso() / 100.0
+                    ? avg * criterio.getPeso() / PRECISION_REDONDEO
                     : avg;
 
                 puntuacionTotal += aporte;
@@ -264,8 +266,8 @@ public class RankingService {
                 detalle.put("criterioId", criterio.getId());
                 detalle.put("criterioNombre", criterio.getNombre());
                 detalle.put("peso", ponderada ? criterio.getPeso() : null);
-                detalle.put("promedio", Math.round(avg * 100.0) / 100.0);
-                detalle.put("ponderado", ponderada ? Math.round(aporte * 100.0) / 100.0 : null);
+                detalle.put("promedio", Math.round(avg * PRECISION_REDONDEO) / PRECISION_REDONDEO);
+                detalle.put("ponderado", ponderada ? Math.round(aporte * PRECISION_REDONDEO) / PRECISION_REDONDEO : null);
 
                 detalleCriterios.add(detalle);
             }
@@ -274,7 +276,7 @@ public class RankingService {
                 puntuacionTotal = puntuacionTotal / criterios.size();
             }
 
-            entry.put("puntuacionTotal", Math.round(puntuacionTotal * 100.0) / 100.0);
+            entry.put("puntuacionTotal", Math.round(puntuacionTotal * PRECISION_REDONDEO) / PRECISION_REDONDEO);
             entry.put("criterios", detalleCriterios);
 
             ranking.add(entry);
