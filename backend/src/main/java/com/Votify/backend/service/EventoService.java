@@ -4,6 +4,8 @@ import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
@@ -91,10 +93,8 @@ public class EventoService extends GenericService<EventoMO> {
     }
 
     private String randomCode() {
-        StringBuilder builder = new StringBuilder(CODE_LENGTH);
-        for (int i = 0; i < CODE_LENGTH; i++) {
-            builder.append(ALPHABET.charAt(RANDOM.nextInt(ALPHABET.length())));
-        }
-        return builder.toString();
+     return IntStream.range(0, CODE_LENGTH)
+                .mapToObj(i -> String.valueOf(ALPHABET.charAt(RANDOM.nextInt(ALPHABET.length()))))
+                .collect(Collectors.joining());   
     }
 }
