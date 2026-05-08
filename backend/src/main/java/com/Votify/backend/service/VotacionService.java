@@ -64,7 +64,7 @@ public class VotacionService extends GenericService<VotacionMO> {
         validarFechas(request.inicio(), request.fin());
         
         boolean esMulticriterio = esModalidadMulticriterio(request.modalidad());
-        //un poco overkill imo
+        
         boolean esPonderada = esModalidadPonderada(request.modalidad());
 
         if (esMulticriterio) {
