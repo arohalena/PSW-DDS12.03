@@ -1,3 +1,12 @@
+-- 1) Limpieza historica del anonimato (ANTES de bloquear UPDATE/DELETE):
+--    Cualquier voto cuyo usuario asociado NO sea jurado ni organizador
+--    pierde la asociacion (queda anonimo).
+UPDATE public.voto v
+   SET usuario_id = NULL
+  FROM public.usuario u
+ WHERE v.usuario_id = u.id
+   AND u.rol NOT IN ('JURADO', 'ORGANIZADOR');
+
 CREATE TABLE IF NOT EXISTS public.auditoria_voto (
     id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     voto_id         uuid NOT NULL,
@@ -17,9 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_voto_proyecto
 CREATE INDEX IF NOT EXISTS idx_auditoria_voto_voto
     ON public.auditoria_voto(voto_id);
 
-
--- Trigger que inserta todos los votos a la tabla de auditoria
-
+-- 3) Trigger AFTER INSERT que registra cada voto en auditoria
 CREATE OR REPLACE FUNCTION public.registrar_auditoria_voto()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -47,8 +54,7 @@ CREATE TRIGGER trg_auditoria_voto
 AFTER INSERT ON public.voto
 FOR EACH ROW EXECUTE FUNCTION public.registrar_auditoria_voto();
 
--- Bloquear UPDATE y DELETE para tema de inalterabilidad de voto
-
+-- 4) Inmutabilidad: bloquear UPDATE y DELETE (DESPUES del UPDATE de limpieza)
 CREATE OR REPLACE FUNCTION public.bloquear_modificacion_voto()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -67,6 +73,7 @@ CREATE TRIGGER trg_voto_criterio_inmutable
 BEFORE UPDATE OR DELETE ON public.voto_criterio
 FOR EACH ROW EXECUTE FUNCTION public.bloquear_modificacion_voto();
 
+-- 5) Auditoria tambien es append-only
 CREATE OR REPLACE FUNCTION public.bloquear_modificacion_auditoria()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -78,11 +85,3 @@ DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON public.auditoria_voto;
 CREATE TRIGGER trg_auditoria_inmutable
 BEFORE UPDATE OR DELETE ON public.auditoria_voto
 FOR EACH ROW EXECUTE FUNCTION public.bloquear_modificacion_auditoria();
-
--- Voto que no esté relacionado con un jurado u organizador se queda como anónimo
-
-UPDATE public.voto v
-   SET usuario_id = NULL
-  FROM public.usuario u
- WHERE v.usuario_id = u.id
-   AND u.rol NOT IN ('JURADO', 'ORGANIZADOR');
