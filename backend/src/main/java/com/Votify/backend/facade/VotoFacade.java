@@ -208,10 +208,6 @@ public class VotoFacade {
         return votoService.findById(id);
     }
 
-    public void delete(UUID id) {
-        votoService.delete(id);
-    }
-
     public List<VotoMO> findByVotacionProyecto_Id(UUID votacionProyectoId) {
         return votoService.findByVotacionProyecto_Id(votacionProyectoId);
     }

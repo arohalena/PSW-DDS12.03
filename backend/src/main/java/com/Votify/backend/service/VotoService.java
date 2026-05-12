@@ -133,12 +133,11 @@ public class VotoService extends GenericService<VotoMO> {
     public UsuarioMO validarJurado(VotacionMO votacion, UUID usuarioId) {
         TipoVotacionMO tipo = votacion.getTipo();
 
-        //Votación POPULAR pura
+        // Votación POPULAR pura: nadie firma el voto, todos anónimos
         if (tipo == TipoVotacionMO.POPULAR) return null;
 
-        //Votación JURADO pura
-        if (tipo == TipoVotacionMO.JURADO){
-
+        // Votación JURADO pura: solo jurados u organizadores pueden votar y firman
+        if (tipo == TipoVotacionMO.JURADO) {
             if (usuarioId == null) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
             }
@@ -150,13 +149,18 @@ public class VotoService extends GenericService<VotoMO> {
             return usuario;
         }
 
-        //Votación MIXTA
+        // Votación MIXTA: anonimato selectivo por rol
         if (tipo == TipoVotacionMO.MIXTA) {
-            if (usuarioId == null) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado o votante.");
-            }   
+            // Voto público sin sesión iniciada: anónimo
+            if (usuarioId == null) return null;
 
-            return usuarioService.obtener(usuarioId);
+            UsuarioMO usuario = usuarioService.obtener(usuarioId);
+
+            // Solo jurados u organizadores firman el voto. El resto vota anónimo.
+            if (usuario.getRol() == RolMO.JURADO || usuario.getRol() == RolMO.ORGANIZADOR) {
+                return usuario;
+            }
+            return null;
         }
 
         return null;

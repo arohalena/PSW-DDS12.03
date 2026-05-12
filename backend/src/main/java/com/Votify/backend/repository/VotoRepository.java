@@ -19,7 +19,8 @@ public interface VotoRepository extends JpaRepository<VotoMO, UUID> {
 
     long countByVotacionProyecto_Id(UUID votacionProyectoId);
 
+    long countByVotacionProyecto_Votacion_Id(UUID votacionId);
+
     @Query("SELECT COUNT(DISTINCT v.anonTokenHash) FROM VotoMO v WHERE v.votacionProyecto.votacion.evento.id = :eventoId")
     long countDistinctVotantesByEventoId(@Param("eventoId") UUID eventoId);
 }
-
