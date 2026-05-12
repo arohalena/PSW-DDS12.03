@@ -29,18 +29,11 @@ public class AuditoriaController {
 
     @GetMapping("/votaciones/{id}/resumen")
     public List<ResumenAuditoriaProyectoDTO> resumen(@PathVariable UUID id) {
-        return auditoriaVotoService.contarPorProyecto(id).stream()
-            .map(row -> new ResumenAuditoriaProyectoDTO(
-                (UUID) row[0],
-                ((Number) row[1]).longValue()
-            ))
-            .toList();
+        return auditoriaVotoService.resumenPorProyecto(id);
     }
 
     @GetMapping("/votaciones/{id}/integridad")
     public IntegridadAuditoriaDTO integridad(@PathVariable UUID id) {
-        long votos = auditoriaVotoService.totalVotos(id);
-        long auditoria = auditoriaVotoService.totalAuditoria(id);
-        return new IntegridadAuditoriaDTO(id, votos, auditoria, votos == auditoria);
+        return auditoriaVotoService.comprobarIntegridad(id);
     }
 }
