@@ -6,6 +6,7 @@ BEGIN
         SELECT schemaname, tablename
           FROM pg_tables
          WHERE schemaname = 'public'
+           AND tablename NOT IN ('flyway_schema_history')
     LOOP
         EXECUTE format(
             'ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY;',
@@ -14,6 +15,8 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Defensa en profundidad: revocar privilegios de los roles publicos
+-- de Supabase sobre todas las tablas.
 
 DO $$
 BEGIN
