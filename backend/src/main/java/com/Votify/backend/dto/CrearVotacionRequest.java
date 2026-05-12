@@ -20,5 +20,7 @@ public record CrearVotacionRequest (
     EstadoVotacionMO estado,
     Boolean comentariosActivos,
     Boolean comentarioObligatorio,
-    List<CriterioEvaluacionRequest> criterios
+    List<CriterioEvaluacionRequest> criterios,
+    Integer pesoPorcentajePopular,
+    Integer pesoPorcentajeJurado
 ) {}

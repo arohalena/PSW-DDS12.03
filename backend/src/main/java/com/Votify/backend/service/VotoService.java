@@ -131,15 +131,35 @@ public class VotoService extends GenericService<VotoMO> {
     }
 
     public UsuarioMO validarJurado(VotacionMO votacion, UUID usuarioId) {
-        if (votacion.getTipo() != TipoVotacionMO.JURADO) return null;
-        if (usuarioId == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
+        TipoVotacionMO tipo = votacion.getTipo();
+
+        //Votación POPULAR pura
+        if (tipo == TipoVotacionMO.POPULAR) return null;
+
+        //Votación JURADO pura
+        if (tipo == TipoVotacionMO.JURADO){
+
+            if (usuarioId == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
+            }
+
+            UsuarioMO usuario = usuarioService.obtener(usuarioId);
+            if (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el jurado puede votar en esta votación.");
+            }
+            return usuario;
         }
-        UsuarioMO usuario = usuarioService.obtener(usuarioId);
-        if (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el jurado puede votar en esta votación.");
+
+        //Votación MIXTA
+        if (tipo == TipoVotacionMO.MIXTA) {
+            if (usuarioId == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado o votante.");
+            }   
+
+            return usuarioService.obtener(usuarioId);
         }
-        return usuario;
+
+        return null;
     }
 
     public void validarComentarios(VotacionMO votacion, String comentario) {
