@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.Votify.backend.model.AuditoriaVotoMO;
 
@@ -21,4 +22,28 @@ public interface AuditoriaVotoRepository extends JpaRepository<AuditoriaVotoMO, 
          GROUP BY a.proyectoId
     """)
     List<Object[]> contarPorProyecto(UUID votacionId);
+
+    @Query(value = """
+        SELECT
+            a.id              AS id,
+            a.voto_id         AS voto_id,
+            a.created_at      AS timestamp,
+            a.anon_token_hash AS anon_token_hash,
+            a.proyecto_id     AS proyecto_id,
+            p.nombre          AS proyecto_nombre,
+            v.usuario_id      AS votante_id,
+            u.nombre          AS votante_nombre
+        FROM auditoria_voto a
+        JOIN voto v       ON v.id  = a.voto_id
+        LEFT JOIN usuario u ON u.id = v.usuario_id
+        JOIN proyecto p   ON p.id  = a.proyecto_id
+        JOIN votacion vt  ON vt.id = a.votacion_id
+        WHERE vt.evento_id = :eventoId
+          AND (:votacionId IS NULL OR a.votacion_id = :votacionId)
+        ORDER BY a.created_at DESC
+    """, nativeQuery = true)
+    List<Object[]> findEnriquecidosByEvento(
+        @Param("eventoId") UUID eventoId,
+        @Param("votacionId") UUID votacionId
+    );
 }
