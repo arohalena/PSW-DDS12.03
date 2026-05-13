@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2, Vote, X } from "lucide-react";
 import { createVotacion } from "../../services/votacionService";
+import SuggestCriteriaPanel from "./SuggestCriteriaPanel";
 import "../../styles/events.css";
 
 const tiposVotacion = [
@@ -73,7 +74,7 @@ function sanitizeWeight(value) {
   return String(numberValue);
 }
 
-function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
+function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -154,6 +155,23 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
       ...prev,
       criteria: prev.criteria.filter((criterion) => criterion.id !== criterionId),
     }));
+  }
+
+  function applySuggestions(criteriosSugeridos) {
+    setConfig((prev) => ({
+      ...prev,
+      criteria: [
+        ...prev.criteria,
+        ...criteriosSugeridos.map((c) => ({
+          id: crypto.randomUUID(),
+          nombre: c.nombre,
+          descripcion: c.descripcion,
+          peso: prev.modalidad === "MULTICRITERIO_PONDERADA" ? String(c.peso) : null,
+        })),
+      ],
+    }));
+
+    setError("");
   }
 
   function validate() {
@@ -390,14 +408,14 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
               />
             </label>
           </div>
-          
+
           <div className="voting-comments-config">
             <label className="voting-toggle-row">
               <input
                 type="checkbox"
                 checked={config.comentariosActivos}
-                onChange={(e) => 
-                  updateConfig({ 
+                onChange={(e) =>
+                  updateConfig({
                     comentariosActivos: e.target.checked,
                     comentarioObligatorio: e.target.checked ? config.comentarioObligatorio : false,
                   })
@@ -446,6 +464,11 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
 
           {needsCriteria(config.modalidad) ? (
             <div className="criteria-configurator">
+              <SuggestCriteriaPanel
+                tipoEvento={tipoEvento}
+                onApply={applySuggestions}
+              />
+
               <div className="criteria-configurator-header">
                 <div>
                   <h4>Criterios</h4>

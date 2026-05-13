@@ -842,6 +842,7 @@ function EventDetailScreen() {
         <CreateVotingModal
           eventoId={eventoId}
           eventoNombre={evento.nombre}
+          tipoEvento={evento.tipoEvento || evento.tipo_evento}
           onClose={() => setCreateVotingModalOpen(false)}
           onCreated={async () => {
             setCreateVotingModalOpen(false);
