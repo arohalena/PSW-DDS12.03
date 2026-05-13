@@ -131,15 +131,39 @@ public class VotoService extends GenericService<VotoMO> {
     }
 
     public UsuarioMO validarJurado(VotacionMO votacion, UUID usuarioId) {
-        if (votacion.getTipo() != TipoVotacionMO.JURADO) return null;
-        if (usuarioId == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
+        TipoVotacionMO tipo = votacion.getTipo();
+
+        // Votación POPULAR pura: nadie firma el voto, todos anónimos
+        if (tipo == TipoVotacionMO.POPULAR) return null;
+
+        // Votación JURADO pura: solo jurados u organizadores pueden votar y firman
+        if (tipo == TipoVotacionMO.JURADO) {
+            if (usuarioId == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación requiere un usuario jurado.");
+            }
+
+            UsuarioMO usuario = usuarioService.obtener(usuarioId);
+            if (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el jurado puede votar en esta votación.");
+            }
+            return usuario;
         }
-        UsuarioMO usuario = usuarioService.obtener(usuarioId);
-        if (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el jurado puede votar en esta votación.");
+
+        // Votación MIXTA: anonimato selectivo por rol
+        if (tipo == TipoVotacionMO.MIXTA) {
+            // Voto público sin sesión iniciada: anónimo
+            if (usuarioId == null) return null;
+
+            UsuarioMO usuario = usuarioService.obtener(usuarioId);
+
+            // Solo jurados u organizadores firman el voto. El resto vota anónimo.
+            if (usuario.getRol() == RolMO.JURADO || usuario.getRol() == RolMO.ORGANIZADOR) {
+                return usuario;
+            }
+            return null;
         }
-        return usuario;
+
+        return null;
     }
 
     public void validarComentarios(VotacionMO votacion, String comentario) {

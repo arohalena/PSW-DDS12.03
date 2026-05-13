@@ -37,7 +37,7 @@ function RankingScreen() {
   const puedeEditar = useMemo(() => {
     if (!usuario || !votacionSeleccionada) return false;
     if (usuario.rol === "ORGANIZADOR") return true;
-    if (usuario.rol === "JURADO" && votacionSeleccionada.tipo === "JURADO") return true;
+    if (usuario.rol === "JURADO" && (votacionSeleccionada.tipo === "JURADO" || votacionSeleccionada.tipo === "MIXTA")) return true;
     return false;
   }, [usuario, votacionSeleccionada]);
 
@@ -127,6 +127,7 @@ function RankingScreen() {
   const esMulticriterio = MODALIDADES_MULTICRITERIO.includes(modalidad);
   const esSimple = modalidad === "SIMPLE";
   const esPuntos = modalidad === "PUNTOS";
+  const esMixta  = votacionSeleccionada?.tipo === "MIXTA";
 
   const selectedProject = useMemo(() => {
     return ranking.find((entry) => entry.proyectoId === selectedProjectId) || ranking[0] || null;
@@ -268,12 +269,16 @@ function RankingScreen() {
     if (esPuntos) {
       return <strong>{formatearNumero(entry.sumaPuntos ?? entry.puntuacionTotal)}</strong>;
     }
+    if (esMixta) {
+      return <strong>{formatearNumero(entry.puntuacionTotal)}</strong>;
+    }
     return <strong>{formatearNota(entry.puntuacionTotal)}</strong>;
   };
 
   const etiquetaPuntuacion = () => {
     if (esSimple) return "votos";
     if (esPuntos) return "pts";
+    if (esMixta) return "pts";
     return "/5";
   };
 
@@ -404,7 +409,10 @@ function RankingScreen() {
             {votaciones.length === 0 && <option value="">Sin votaciones</option>}
             {votaciones.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.nombre} — {v.tipo} · {etiquetaModalidad(v.modalidad)}
+                {v.nombre} — {v.tipo === "MIXTA"
+                  ? `Mixta (Pop.${v.pesoPorcentajePopular ?? "?"}% / Jur.${v.pesoPorcentajeJurado ?? "?"}%)`
+                  : v.tipo
+                } · {etiquetaModalidad(v.modalidad)}
               </option>
             ))}
           </select>
@@ -539,14 +547,29 @@ function RankingScreen() {
                           {renderPuntuacionPrincipal(entry)}
                           <span className="ranking-score-unit">{etiquetaPuntuacion()}</span>
 
-                          {!esSimple && (
+                          {!esSimple && !esMixta && (
                             <div className="ranking-votes-line">
                               <span>{entry.totalVotos ?? 0} votos</span>
+                            </div>
+                          )}
+
+                          {esMixta && (
+                            <div className="ranking-votes-line" style={{ flexDirection: "column", gap: "2px", alignItems: "flex-end" }}>
+                              <span style={{ color: "#4a90d9", fontSize: "0.75rem" }}>
+                                🌐 {entry.votosPopular ?? 0}v ({entry.pesoPopular ?? 0}%)
+                              </span>
+                              <span style={{ color: "#e8a838", fontSize: "0.75rem" }}>
+                                ⚖️ {entry.votosJurado ?? 0}v ({entry.pesoJurado ?? 0}%)
+                              </span>
                             </div>
                           )}
                         </div>
 
                         {esMulticriterio && !enModoManual && (
+                          <span className="ranking-detail-link">Ver Detalle</span>
+                        )}
+
+                        {esMixta && !enModoManual && (
                           <span className="ranking-detail-link">Ver Detalle</span>
                         )}
 
@@ -699,6 +722,84 @@ function RankingScreen() {
                       <span>Votantes activos en el evento</span>
                       <strong className="ranking-final-score">
                         {selectedProject.votantesActivos ?? 0}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            )}
+
+            {esMixta && selectedProject && (
+              <aside className="ranking-detail-card">
+                <div className="ranking-card-header">
+                  <div>
+                    <h2>
+                      Proyecto #{selectedProject.posicion}: {selectedProject.proyectoNombre}
+                    </h2>
+                    <p>Desglose votación mixta</p>
+                  </div>
+                </div>
+
+                <div className="ranking-detail-body">
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>🌐 Votos populares ({selectedProject.pesoPopular ?? 0}% de peso)</span>
+                      <strong className="ranking-final-score">
+                        {selectedProject.votosPopular ?? 0} votos
+                      </strong>
+                    </div>
+                    <div className="ranking-progress-bar">
+                      <div
+                        className="ranking-progress-fill"
+                        style={{ width: `${selectedProject.pesoPopular ?? 0}%`, backgroundColor: "#4a90d9" }}
+                      />
+                    </div>
+                    <div className="ranking-criterion-head" style={{ marginTop: "6px" }}>
+                      <span style={{ fontSize: "0.82rem", color: "#888" }}>Puntuación popular ponderada</span>
+                      <span style={{ fontWeight: 600 }}>
+                        {(((selectedProject.puntosPopular ?? 0) * (selectedProject.pesoPopular ?? 0)) / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>⚖️ Votos jurado ({selectedProject.pesoJurado ?? 0}% de peso)</span>
+                      <strong className="ranking-final-score">
+                        {selectedProject.votosJurado ?? 0} votos
+                      </strong>
+                    </div>
+                    <div className="ranking-progress-bar">
+                      <div
+                        className="ranking-progress-fill"
+                        style={{ width: `${selectedProject.pesoJurado ?? 0}%`, backgroundColor: "#e8a838" }}
+                      />
+                    </div>
+                    <div className="ranking-criterion-head" style={{ marginTop: "6px" }}>
+                      <span style={{ fontSize: "0.82rem", color: "#888" }}>Puntuación jurado ponderada</span>
+                      <span style={{ fontWeight: 600 }}>
+                        {(((selectedProject.puntosJurado ?? 0) * (selectedProject.pesoJurado ?? 0)) / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>🏆 Puntuación total ponderada</span>
+                      <strong className="ranking-final-score" style={{ fontSize: "1.3rem" }}>
+                        {selectedProject.puntuacionTotal ?? 0}
+                      </strong>
+                    </div>
+                    <div style={{ fontSize: "0.78rem", color: "#888", marginTop: "4px" }}>
+                      = (popular × {selectedProject.pesoPopular ?? 0}%) + (jurado × {selectedProject.pesoJurado ?? 0}%)
+                    </div>
+                  </div>
+
+                  <div className="ranking-final-score-box">
+                    <div className="ranking-criterion-head">
+                      <span>Total de votos (popular + jurado)</span>
+                      <strong className="ranking-final-score">
+                        {selectedProject.totalVotos ?? 0}
                       </strong>
                     </div>
                   </div>

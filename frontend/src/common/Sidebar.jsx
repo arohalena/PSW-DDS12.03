@@ -4,6 +4,7 @@ import { Calendar, Folder, Home, Settings, Trophy, Users, Vote } from "lucide-re
 import { useState, useEffect, useMemo } from "react";
 import { usuarioHasProject } from "../services/usuarioService"; 
 import { getUsuarioLogueado } from "../services/sessionService";
+import { Shield } from "lucide-react";
 
 
 const items = [
@@ -11,6 +12,7 @@ const items = [
   { label: "Eventos", to: "/eventos", icon: Calendar },
   { label: "Proyectos", to: "/proyectos", icon: Folder },
   { label: "Usuarios", to: "/usuarios", icon: Users },
+  { label: "Auditoría", to: "/auditoria", icon: Shield },
   { label: "Mi Proyecto", to: "/configuracion", icon: Trophy, private:true },
 ];
 

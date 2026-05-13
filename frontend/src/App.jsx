@@ -16,6 +16,7 @@ import EventDetailScreen from "./screens/event/EventDetailScreen";
 import ProjectDetailScreen from "./screens/project/ProjectDetailScreen";
 import PopularVotingScreen from "./screens/voting/PopularVotingScreen";
 import EditVotingScreen from "./screens/voting/EditVotingScreen";
+import AuditoriaScreen from "./screens/auditoria/AuditoriaScreen";
 
 function PrivateRoute({ children }) {
   const usuario = localStorage.getItem("usuarioLogueado");
@@ -69,7 +70,11 @@ function App() {
 
         {/* redirects */}
         <Route path="/votar" element={<Navigate to="/eventos" replace />} />
+
+        <Route path="/auditoria" element={<AuditoriaScreen />} />
+
       </Routes>
+      
     </BrowserRouter>
   );
 }

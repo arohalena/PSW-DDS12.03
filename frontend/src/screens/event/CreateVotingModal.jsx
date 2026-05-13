@@ -6,6 +6,7 @@ import "../../styles/events.css";
 const tiposVotacion = [
   { value: "POPULAR", label: "Popular" },
   { value: "JURADO", label: "Jurado" },
+  { value: "MIXTA", label: "Mixta (Popular + Jurado)" },
 ];
 
 const modalidades = [
@@ -86,6 +87,8 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
     comentariosActivos: true,
     comentarioObligatorio: true,
     criteria: [],
+    pesoPorcentajePopular: 50,
+    pesoPorcentajeJurado: 50,
   });
 
   const totalPeso = useMemo(() => {
@@ -177,6 +180,17 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
       return "La fecha/hora de fin debe ser posterior a la de inicio.";
     }
 
+    if (config.tipo === "MIXTA") {
+      const pp = Number(config.pesoPorcentajePopular || 0);
+      const pj = Number(config.pesoPorcentajeJurado  || 0);
+      if (pp < 0 || pp > 100 || pj < 0 || pj > 100) {
+        return "Los pesos deben estar entre 0 y 100.";
+      }
+      if (pp + pj !== 100) {
+        return `Los pesos de popular (${pp}%) y jurado (${pj}%) deben sumar 100%.`;
+      }
+    }
+
     if (needsCriteria(config.modalidad)) {
       const validCriteria = config.criteria.filter((criterion) => criterion.nombre.trim());
       const zeroWeight = config.criteria.filter((criterion) => criterion.peso == 0);
@@ -244,6 +258,8 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
                 orden: index,
               }))
           : [],
+        pesoPorcentajePopular: config.tipo === "MIXTA" ? Number(config.pesoPorcentajePopular) : null,
+        pesoPorcentajeJurado:  config.tipo === "MIXTA" ? Number(config.pesoPorcentajeJurado)  : null,
       });
 
       onCreated();
@@ -307,6 +323,53 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
               />
             </label>
           </div>
+
+          {config.tipo === "MIXTA" && (
+            <div className="event-field" style={{ marginTop: "8px" }}>
+              <span className="mini-label">Pesos de la votación mixta</span>
+              <p style={{ fontSize: "0.82rem", color: "var(--color-text-secondary, #666)", marginBottom: "8px" }}>
+                Define qué porcentaje contribuye el voto popular y el de jurado al resultado final. Deben sumar 100%.
+              </p>
+              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                <label className="event-field" style={{ flex: 1 }}>
+                  <span>Peso Voto Popular (%)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={config.pesoPorcentajePopular}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      updateConfig({ pesoPorcentajePopular: val, pesoPorcentajeJurado: 100 - val });
+                    }}
+                  />
+                </label>
+                <label className="event-field" style={{ flex: 1 }}>
+                  <span>Peso Voto Jurado (%)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={config.pesoPorcentajeJurado}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      updateConfig({ pesoPorcentajeJurado: val, pesoPorcentajePopular: 100 - val });
+                    }}
+                  />
+                </label>
+                <div style={{ textAlign: "center", minWidth: "80px" }}>
+                  <span style={{
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    color: Number(config.pesoPorcentajePopular) + Number(config.pesoPorcentajeJurado) === 100
+                      ? "green" : "red"
+                  }}>
+                    Total: {Number(config.pesoPorcentajePopular || 0) + Number(config.pesoPorcentajeJurado || 0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="event-grid two-columns">
             <label className="event-field">
