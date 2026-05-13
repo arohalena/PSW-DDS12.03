@@ -79,8 +79,8 @@ function MiniRadarChart({ data }) {
 
   const polygonPoints = safeData
     .map((item, index) => {
-      const p = point(index, item.value);
-      return `${p.x},${p.y}`;
+      const point = point(index, item.value);
+      return `${point.x},${point.y}`;
     })
     .join(" ");
 
@@ -90,8 +90,8 @@ function MiniRadarChart({ data }) {
         {[1, 2, 3, 4, 5].map((level) => {
           const gridPoints = safeData
             .map((_, index) => {
-              const p = point(index, level);
-              return `${p.x},${p.y}`;
+              const point = point(index, level);
+              return `${point.x},${point.y}`;
             })
             .join(" ");
 
@@ -121,8 +121,8 @@ function MiniRadarChart({ data }) {
         <polygon points={polygonPoints} className="radar-value-shape" />
 
         {safeData.map((item, index) => {
-          const p = point(index, item.value);
-          return <circle key={item.label} cx={p.x} cy={p.y} r="4" className="radar-point" />;
+          const point = point(index, item.value);
+          return <circle key={item.label} cx={point.x} cy={point.y} r="4" className="radar-point" />;
         })}
       </svg>
     </div>
