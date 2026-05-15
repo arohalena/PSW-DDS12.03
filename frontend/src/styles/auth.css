@@ -234,3 +234,32 @@
   z-index: 30;
   text-align: left;
 }
+
+.auth-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.auth-field-error {
+  font-size: 0.85rem;
+  color: #b91c1c;
+  margin-top: 4px;
+}
+
+.auth-input-wrapper--error {
+  border: 1px solid #b91c1c;
+  border-radius: 12px;
+}
+
+.auth-password-rules {
+  list-style: disc inside;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.auth-password-rules li {
+  margin-bottom: 2px;
+}
