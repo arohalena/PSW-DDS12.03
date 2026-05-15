@@ -139,11 +139,7 @@ function RegisterScreen() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <ul className="auth-password-rules">
-                <li>Mínimo 8 caracteres</li>
-                <li>Al menos una letra</li>
-                <li>Al menos un número</li>
-              </ul>
+              <div className="auth-hint">Mínimo 4 caracteres.</div>
               {errors.password && <div className="auth-field-error">{errors.password}</div>}
             </div>
 
