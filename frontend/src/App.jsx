@@ -17,17 +17,27 @@ import ProjectDetailScreen from "./screens/project/ProjectDetailScreen";
 import PopularVotingScreen from "./screens/voting/PopularVotingScreen";
 import EditVotingScreen from "./screens/voting/EditVotingScreen";
 import AuditoriaScreen from "./screens/auditoria/AuditoriaScreen";
+import { getUsuarioLogueado } from "./services/sessionService";
 
+// Verifica sesion
 function PrivateRoute({ children }) {
   const usuario = localStorage.getItem("usuarioLogueado");
   return usuario ? children : <Navigate to="/login" replace />;
 }
 
-function PrivatePage({ children }) {
+// Verifica sesion Y rol permitido
+function RoleRoute({ children, roles }) {
+  const usuario = getUsuarioLogueado();
+  if (!usuario) return <Navigate to="/login" replace />;
+  if (roles && !roles.includes(usuario.rol)) return <Navigate to="/" replace />;
+  return children;
+}
+
+function PrivatePage({ children, roles }) {
   return (
-    <PrivateRoute>
+    <RoleRoute roles={roles}>
       <AppLayout>{children}</AppLayout>
-    </PrivateRoute>
+    </RoleRoute>
   );
 }
 
@@ -35,46 +45,124 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginScreen />} />
-
+        {/* Públicas */}
+        <Route path="/login"    element={<LoginScreen />}    />
         <Route path="/registro" element={<RegisterScreen />} />
 
-        <Route path="/" element={<PrivatePage><DashboardScreen /></PrivatePage>} />
+        {/* Dashboard — todos los roles logueados */}
+        <Route
+          path="/"
+          element={
+            <PrivatePage>
+              <DashboardScreen />
+            </PrivatePage>
+          }
+        />
 
-        <Route path="/eventos" element={<PrivatePage><EventsListScreen /></PrivatePage>} />
+        {/* Eventos — todos */}
+        <Route
+          path="/eventos"
+          element={
+            <PrivatePage>
+              <EventsListScreen />
+            </PrivatePage>
+          }
+        />
 
-        <Route path="/eventos/crear" element={<PrivatePage><CreateEventScreen /></PrivatePage>} />
+        {/* Crear evento — solo ORGANIZADOR */}
+        <Route
+          path="/eventos/crear"
+          element={
+            <PrivatePage roles={["ORGANIZADOR"]}>
+              <CreateEventScreen />
+            </PrivatePage>
+          }
+        />
 
-        <Route path="/eventos/:eventoId" element={<PrivatePage><EventDetailScreen /></PrivatePage>} />
+        {/* Detalle evento — todos */}
+        <Route
+          path="/eventos/:eventoId"
+          element={
+            <PrivatePage>
+              <EventDetailScreen />
+            </PrivatePage>
+          }
+        />
 
+        {/* Detalle proyecto — todos */}
         <Route
           path="/eventos/:eventoId/proyectos/:proyectoId"
-          element={<PrivatePage><ProjectDetailScreen /></PrivatePage>}
+          element={
+            <PrivatePage>
+              <ProjectDetailScreen />
+            </PrivatePage>
+          }
         />
 
+        {/* Votar - todos */}
         <Route
           path="/eventos/:eventoId/votaciones/:votingId/proyectos/:proyectoId/votar"
-          element={<PrivatePage><ProjectVotingDetailScreen /></PrivatePage>}
+          element={
+            <PrivatePage roles={["JURADO", "COMPETIDOR", "PUBLICO", "ESPECTADOR", "ORGANIZADOR"]}>
+              <ProjectVotingDetailScreen />
+            </PrivatePage>
+          }
         />
 
+        {/* Resultados/Ranking — todos */}
         <Route
           path="/eventos/:eventoId/votaciones/:votingId/resultados"
-          element={<PrivatePage><RankingScreen /></PrivatePage>}
+          element={
+            <PrivatePage>
+              <RankingScreen />
+            </PrivatePage>
+          }
         />
 
-        <Route path="/proyectos" element={<PrivatePage><ProjectsScreen /></PrivatePage>} />
+        {/* Proyectos globales — ORGANIZADOR y JURADO */}
+        <Route
+          path="/proyectos"
+          element={
+            <PrivatePage roles={["ORGANIZADOR", "JURADO"]}>
+              <ProjectsScreen />
+            </PrivatePage>
+          }
+        />
 
-        <Route path="/usuarios" element={<PrivatePage><UserManagementScreen /></PrivatePage>} />
+        {/* Gestión de usuarios — solo ORGANIZADOR */}
+        <Route
+          path="/usuarios"
+          element={
+            <PrivatePage roles={["ORGANIZADOR"]}>
+              <UserManagementScreen />
+            </PrivatePage>
+          }
+        />
 
-        <Route path="/configuracion" element={<PrivatePage><MyProjectDashboardScreen /></PrivatePage>} />
+        {/* Mi Proyecto — solo COMPETIDOR */}
+        <Route
+          path="/configuracion"
+          element={
+            <PrivatePage roles={["COMPETIDOR", "ORGANIZADOR"]}>
+              <MyProjectDashboardScreen />
+            </PrivatePage>
+          }
+        />
 
-        {/* redirects */}
+        {/* Auditoría — ORGANIZADOR JURADO y COMPETIDOR */}
+        <Route
+          path="/auditoria"
+          element={
+            <PrivatePage roles={["ORGANIZADOR", "JURADO", "COMPETIDOR"]}>
+              <AuditoriaScreen />
+            </PrivatePage>
+          }
+        />
+
+        {/* Redirect comodin */}
         <Route path="/votar" element={<Navigate to="/eventos" replace />} />
-
-        <Route path="/auditoria" element={<AuditoriaScreen />} />
-
+        <Route path="*"      element={<Navigate to="/"        replace />} />
       </Routes>
-      
     </BrowserRouter>
   );
 }

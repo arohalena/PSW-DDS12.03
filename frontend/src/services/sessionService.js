@@ -12,6 +12,25 @@ export function esOrganizador() {
   return usuario?.rol === "ORGANIZADOR";
 }
 
+export function esJurado() {
+  const usuario = getUsuarioLogueado();
+  return usuario?.rol === "JURADO";
+}
+
+export function esCompetidor() {
+  const usuario = getUsuarioLogueado();
+  return usuario?.rol === "COMPETIDOR";
+}
+
+export function esPublico() {
+  const usuario = getUsuarioLogueado();
+  return usuario?.rol === "PUBLICO" || usuario?.rol === "ESPECTADOR";
+}
+
+export function getRolUsuario() {
+  return getUsuarioLogueado()?.rol || null;
+}
+
 export function getVotingToken() {
   const usuario = getUsuarioLogueado();
 
