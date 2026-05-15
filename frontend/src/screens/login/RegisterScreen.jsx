@@ -8,7 +8,6 @@ function RegisterScreen() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -17,35 +16,44 @@ function RegisterScreen() {
     confirmPassword: "",
   });
 
+  const [errors, setErrors] = useState({});
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      delete next.general;
+      return next;
     });
-    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setErrors({});
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+      setErrors({ confirmPassword: "Las contraseñas no coinciden." });
       return;
     }
 
     try {
-    const usuario = await registerUsuario({
-      nombre: formData.nombre,
-      email: formData.email,
-      password: formData.password,
-    });
+      const usuario = await registerUsuario({
+        nombre: formData.nombre,
+        email: formData.email,
+        password: formData.password,
+      });
 
-    localStorage.setItem("usuarioLogueado", JSON.stringify(usuario));
-    navigate("/usuarios");
-  } catch (err) {
-    setError(err.message || "Error al registrar el usuario");
-  }
+      localStorage.setItem("usuarioLogueado", JSON.stringify(usuario));
+      navigate("/usuarios");
+    } catch (err) {
+      if (err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+        setErrors(err.fieldErrors);
+      } else {
+        setErrors({ general: err.message || "Error al registrar el usuario." });
+      }
+    }
   };
 
   return (
@@ -60,10 +68,14 @@ function RegisterScreen() {
         </div>
 
         <div className="auth-card">
-          <form onSubmit={handleSubmit} className="auth-form">
+          <form onSubmit={handleSubmit} className="auth-form" noValidate>
             <div className="auth-field">
               <label htmlFor="nombre">Nombre completo</label>
-              <div className="auth-input-wrapper">
+              <div
+                className={`auth-input-wrapper${
+                  errors.nombre ? " auth-input-wrapper--error" : ""
+                }`}
+              >
                 <User className="auth-input-icon" />
                 <input
                   id="nombre"
@@ -75,11 +87,17 @@ function RegisterScreen() {
                   required
                 />
               </div>
+              <div className="auth-hint">Al menos 2 caracteres.</div>
+              {errors.nombre && <div className="auth-field-error">{errors.nombre}</div>}
             </div>
 
             <div className="auth-field">
               <label htmlFor="email">Correo electrónico</label>
-              <div className="auth-input-wrapper">
+              <div
+                className={`auth-input-wrapper${
+                  errors.email ? " auth-input-wrapper--error" : ""
+                }`}
+              >
                 <Mail className="auth-input-icon" />
                 <input
                   id="email"
@@ -91,11 +109,17 @@ function RegisterScreen() {
                   required
                 />
               </div>
+              <div className="auth-hint">Formato: nombre@dominio.com</div>
+              {errors.email && <div className="auth-field-error">{errors.email}</div>}
             </div>
 
             <div className="auth-field">
               <label htmlFor="password">Contraseña</label>
-              <div className="auth-input-wrapper">
+              <div
+                className={`auth-input-wrapper${
+                  errors.password ? " auth-input-wrapper--error" : ""
+                }`}
+              >
                 <Lock className="auth-input-icon" />
                 <input
                   id="password"
@@ -105,21 +129,31 @@ function RegisterScreen() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  minLength={4}
                 />
                 <button
                   type="button"
                   className="auth-eye-btn"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              <ul className="auth-password-rules">
+                <li>Mínimo 8 caracteres</li>
+                <li>Al menos una letra</li>
+                <li>Al menos un número</li>
+              </ul>
+              {errors.password && <div className="auth-field-error">{errors.password}</div>}
             </div>
 
             <div className="auth-field">
               <label htmlFor="confirmPassword">Confirmar contraseña</label>
-              <div className="auth-input-wrapper">
+              <div
+                className={`auth-input-wrapper${
+                  errors.confirmPassword ? " auth-input-wrapper--error" : ""
+                }`}
+              >
                 <Lock className="auth-input-icon" />
                 <input
                   id="confirmPassword"
@@ -134,17 +168,23 @@ function RegisterScreen() {
                   type="button"
                   className="auth-eye-btn"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={
+                    showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  }
                 >
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {errors.confirmPassword && (
+                <div className="auth-field-error">{errors.confirmPassword}</div>
+              )}
             </div>
 
             <div className="auth-helper-text">
               Tu rol se asignará automáticamente como participante.
             </div>
 
-            {error && <div className="auth-error">{error}</div>}
+            {errors.general && <div className="auth-error">{errors.general}</div>}
 
             <button type="submit" className="auth-primary-btn">
               Crear cuenta

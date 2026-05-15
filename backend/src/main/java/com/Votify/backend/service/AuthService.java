@@ -18,24 +18,24 @@ import lombok.RequiredArgsConstructor;
 public class AuthService {
     private final UsuarioRepository usuarioRepository;
 
-    public AuthResponse register(AuthRegisterRequest request){
-            usuarioRepository.findByEmail(request.email()).ifPresent(usuario ->{
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Ya existe un usuario con ese email.");
-            });
+    public AuthResponse register(AuthRegisterRequest request) {
+        usuarioRepository.findByEmail(request.email()).ifPresent(usuario -> {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario con ese email.");
+        });
 
-            UsuarioMO usuario = new UsuarioMO();
-            usuario.setNombre(request.nombre());
-            usuario.setEmail(request.email());
-            usuario.setPassword(request.password());
-            usuario.setRol(RolMO.PUBLICO); // Por defecto lo dejo publico, luego el organizador cambia los roles
+        UsuarioMO usuario = new UsuarioMO();
+        usuario.setNombre(request.nombre());
+        usuario.setEmail(request.email());
+        usuario.setPassword(request.password());
+        usuario.setRol(RolMO.PUBLICO);
 
-            UsuarioMO guardado = usuarioRepository.save(usuario);
-            return new AuthResponse(
-                guardado.getId(), 
-                guardado.getNombre(), 
-                guardado.getEmail(), 
-                guardado.getRol()
-            );
+        UsuarioMO guardado = usuarioRepository.save(usuario);
+        return new AuthResponse(
+            guardado.getId(),
+            guardado.getNombre(),
+            guardado.getEmail(),
+            guardado.getRol()
+        );
     }
 
     public AuthResponse login(AuthLoginRequest request) {
@@ -43,7 +43,7 @@ public class AuthService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario incorrecto."));
 
         if (!usuario.getPassword().equals(request.password())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Contraseña incorrecta.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Contraseña incorrecta.");
         }
 
         return new AuthResponse(
@@ -53,5 +53,4 @@ public class AuthService {
             usuario.getRol()
         );
     }
-    
 }
