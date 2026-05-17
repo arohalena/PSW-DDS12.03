@@ -77,7 +77,7 @@ export async function deleteAllCriteriosByEvento(eventoId){
   const response = await fetch(`${CRITERIOS_URL}/evento/${eventoId}`, { method: "DELETE" });
 
   if (!response.ok){
-    throw new Error("No se pudieron eliminar los criterios"); 
+    throw new Error("No se pudieron eliminar los criterios");
   }
 
 }
@@ -110,7 +110,7 @@ export async function getPuntuacionesByVP(votacionProyectoId){
 
   if (!response.ok){
     throw new Error("No se pudieron cargar las puntuaciones");
-  } 
+  }
 
   return response.json();
 
@@ -157,5 +157,38 @@ export async function guardarOrdenRanking(eventoId, votacionId, usuarioId, posic
     const errorText = await response.text();
     throw new Error(errorText || "No se pudo guardar el orden manual");
   }
+
+}
+
+export async function getPlantillasCriterios(){
+
+  const response = await fetch(`${CRITERIOS_URL}/plantillas`);
+
+  if (!response.ok){
+
+    throw new Error("No se pudieron cargar las plantillas de criterios");
+
+  }
+
+  return response.json();
+
+}
+
+export async function sugerirPlantillaCriterios(descripcion, tipoEvento){
+
+  const params = new URLSearchParams();
+
+  if (descripcion) params.append("descripcion", descripcion);
+  if (tipoEvento)  params.append("tipoEvento", tipoEvento);
+
+  const response = await fetch(`${CRITERIOS_URL}/plantillas/sugerencia?${params}`);
+
+  if (!response.ok){
+
+    throw new Error("No se pudo obtener la sugerencia");
+
+  }
+
+  return response.json();
 
 }

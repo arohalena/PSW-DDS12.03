@@ -99,6 +99,23 @@ public class VotacionService extends GenericService<VotacionMO> {
         if (request.modalidad() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La modalidad de votación es requerida");
         }
+
+        if (request.tipo() == com.Votify.backend.model.TipoVotacionMO.MIXTA) {
+            Integer popular = request.pesoPorcentajePopular();
+            Integer jurado  = request.pesoPorcentajeJurado();
+            if (popular == null || jurado == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Para votación MIXTA debes especificar el peso porcentual de popular y jurado.");
+            }
+            if (popular < 0 || popular > 100 || jurado < 0 || jurado > 100) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Los porcentajes deben estar entre 0 y 100.");
+            }
+            if (popular + jurado != 100) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Los porcentajes de popular y jurado deben sumar exactamente 100.");
+            }
+        }
     }
 
     private void validarFechas(OffsetDateTime inicio, OffsetDateTime fin) {
@@ -144,6 +161,12 @@ public class VotacionService extends GenericService<VotacionMO> {
                 && request.comentarioObligatorio());
         votacion.setNombre(request.nombre().trim());
         votacion.setEstado(request.estado() != null ? request.estado() : EstadoVotacionMO.PENDIENTE);
+
+        if (request.tipo() == com.Votify.backend.model.TipoVotacionMO.MIXTA) {
+            votacion.setPesoPorcentajePopular(request.pesoPorcentajePopular());
+            votacion.setPesoPorcentajeJurado(request.pesoPorcentajeJurado());
+        }
+
         return votacion;
     }
 

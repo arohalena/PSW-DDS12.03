@@ -22,6 +22,8 @@ export async function createVotacion(votacion) {
     comentariosActivos: votacion.comentariosActivos,
     comentarioObligatorio: votacion.comentariosActivos ? votacion.comentarioObligatorio : false,
     criterios: votacion.criterios || [],
+    pesoPorcentajePopular: votacion.pesoPorcentajePopular ?? null,
+    pesoPorcentajeJurado:  votacion.pesoPorcentajeJurado  ?? null,
   };
 
   const response = await fetch(VOTACIONES_URL, {

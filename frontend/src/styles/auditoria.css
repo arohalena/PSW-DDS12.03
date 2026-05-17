@@ -1,0 +1,293 @@
+.auditoria-page {
+  padding: 24px 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.auditoria-header h1 {
+  font-size: 1.85rem;
+  margin: 0 0 4px;
+}
+
+.auditoria-header p {
+  color: #666;
+  margin: 0 0 20px;
+}
+
+/* Hero */
+.auditoria-hero {
+  background: #fff;
+  border: 1px solid #ececef;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.auditoria-hero-icon {
+  width: 44px;
+  height: 44px;
+  background: #f3eafd;
+  color: #7a3fd9;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+
+.auditoria-hero h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.auditoria-hero p {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Selectores */
+.auditoria-selectors {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.auditoria-selectors label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 240px;
+  flex: 1;
+}
+
+.auditoria-selectors label span {
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 600;
+}
+
+.auditoria-selectors select {
+  padding: 10px 12px;
+  border: 1px solid #d8d8de;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+/* Stats */
+.auditoria-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.auditoria-stat-card {
+  background: #fff;
+  border: 1px solid #ececef;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.auditoria-stat-card header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.auditoria-stat-card strong {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* Filtros chips */
+.auditoria-filtros {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.auditoria-filtros > span {
+  font-weight: 600;
+  color: #444;
+}
+
+.chip {
+  border: none;
+  background: #f1f1f4;
+  color: #444;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.chip:hover {
+  background: #e6e6ec;
+}
+
+.chip.active {
+  background: #6c52f4;
+  color: #fff;
+}
+
+/* Tabla */
+.auditoria-tabla {
+  background: #fff;
+  border: 1px solid #ececef;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.auditoria-tabla-head,
+.auditoria-fila {
+  display: grid;
+  grid-template-columns: 1.2fr 1.4fr 1.4fr 1.2fr 0.9fr;
+  align-items: center;
+  padding: 14px 20px;
+  gap: 12px;
+}
+
+.auditoria-tabla-head {
+  background: #fafafc;
+  color: #666;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  border-bottom: 1px solid #ececef;
+}
+
+.auditoria-fila {
+  border-bottom: 1px solid #f3f3f5;
+  font-size: 0.92rem;
+}
+
+.auditoria-fila:last-child {
+  border-bottom: none;
+}
+
+.celda {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.celda.timestamp {
+  color: #444;
+}
+
+.celda.votante > div,
+.celda.proyecto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.celda.votante strong,
+.celda.proyecto strong {
+  font-weight: 600;
+}
+
+.celda.votante strong.italic {
+  font-style: italic;
+  color: #555;
+  font-weight: 500;
+}
+
+.celda.votante span,
+.celda.proyecto span {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.celda.token code {
+  background: #f5f5f7;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.badge.verificado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e6f7ed;
+  color: #1f8a4c;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Garantía footer */
+.auditoria-garantia {
+  background: #eef4ff;
+  border: 1px solid #d6e3ff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 14px;
+  color: #1f4ea0;
+}
+
+.auditoria-garantia strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.auditoria-garantia p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* Cards de feedback ya existen en otras vistas */
+.feedback-card {
+  background: #fff;
+  border: 1px solid #ececef;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+
+.feedback-card.error-box {
+  background: #fdecec;
+  border-color: #f4c0c0;
+  color: #a52a2a;
+}
+
+.feedback-card.warning-box {
+  background: #fff7e6;
+  border-color: #ffd591;
+  color: #874d00;
+}
+
+@media (max-width: 900px) {
+  .auditoria-stats {
+    grid-template-columns: 1fr;
+  }
+  .auditoria-tabla-head,
+  .auditoria-fila {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .auditoria-tabla-head {
+    display: none;
+  }
+  .auditoria-fila {
+    padding: 14px 16px;
+  }
+}

@@ -56,6 +56,12 @@ public class VotacionMO extends ModeloBaseMO {
     @Column(name = "modo_ranking", nullable = false)
     private ModoRankingMO modoRanking = ModoRankingMO.AUTOMATICO;
 
+    @Column(name = "peso_porcentaje_popular")
+    private Integer pesoPorcentajePopular;
+
+    @Column(name = "peso_porcentaje_jurado")
+    private Integer pesoPorcentajeJurado;
+
     @Column(nullable = false)
     private boolean comentariosActivos;
 

@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.Votify.backend.dto.PlantillaSugerenciaDTO;
 import com.Votify.backend.model.CriterioEvaluacionMO;
 import com.Votify.backend.service.CriterioEvaluacionService;
 import com.Votify.backend.service.GenericService;
+import com.Votify.backend.service.SugerenciaCriterioService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class CriterioEvaluacionController extends GenericController<CriterioEvaluacionMO> {
 
     private final CriterioEvaluacionService criterioService;
+    private final SugerenciaCriterioService sugerenciaService;
 
     @Override
     protected GenericService<CriterioEvaluacionMO> getService(){
@@ -57,6 +61,22 @@ public class CriterioEvaluacionController extends GenericController<CriterioEval
     public void deleteAllByEvento(@PathVariable UUID eventoId){
 
         criterioService.deleteAllByEventoId(eventoId);
-        
+
+    }
+
+    @GetMapping("/plantillas")
+    public List<PlantillaSugerenciaDTO> listarPlantillas(){
+
+        return sugerenciaService.listarPlantillas();
+
+    }
+
+    @GetMapping("/plantillas/sugerencia")
+    public PlantillaSugerenciaDTO sugerirPlantilla(
+            @RequestParam(required = false) String descripcion,
+            @RequestParam(required = false) String tipoEvento){
+
+        return sugerenciaService.sugerir(descripcion, tipoEvento);
+
     }
 }

@@ -61,6 +61,11 @@ public class RankingService {
             case MULTICRITERIO_PONDERADA -> rankingMulticriterio(eventoId, votacionId, true);
         };
 
+        // Si es votación MIXTA
+        if (votacion.getTipo() == TipoVotacionMO.MIXTA) {
+            ranking = rankingMixto(eventoId, votacionId, votacion);
+        }
+
         ModoRankingMO modo = votacion.getModoRanking() != null ? votacion.getModoRanking() : ModoRankingMO.AUTOMATICO;
 
         for (Map<String, Object> entry : ranking) {
@@ -145,10 +150,90 @@ public class RankingService {
 
         if (rol == RolMO.ORGANIZADOR) return;
 
-        if (rol == RolMO.JURADO && votacion.getTipo() == TipoVotacionMO.JURADO) return;
+        if (rol == RolMO.JURADO && (votacion.getTipo() == TipoVotacionMO.JURADO || votacion.getTipo() == TipoVotacionMO.MIXTA)) return;
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-            "Solo el organizador o un jurado en votaciones de jurado pueden modificar el ranking.");
+            "Solo el organizador o un jurado en votaciones de jurado/mixta pueden modificar el ranking.");
+    }
+
+    private List<Map<String, Object>> rankingMixto(UUID eventoId, UUID votacionId, VotacionMO votacion) {
+
+        int pesoPopular = votacion.getPesoPorcentajePopular() != null ? votacion.getPesoPorcentajePopular() : 50;
+        int pesoJurado  = votacion.getPesoPorcentajeJurado()  != null ? votacion.getPesoPorcentajeJurado()  : 50;
+
+        List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
+        long votantesActivos = votoRepository.countDistinctVotantesByEventoId(eventoId);
+
+        List<Map<String, Object>> ranking = new ArrayList<>();
+
+        for (VotacionProyectoMO vp : proyectosVotacion) {
+
+            Map<String, Object> entry = baseEntry(vp, votantesActivos);
+
+            List<VotoMO> todosLosVotos = votoRepository.findByVotacionProyecto_Id(vp.getId());
+
+            // Separar votos de jurado
+            List<VotoMO> votosJurado  = new ArrayList<>();
+            List<VotoMO> votosPopular = new ArrayList<>();
+
+            for (VotoMO voto : todosLosVotos) {
+                UsuarioMO usuario = voto.getUsuario();
+                if (usuario != null &&
+                    (usuario.getRol() == RolMO.JURADO || usuario.getRol() == RolMO.ORGANIZADOR)) {
+                    votosJurado.add(voto);
+                } else {
+                    votosPopular.add(voto);
+                }
+            }
+
+            // Calcular puntuación popular
+            double puntosPopular = calcularPuntuacionVotos(votosPopular, votacion.getModalidad());
+            // Calcular puntuación jurado
+            double puntosJurado  = calcularPuntuacionVotos(votosJurado,  votacion.getModalidad());
+
+            double puntuacionTotal = (puntosPopular * pesoPopular / 100.0) + (puntosJurado * pesoJurado / 100.0);
+
+            entry.put("totalVotos",       todosLosVotos.size());
+            entry.put("votosPopular",     votosPopular.size());
+            entry.put("votosJurado",      votosJurado.size());
+            entry.put("puntosPopular",    Math.round(puntosPopular * PRECISION_REDONDEO) / PRECISION_REDONDEO);
+            entry.put("puntosJurado",     Math.round(puntosJurado  * PRECISION_REDONDEO) / PRECISION_REDONDEO);
+            entry.put("pesoPopular",      pesoPopular);
+            entry.put("pesoJurado",       pesoJurado);
+            entry.put("puntuacionTotal",  Math.round(puntuacionTotal * PRECISION_REDONDEO) / PRECISION_REDONDEO);
+            entry.put("criterios",        new ArrayList<>());
+
+            ranking.add(entry);
+        }
+
+        return ranking;
+    }
+
+    // Calcular la puntuación de un conjunto de votos según la modalidad
+    private double calcularPuntuacionVotos(List<VotoMO> votos, ModalidadVotacionMO modalidad) {
+        if (votos.isEmpty()) return 0;
+
+        return switch (modalidad) {
+            case SIMPLE -> votos.size();
+            case PUNTOS -> {
+                double suma = 0;
+                for (VotoMO v : votos) {
+                    if (v.getPuntuacionTotal() != null) suma += v.getPuntuacionTotal().doubleValue();
+                }
+                yield suma;
+            }
+            case MULTICRITERIO, MULTICRITERIO_PONDERADA -> {
+                double suma = 0;
+                int count = 0;
+                for (VotoMO v : votos) {
+                    if (v.getPuntuacionTotal() != null) {
+                        suma += v.getPuntuacionTotal().doubleValue();
+                        count++;
+                    }
+                }
+                yield count > 0 ? suma / count : 0;
+            }
+        };
     }
 
     private List<Map<String, Object>> aplicarOrdenManual(List<Map<String, Object>> ranking, UUID votacionId) {

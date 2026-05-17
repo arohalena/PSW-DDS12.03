@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2, Vote, X } from "lucide-react";
 import { createVotacion } from "../../services/votacionService";
+import SuggestCriteriaPanel from "./SuggestCriteriaPanel";
 import "../../styles/events.css";
 
 const tiposVotacion = [
   { value: "POPULAR", label: "Popular" },
   { value: "JURADO", label: "Jurado" },
+  { value: "MIXTA", label: "Mixta (Popular + Jurado)" },
 ];
 
 const modalidades = [
@@ -72,7 +74,7 @@ function sanitizeWeight(value) {
   return String(numberValue);
 }
 
-function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
+function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -86,6 +88,8 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
     comentariosActivos: true,
     comentarioObligatorio: true,
     criteria: [],
+    pesoPorcentajePopular: 50,
+    pesoPorcentajeJurado: 50,
   });
 
   const totalPeso = useMemo(() => {
@@ -153,6 +157,23 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
     }));
   }
 
+  function applySuggestions(criteriosSugeridos) {
+    setConfig((prev) => ({
+      ...prev,
+      criteria: [
+        ...prev.criteria,
+        ...criteriosSugeridos.map((c) => ({
+          id: crypto.randomUUID(),
+          nombre: c.nombre,
+          descripcion: c.descripcion,
+          peso: prev.modalidad === "MULTICRITERIO_PONDERADA" ? String(c.peso) : null,
+        })),
+      ],
+    }));
+
+    setError("");
+  }
+
   function validate() {
     if (!config.nombre.trim()) {
       return "La votación debe tener nombre.";
@@ -175,6 +196,17 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
 
     if (fin <= inicio) {
       return "La fecha/hora de fin debe ser posterior a la de inicio.";
+    }
+
+    if (config.tipo === "MIXTA") {
+      const pp = Number(config.pesoPorcentajePopular || 0);
+      const pj = Number(config.pesoPorcentajeJurado  || 0);
+      if (pp < 0 || pp > 100 || pj < 0 || pj > 100) {
+        return "Los pesos deben estar entre 0 y 100.";
+      }
+      if (pp + pj !== 100) {
+        return `Los pesos de popular (${pp}%) y jurado (${pj}%) deben sumar 100%.`;
+      }
     }
 
     if (needsCriteria(config.modalidad)) {
@@ -244,6 +276,8 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
                 orden: index,
               }))
           : [],
+        pesoPorcentajePopular: config.tipo === "MIXTA" ? Number(config.pesoPorcentajePopular) : null,
+        pesoPorcentajeJurado:  config.tipo === "MIXTA" ? Number(config.pesoPorcentajeJurado)  : null,
       });
 
       onCreated();
@@ -308,6 +342,53 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
             </label>
           </div>
 
+          {config.tipo === "MIXTA" && (
+            <div className="event-field" style={{ marginTop: "8px" }}>
+              <span className="mini-label">Pesos de la votación mixta</span>
+              <p style={{ fontSize: "0.82rem", color: "var(--color-text-secondary, #666)", marginBottom: "8px" }}>
+                Define qué porcentaje contribuye el voto popular y el de jurado al resultado final. Deben sumar 100%.
+              </p>
+              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                <label className="event-field" style={{ flex: 1 }}>
+                  <span>Peso Voto Popular (%)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={config.pesoPorcentajePopular}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      updateConfig({ pesoPorcentajePopular: val, pesoPorcentajeJurado: 100 - val });
+                    }}
+                  />
+                </label>
+                <label className="event-field" style={{ flex: 1 }}>
+                  <span>Peso Voto Jurado (%)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={config.pesoPorcentajeJurado}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      updateConfig({ pesoPorcentajeJurado: val, pesoPorcentajePopular: 100 - val });
+                    }}
+                  />
+                </label>
+                <div style={{ textAlign: "center", minWidth: "80px" }}>
+                  <span style={{
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    color: Number(config.pesoPorcentajePopular) + Number(config.pesoPorcentajeJurado) === 100
+                      ? "green" : "red"
+                  }}>
+                    Total: {Number(config.pesoPorcentajePopular || 0) + Number(config.pesoPorcentajeJurado || 0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="event-grid two-columns">
             <label className="event-field">
               <span>Inicio de la votación</span>
@@ -327,14 +408,14 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
               />
             </label>
           </div>
-          
+
           <div className="voting-comments-config">
             <label className="voting-toggle-row">
               <input
                 type="checkbox"
                 checked={config.comentariosActivos}
-                onChange={(e) => 
-                  updateConfig({ 
+                onChange={(e) =>
+                  updateConfig({
                     comentariosActivos: e.target.checked,
                     comentarioObligatorio: e.target.checked ? config.comentarioObligatorio : false,
                   })
@@ -383,6 +464,11 @@ function CreateVotingModal({ eventoId, eventoNombre, onClose, onCreated }) {
 
           {needsCriteria(config.modalidad) ? (
             <div className="criteria-configurator">
+              <SuggestCriteriaPanel
+                tipoEvento={tipoEvento}
+                onApply={applySuggestions}
+              />
+
               <div className="criteria-configurator-header">
                 <div>
                   <h4>Criterios</h4>
