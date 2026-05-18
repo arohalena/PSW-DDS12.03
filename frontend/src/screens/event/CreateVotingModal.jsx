@@ -160,15 +160,12 @@ function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCrea
   function applySuggestions(criteriosSugeridos) {
     setConfig((prev) => ({
       ...prev,
-      criteria: [
-        ...prev.criteria,
-        ...criteriosSugeridos.map((c) => ({
-          id: crypto.randomUUID(),
-          nombre: c.nombre,
-          descripcion: c.descripcion,
-          peso: prev.modalidad === "MULTICRITERIO_PONDERADA" ? String(c.peso) : null,
-        })),
-      ],
+      criteria: criteriosSugeridos.map((c) => ({
+        id: crypto.randomUUID(),
+        nombre: c.nombre,
+        descripcion: c.descripcion,
+        peso: prev.modalidad === "MULTICRITERIO_PONDERADA" ? String(c.peso) : null,
+      })),
     }));
 
     setError("");
@@ -352,26 +349,34 @@ function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCrea
                 <label className="event-field" style={{ flex: 1 }}>
                   <span>Peso Voto Popular (%)</span>
                   <input
-                    type="number"
-                    min="0"
-                    max="100"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
                     value={config.pesoPorcentajePopular}
                     onChange={(e) => {
-                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                      updateConfig({ pesoPorcentajePopular: val, pesoPorcentajeJurado: 100 - val });
+                      const sanitized = sanitizeWeight(e.target.value);
+                      const val = sanitized === "" ? 0 : Number(sanitized);
+                      updateConfig({
+                        pesoPorcentajePopular: val,
+                        pesoPorcentajeJurado: 100 - val,
+                      });
                     }}
                   />
                 </label>
                 <label className="event-field" style={{ flex: 1 }}>
                   <span>Peso Voto Jurado (%)</span>
                   <input
-                    type="number"
-                    min="0"
-                    max="100"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
                     value={config.pesoPorcentajeJurado}
                     onChange={(e) => {
-                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                      updateConfig({ pesoPorcentajeJurado: val, pesoPorcentajePopular: 100 - val });
+                      const sanitized = sanitizeWeight(e.target.value);
+                      const val = sanitized === "" ? 0 : Number(sanitized);
+                      updateConfig({
+                        pesoPorcentajeJurado: val,
+                        pesoPorcentajePopular: 100 - val,
+                      });
                     }}
                   />
                 </label>
