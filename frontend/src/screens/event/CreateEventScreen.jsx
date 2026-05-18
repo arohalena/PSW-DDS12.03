@@ -13,6 +13,7 @@ import { createEvento, generarCodigoEvento } from "../../services/eventoService"
 import { createVotacion } from "../../services/votacionService";
 import { esOrganizador } from "../../services/sessionService";
 import SuggestCriteriaPanel from "./SuggestCriteriaPanel";
+import BaremoTemplatesPanel from "./BaremoTemplatesPanel";
 import "../../styles/events.css";
 
 const tiposVotacion = [
@@ -261,6 +262,28 @@ function CreateEventScreen() {
             nombre: c.nombre,
             descripcion: c.descripcion,
             peso: config.modalidad === "MULTICRITERIO_PONDERADA" ? Number(c.peso) : null,
+            escalaMin: 1,
+            escalaMax: 5,
+            orden: index,
+          })),
+        };
+      })
+    );
+  }
+
+  function applyBaremoTemplateToVoting(votingId, plantilla) {
+    setVotingConfigs((prev) =>
+      prev.map((config) => {
+        if (config.id !== votingId) return config;
+
+        return {
+          ...config,
+          modalidad: "MULTICRITERIO_PONDERADA",
+          criteria: plantilla.criterios.map((c, index) => ({
+            id: crypto.randomUUID(),
+            nombre: c.nombre,
+            descripcion: c.descripcion,
+            peso: Number(c.peso),
             escalaMin: 1,
             escalaMax: 5,
             orden: index,
@@ -700,6 +723,10 @@ function CreateEventScreen() {
 
                    {needsCriteria(config.modalidad) ? (
                     <div className="criteria-configurator">
+                      <BaremoTemplatesPanel
+                        onApply={(plantilla) => applyBaremoTemplateToVoting(config.id, plantilla)}
+                      />
+
                       <SuggestCriteriaPanel
                         tipoEvento={formData.tipo}
                         onApply={(criterios) => applySuggestionsToVoting(config.id, criterios)}

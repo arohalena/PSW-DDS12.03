@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Plus, Trash2, Vote, X } from "lucide-react";
 import { createVotacion } from "../../services/votacionService";
 import SuggestCriteriaPanel from "./SuggestCriteriaPanel";
+import BaremoTemplatesPanel from "./BaremoTemplatesPanel";
 import "../../styles/events.css";
 
 const tiposVotacion = [
@@ -165,6 +166,21 @@ function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCrea
         nombre: c.nombre,
         descripcion: c.descripcion,
         peso: prev.modalidad === "MULTICRITERIO_PONDERADA" ? String(c.peso) : null,
+      })),
+    }));
+
+    setError("");
+  }
+
+  function applyBaremoTemplate(plantilla) {
+    setConfig((prev) => ({
+      ...prev,
+      modalidad: "MULTICRITERIO_PONDERADA",
+      criteria: plantilla.criterios.map((c) => ({
+        id: crypto.randomUUID(),
+        nombre: c.nombre,
+        descripcion: c.descripcion,
+        peso: String(c.peso),
       })),
     }));
 
@@ -469,6 +485,8 @@ function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCrea
 
           {needsCriteria(config.modalidad) ? (
             <div className="criteria-configurator">
+              <BaremoTemplatesPanel onApply={applyBaremoTemplate} />
+
               <SuggestCriteriaPanel
                 tipoEvento={tipoEvento}
                 onApply={applySuggestions}
