@@ -124,17 +124,27 @@ function CreateEventScreen() {
       formData.nombre.trim() &&
       formData.descripcion.trim() &&
       formData.fecha_inicio &&
-      formData.fecha_fin
+      formData.fecha_fin &&
+      formData.fecha_fin >= formData.fecha_inicio
     );
   }, [formData, puedeGestionarEventos]);
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+
+      //UT de mejorabilidad de fecha fin anterior a la fecha ini
+      if (name === "fecha_inicio" && prev.fecha_fin && value && prev.fecha_fin < value) {
+        next.fecha_fin = "";
+      }
+
+      return next;
+    });
   }
 
   async function handleRegenerateCode() {
@@ -417,6 +427,7 @@ function CreateEventScreen() {
                   name="fecha_fin"
                   value={formData.fecha_fin}
                   onChange={handleChange}
+                  min={formData.fecha_inicio || undefined}
                   required
                 />
               </label>
