@@ -12,6 +12,7 @@ import {
 import { createEvento, generarCodigoEvento } from "../../services/eventoService";
 import { createVotacion } from "../../services/votacionService";
 import { esOrganizador } from "../../services/sessionService";
+import SuggestCriteriaPanel from "./SuggestCriteriaPanel";
 import "../../styles/events.css";
 
 const tiposVotacion = [
@@ -243,6 +244,27 @@ function CreateEventScreen() {
         return {
           ...config,
           criteria: config.criteria.filter((criterion) => criterion.id !== criterionId),
+        };
+      })
+    );
+  }
+
+  function applySuggestionsToVoting(votingId, criteriosSugeridos) {
+    setVotingConfigs((prev) =>
+      prev.map((config) => {
+        if (config.id !== votingId) return config;
+
+        return {
+          ...config,
+          criteria: criteriosSugeridos.map((c, index) => ({
+            id: crypto.randomUUID(),
+            nombre: c.nombre,
+            descripcion: c.descripcion,
+            peso: config.modalidad === "MULTICRITERIO_PONDERADA" ? Number(c.peso) : null,
+            escalaMin: 1,
+            escalaMax: 5,
+            orden: index,
+          })),
         };
       })
     );
@@ -676,11 +698,16 @@ function CreateEventScreen() {
                       </div>
                     </div>
 
-                    {needsCriteria(config.modalidad) ? (
-                      <div className="criteria-configurator">
-                        <div className="criteria-configurator-header">
-                          <div>
-                            <h4>Criterios de evaluación</h4>
+                   {needsCriteria(config.modalidad) ? (
+                    <div className="criteria-configurator">
+                      <SuggestCriteriaPanel
+                        tipoEvento={formData.tipo}
+                        onApply={(criterios) => applySuggestionsToVoting(config.id, criterios)}
+                      />
+
+                      <div className="criteria-configurator-header">
+                        <div>
+                          <h4>Criterios de evaluación</h4>
                             <p>
                               En la votación se podrán añadir comentarios por criterio.
                             </p>
