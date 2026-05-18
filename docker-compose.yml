@@ -34,7 +34,7 @@ services:
 
   flyway:
     image: flyway/flyway:10
-    command: -url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require -user=${DB_USER} -password=${DB_PASSWORD} -baselineOnMigrate=true -baselineVersion=1 migrate
+    command: -url=jdbc:postgresql://${DB_HOST}:${DB_FLYWAY_PORT}/${DB_NAME}?sslmode=require&prepareThreshold=0 -user=${DB_USER} -password=${DB_PASSWORD} -baselineOnMigrate=true -baselineVersion=1 migrate
     volumes:
       - ./migrations:/flyway/sql
     restart: on-failure
