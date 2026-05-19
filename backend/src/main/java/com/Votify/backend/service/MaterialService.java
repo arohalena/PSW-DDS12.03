@@ -14,7 +14,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -124,6 +127,19 @@ public class MaterialService extends GenericService<MaterialMO> {
         } catch (MalformedURLException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo leer el archivo solicitado.");
         }
+    }
+
+    public ResponseEntity<Resource> descargarArchivo(UUID materialId) {
+        MaterialMO material = findById(materialId);
+        Resource resource = cargarComoRecurso(materialId);
+        
+        String tipoMime = material.getTipoMime() != null ? material.getTipoMime() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        String nombre = material.getNombre();
+        
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(tipoMime))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + nombre + "\"")
+            .body(resource);
     }
 
     private String sanitizeFileName(String rawFileName) {

@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -45,12 +43,6 @@ public class MaterialController extends GenericController<MaterialMO> {
 
     @GetMapping("/{id}/descargar")
     public ResponseEntity<Resource> descargarArchivo(@PathVariable UUID id) {
-        Resource resource = materialService.cargarComoRecurso(id);
-        MaterialMO material = materialService.findById(id);
-        
-        return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType(material.getTipoMime() != null ? material.getTipoMime() : MediaType.APPLICATION_OCTET_STREAM_VALUE))
-            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + material.getNombre() + "\"")
-            .body(resource);
+        return materialService.descargarArchivo(id);
     }
 }
