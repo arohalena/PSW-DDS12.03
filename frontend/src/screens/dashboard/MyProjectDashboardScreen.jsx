@@ -23,6 +23,8 @@ import { asignarProyectoAVotacion, getVotacionesByEvento } from "../../services/
 import { getUsuarioLogueado } from "../../services/sessionService";
 import "../../styles/my-project-dashboard.css";
 
+import { ProjectMaterials } from "../../common/ProjectMaterials";
+
 const EMPTY_FORM = {
   nombre: "",
   descripcion: "",
@@ -746,6 +748,10 @@ function MyProjectDashboardScreen() {
               )}
             </article>
           </section>
+
+            <ProjectMaterials 
+              proyectoId={selectedProject?.id} 
+            />
 
           <section className="participant-comments-card">
             <div className="participant-card-header">
