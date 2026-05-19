@@ -21,9 +21,10 @@ import {
   assignCompetidor,
   createCompetidor,
   deleteAsignacionCompetidor,
+  deleteCompetidor,
   getCompetidores,
 } from "../../services/competidorService";
-import { getEquipos } from "../../services/equipoService";
+import { getEquipos, deleteEquipo } from "../../services/equipoService";
 import { getEventos } from "../../services/eventoService";
 import { createProyectoConEquipo, getProyectos } from "../../services/proyectoService";
 import {
@@ -421,6 +422,59 @@ function AssignCompetitorsModal({ open, onClose, equipo, competidores, currentAs
   );
 }
 
+function ConfirmDeleteModal({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+}) {
+  const [loading, setLoading] = useState(false);
+
+  if (!open) return null;
+
+  async function handleConfirm() {
+    try {
+      setLoading(true);
+      await onConfirm();
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="users-modal-backdrop">
+      <div className="users-modal users-modal-small">
+        <h2>{title}</h2>
+
+        <p>{message}</p>
+
+        <div className="users-modal-actions">
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={handleConfirm}
+            disabled={loading}
+          >
+            <Trash2 size={16} />
+            {loading ? "Eliminando..." : "Eliminar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function UserManagementScreen() {
   const [activeTab, setActiveTab] = useState("usuarios");
   const [usuarios, setUsuarios] = useState([]);
@@ -443,6 +497,8 @@ function UserManagementScreen() {
   const [equipoModalOpen, setEquipoModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedEquipo, setSelectedEquipo] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfig, setDeleteConfig] = useState(null);
 
   const puedeGestionar = esOrganizador();
 
@@ -558,10 +614,19 @@ function UserManagementScreen() {
   }
 
   async function handleDeleteUser(usuario) {
-    if (!window.confirm(`¿Eliminar a ${usuario.nombre}?`)) return;
-    await deleteUsuario(usuario.id);
-    await loadAll();
+  await deleteUsuario(usuario.id);
+  await loadAll();
   }
+
+  async function handleDeleteCompetidor(competidor) {
+  await deleteCompetidor(competidor.id);
+  await loadAll();
+}
+
+async function handleDeleteEquipo(equipo) {
+  await deleteEquipo(equipo.id);
+  await loadAll();
+}
 
   async function handleCreateCompetidor(data) {
     await createCompetidor({
@@ -698,7 +763,20 @@ function UserManagementScreen() {
                         <td>
                           <div className="table-actions">
                             <button disabled={!puedeGestionar} onClick={() => { setEditingUser(usuario); setUserModalOpen(true); }}><Edit size={16} /></button>
-                            <button disabled={!puedeGestionar} onClick={() => handleDeleteUser(usuario)}><Trash2 size={16} /></button>
+                            <button
+                              disabled={!puedeGestionar}
+                              onClick={() => {
+                                setDeleteConfig({
+                                  title: "Eliminar usuario",
+                                  message: `¿Seguro que deseas eliminar a ${usuario.nombre}?`,
+                                  action: () => handleDeleteUser(usuario),
+                                });
+
+                                setDeleteModalOpen(true);
+                              }}
+                              >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -749,6 +827,24 @@ function UserManagementScreen() {
                             ))
                           )}
                         </div>
+                        {puedeGestionar ? (
+                          <div className="table-actions">
+                            <button
+                              className="danger-action-btn"
+                              onClick={() => {
+                                setDeleteConfig({
+                                  title: "Eliminar competidor",
+                                  message: `¿Seguro que deseas eliminar al competidor ${competidor.nombre}?`,
+                                  action: () => handleDeleteCompetidor(competidor),
+                                });
+
+                                setDeleteModalOpen(true);
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     </article>
                   );
@@ -798,6 +894,24 @@ function UserManagementScreen() {
                         <Plus size={16} />
                         Asignar más competidores
                       </button>
+                      {puedeGestionar ? (
+                        <button
+                          type="button"
+                          className="danger-btn full-width-btn"
+                          onClick={() => {
+                            setDeleteConfig({
+                              title: "Eliminar equipo",
+                              message: `¿Seguro que deseas eliminar el equipo ${equipo.nombre}?`,
+                              action: () => handleDeleteEquipo(equipo),
+                            });
+
+                            setDeleteModalOpen(true);
+                          }}
+                        >
+                          <Trash2 size={16} />
+                          Eliminar equipo
+                        </button>
+                      ) : null}
                     </article>
                   );
                 })}
@@ -837,6 +951,17 @@ function UserManagementScreen() {
         competidores={competidores}
         currentAsignaciones={selectedEquipo ? asignacionesPorEquipo[selectedEquipo.id] || [] : []}
         onSubmit={handleAssignCompetitors}
+      />
+      
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteConfig(null);
+        }}
+        title={deleteConfig?.title}
+        message={deleteConfig?.message}
+        onConfirm={deleteConfig?.action || (async () => {})}
       />
     </main>
   );

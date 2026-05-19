@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ProyectoMO;
+import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.EventoRepository;
 import com.Votify.backend.repository.ProyectoRepository;
@@ -26,6 +27,7 @@ public class EquipoService extends GenericService<EquipoMO> {
     private final EquipoRepository equipoRepository;
     private final EventoRepository eventoRepository;
     private final ProyectoRepository proyectoRepository;
+    private final CompetidorEventoRepository competidorEventoRepository;
 
     @Override
     protected JpaRepository<EquipoMO, UUID> getRepository() {
@@ -82,5 +84,25 @@ public class EquipoService extends GenericService<EquipoMO> {
             equipo.setEvento(null);
             equipoRepository.save(equipo);
         }
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+        EquipoMO equipo = equipoRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado."));
+ 
+        competidorEventoRepository.deleteAll(
+            competidorEventoRepository.findByEquipoId(id)
+        );
+
+        ProyectoMO proyecto = equipo.getProyecto();
+        if (proyecto != null) {
+            proyecto.setEquipo(null);
+            proyectoRepository.save(proyecto);
+        }
+        equipo.setProyecto(null);
+        equipoRepository.save(equipo);
+        equipoRepository.delete(equipo);
     }
 }

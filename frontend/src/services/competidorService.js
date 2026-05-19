@@ -61,3 +61,14 @@ export async function deleteAsignacionCompetidor(asignacionId) {
 
   if (!response.ok) throw new Error(await response.text() || "No se pudo quitar el competidor del equipo");
 }
+
+export async function deleteCompetidor(id) {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+  });
+ 
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo eliminar el competidor");
+  }
+}

@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.model.UsuarioMO;
+import com.Votify.backend.repository.CompetidorEventoRepository;
 import com.Votify.backend.repository.CompetidorRepository;
 import com.Votify.backend.repository.UsuarioRepository;
 
@@ -23,6 +24,7 @@ public class CompetidorService extends GenericService<CompetidorMO> {
 
     private final CompetidorRepository competidorRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CompetidorEventoRepository competidorEventoRepository;
 
     @Override
     protected JpaRepository<CompetidorMO, UUID> getRepository() {
@@ -96,6 +98,19 @@ public class CompetidorService extends GenericService<CompetidorMO> {
 
         return competidorRepository.findByUsuarioId(usuarioId);
         
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id){
+        CompetidorMO competidor = competidorRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Competidor no encontrado."));
+
+        competidorEventoRepository.deleteAll(
+            competidorEventoRepository.findByCompetidorId(id)
+        );
+ 
+        competidorRepository.delete(competidor);
     }
 }
 
