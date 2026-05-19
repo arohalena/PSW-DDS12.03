@@ -21,6 +21,8 @@ services:
     ports:
       - "8090:8080"
       - "8000:8000"
+    volumes:
+      - ./backend/uploads/material:/app/uploads/material
     environment:
       - POSTGRE_HOST=${DB_HOST}
       - POSTGRE_PORT=${DB_PORT}
