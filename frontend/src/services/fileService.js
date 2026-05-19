@@ -43,3 +43,29 @@ export const uploadFiles = async (files, proyectoId = null) => {
     throw error;
   }
 };
+
+export const getMaterialesByProyecto = async (proyectoId) => {
+  if (!proyectoId) {
+    throw new Error('El proyecto es requerido.');
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/proyecto/${proyectoId}`);
+    if (!response.ok) {
+      throw new Error('Error al cargar materiales');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error en getMaterialesByProyecto:", error);
+    throw error;
+  }
+};
+
+export const descargarMaterial = (materialId) => {
+  if (!materialId) {
+    throw new Error('El ID del material es requerido.');
+  }
+
+  return `${API_URL}/${materialId}/descargar`;
+};
