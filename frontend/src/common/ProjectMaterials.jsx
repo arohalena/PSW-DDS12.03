@@ -4,27 +4,32 @@ import { uploadFiles } from '../services/fileService';
 
 import '../styles/material.css';
 
-export function ProjectMaterials () {
+export function ProjectMaterials ({ proyectoId }) {
   const [files, setFiles] = useState([]);
   const [newFiles, setNewFiles] = useState([]); 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const saveFiles = () => {
-  
+  const saveFiles = async () => { 
+    if (newFiles.length === 0) return;
+    
     console.log("Guardando los siguientes archivos: ", newFiles);
 
     try {
-      uploadFiles(newFiles);    
-      
-      setFiles((newFiles) => 
-        newFiles.map(f => 
-          newFiles.find(newItem => newItem.id === f.id) 
-            ? { ...f, status: 'Subido' } 
-            : f
-        )
-      );
+      const actualFiles = newFiles.map(f => f.file);
 
+      const uploadedItems = await uploadFiles(actualFiles, proyectoId);
+
+      const updatedFiles = uploadedItems.map((item, index) => ({
+        id: item.id ?? Date.now() + index,
+        name: item.nombre,
+        rutaFichero: item.rutaFichero,
+        size: formatSize(newFiles[index]?.file?.size ?? 0),
+        type: newFiles[index]?.type ?? 'pdf',
+        status: 'Subido',
+      }));
+
+      setFiles((prev) => [...prev, ...updatedFiles]);
       setNewFiles([]);
 
     } catch (err) {
@@ -42,9 +47,11 @@ export function ProjectMaterials () {
   };
 
   // Manejar la adición de archivos
-  const handleFiles = (newFiles) => {
-    const uploadedFiles = Array.from(newFiles).map((file, index) => ({
+  const handleFiles = (filesFromEvent) => {
+    const fileArray = Array.from(filesFromEvent);
+    const uploadedFiles = fileArray.map((file, index) => ({
       id: Date.now() + index,
+      file: file,
       name: file.name,
       size: formatSize(file.size),
       type: file.type.split('/')[0] === 'image' ? 'image' : 
@@ -116,6 +123,7 @@ export function ProjectMaterials () {
             </div>
             <div className="file-info">
               <span className="file-name">{file.name}</span>
+              <span className="file-meta">{file.rutaFichero}</span>
               <div className="meta-row">
                 <span className="file-meta">{file.size}</span>
                 <span className="file-meta">•</span>
