@@ -21,6 +21,7 @@ import {
   getVotacionesByEvento,
 } from "../../services/votacionService";
 import { getRanking } from "../../services/criterioService";
+import { MaterialGallery } from "../../common/MaterialGallery";
 import "../../styles/projects.css";
 
 function initials(name = "", email = "") {
@@ -498,17 +499,7 @@ const selectedScoreText = useMemo(() => {
           </div>
         </div>
 
-        <div className="mock-gallery-grid">
-          <div>
-            <span>Preview</span>
-          </div>
-          <div>
-            <span>Demo</span>
-          </div>
-          <div>
-            <span>Pitch deck</span>
-          </div>
-        </div>
+        <MaterialGallery proyectoId={idProyecto} />
       </section>
 
       <section className="mock-card mock-feedback-section">

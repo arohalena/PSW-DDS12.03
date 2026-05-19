@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -15,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.Votify.backend.dto.MaterialRequest;
-import com.Votify.backend.dto.MaterialUploadResponse;
 import com.Votify.backend.model.MaterialMO;
 import com.Votify.backend.service.GenericService;
 import com.Votify.backend.service.MaterialService;
@@ -44,8 +41,8 @@ public class MaterialController extends GenericController<MaterialMO> {
         return materialService.findByProyectoId(proyectoId);
     }
 
-    /*@GetMapping("/{id}/descargar")
+    @GetMapping("/{id}/descargar")
     public ResponseEntity<Resource> descargarArchivo(@PathVariable UUID id) {
         return materialService.descargarArchivo(id);
-    }*/
+    }
 }
