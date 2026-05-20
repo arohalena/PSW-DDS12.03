@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.Votify.backend.model.CriterioEvaluacionMO;
 import com.Votify.backend.model.EquipoMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.ModoRankingMO;
@@ -23,43 +22,67 @@ import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoMO;
-import com.Votify.backend.repository.CriterioEvaluacionRepository;
 import com.Votify.backend.repository.EquipoRepository;
-import com.Votify.backend.repository.PuntuacionCriterioRepository;
 import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
 import com.Votify.backend.repository.VotoRepository;
-
-import lombok.RequiredArgsConstructor;
+import com.Votify.backend.strategy.EstrategiaCalculoRanking;
+import com.Votify.backend.strategy.EstrategiaRankingMulticriterio;
+import com.Votify.backend.strategy.EstrategiaRankingMulticriterioPonderada;
+import com.Votify.backend.strategy.EstrategiaRankingPuntos;
+import com.Votify.backend.strategy.EstrategiaRankingSimple;
 
 @Service
-@RequiredArgsConstructor
 public class RankingService {
 
-    private final CriterioEvaluacionRepository criterioRepository;
-    private final PuntuacionCriterioRepository puntuacionRepository;
+    private static final double PRECISION_REDONDEO = 100.0;
+
     private final VotacionProyectoRepository votacionProyectoRepository;
     private final VotoRepository votoRepository;
     private final EquipoRepository equipoRepository;
     private final VotacionRepository votacionRepository;
     private final UsuarioRepository usuarioRepository;
 
-    private static final double PRECISION_REDONDEO = 100.0;
+    private final EstrategiaRankingSimple estrategiaSimple;
+    private final EstrategiaRankingPuntos estrategiaPuntos;
+    private final EstrategiaRankingMulticriterio estrategiaMulticriterio;
+    private final EstrategiaRankingMulticriterioPonderada estrategiaMulticriterioPonderada;
+
+    public RankingService(VotacionProyectoRepository votacionProyectoRepository,
+                          VotoRepository votoRepository,
+                          EquipoRepository equipoRepository,
+                          VotacionRepository votacionRepository,
+                          UsuarioRepository usuarioRepository,
+                          EstrategiaRankingSimple estrategiaSimple,
+                          EstrategiaRankingPuntos estrategiaPuntos,
+                          EstrategiaRankingMulticriterio estrategiaMulticriterio,
+                          EstrategiaRankingMulticriterioPonderada estrategiaMulticriterioPonderada) {
+
+        this.votacionProyectoRepository = votacionProyectoRepository;
+        this.votoRepository = votoRepository;
+        this.equipoRepository = equipoRepository;
+        this.votacionRepository = votacionRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.estrategiaSimple = estrategiaSimple;
+        this.estrategiaPuntos = estrategiaPuntos;
+        this.estrategiaMulticriterio = estrategiaMulticriterio;
+        this.estrategiaMulticriterioPonderada = estrategiaMulticriterioPonderada;
+    }
 
     public List<Map<String, Object>> calcularRanking(UUID eventoId, UUID votacionId) {
 
         VotacionMO votacion = votacionRepository.findById(votacionId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se ha encontrado la votación."));
 
-        ModalidadVotacionMO modalidad = votacion.getModalidad();
-
-        List<Map<String, Object>> ranking = switch (modalidad) {
-            case SIMPLE -> rankingSimple(eventoId, votacionId);
-            case PUNTOS -> rankingPuntos(eventoId, votacionId);
-            case MULTICRITERIO -> rankingMulticriterio(eventoId, votacionId, false);
-            case MULTICRITERIO_PONDERADA -> rankingMulticriterio(eventoId, votacionId, true);
+        EstrategiaCalculoRanking estrategia = switch (votacion.getModalidad()) {
+            case SIMPLE -> estrategiaSimple;
+            case PUNTOS -> estrategiaPuntos;
+            case MULTICRITERIO -> estrategiaMulticriterio;
+            case MULTICRITERIO_PONDERADA -> estrategiaMulticriterioPonderada;
         };
+
+        List<Map<String, Object>> ranking = estrategia.calcular(eventoId, votacionId);
 
         // Si es votación MIXTA
         if (votacion.getTipo() == TipoVotacionMO.MIXTA) {
@@ -254,117 +277,6 @@ public class RankingService {
 
         for (int i = 0; i < ranking.size(); i++) {
             ranking.get(i).put("posicion", i + 1);
-        }
-
-        return ranking;
-    }
-
-    private List<Map<String, Object>> rankingSimple(UUID eventoId, UUID votacionId) {
-
-        List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
-        long votantesActivos = votoRepository.countDistinctVotantesByEventoId(eventoId);
-
-        List<Map<String, Object>> ranking = new ArrayList<>();
-
-        for (VotacionProyectoMO vp : proyectosVotacion) {
-
-            Map<String, Object> entry = baseEntry(vp, votantesActivos);
-
-            long totalVotos = votoRepository.countByVotacionProyecto_Id(vp.getId());
-
-            entry.put("totalVotos", totalVotos);
-            entry.put("puntuacionTotal", (double) totalVotos);
-            entry.put("criterios", new ArrayList<>());
-
-            ranking.add(entry);
-        }
-
-        return ranking;
-    }
-
-    private List<Map<String, Object>> rankingPuntos(UUID eventoId, UUID votacionId) {
-
-        List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
-        long votantesActivos = votoRepository.countDistinctVotantesByEventoId(eventoId);
-
-        List<Map<String, Object>> ranking = new ArrayList<>();
-
-        for (VotacionProyectoMO vp : proyectosVotacion) {
-
-            Map<String, Object> entry = baseEntry(vp, votantesActivos);
-
-            List<VotoMO> votos = votoRepository.findByVotacionProyecto_Id(vp.getId());
-            long totalVotos = votos.size();
-
-            double sumaPuntos = 0;
-
-            for (VotoMO v : votos) {
-                if (v.getPuntuacionTotal() != null) {
-                    sumaPuntos += v.getPuntuacionTotal().doubleValue();
-                }
-            }
-
-            double mediaPuntos = totalVotos > 0 ? sumaPuntos / totalVotos : 0;
-
-            entry.put("totalVotos", totalVotos);
-            entry.put("sumaPuntos", Math.round(sumaPuntos * PRECISION_REDONDEO) / PRECISION_REDONDEO);
-            entry.put("mediaPuntos", Math.round(mediaPuntos * PRECISION_REDONDEO) / PRECISION_REDONDEO);
-            entry.put("puntuacionTotal", Math.round(sumaPuntos * PRECISION_REDONDEO) / PRECISION_REDONDEO);
-            entry.put("criterios", new ArrayList<>());
-
-            ranking.add(entry);
-        }
-
-        return ranking;
-    }
-
-    private List<Map<String, Object>> rankingMulticriterio(UUID eventoId, UUID votacionId, boolean ponderada) {
-
-        List<CriterioEvaluacionMO> criterios = criterioRepository.findByEvento_IdOrderByOrdenAsc(eventoId);
-        List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
-        long votantesActivos = votoRepository.countDistinctVotantesByEventoId(eventoId);
-
-        List<Map<String, Object>> ranking = new ArrayList<>();
-
-        for (VotacionProyectoMO vp : proyectosVotacion) {
-
-            Map<String, Object> entry = baseEntry(vp, votantesActivos);
-
-            long totalVotos = votoRepository.countByVotacionProyecto_Id(vp.getId());
-            entry.put("totalVotos", totalVotos);
-
-            double puntuacionTotal = 0;
-            List<Map<String, Object>> detalleCriterios = new ArrayList<>();
-
-            for (CriterioEvaluacionMO criterio : criterios) {
-
-                Double promedio = puntuacionRepository.promedioByCriterioAndVotacionProyecto(criterio.getId(), vp.getId());
-                double avg = promedio != null ? promedio : 0;
-
-                double aporte = ponderada
-                    ? avg * criterio.getPeso() / PRECISION_REDONDEO
-                    : avg;
-
-                puntuacionTotal += aporte;
-
-                Map<String, Object> detalle = new LinkedHashMap<>();
-                detalle.put("criterioId", criterio.getId());
-                detalle.put("criterioNombre", criterio.getNombre());
-                detalle.put("peso", ponderada ? criterio.getPeso() : null);
-                detalle.put("promedio", Math.round(avg * PRECISION_REDONDEO) / PRECISION_REDONDEO);
-                detalle.put("ponderado", ponderada ? Math.round(aporte * PRECISION_REDONDEO) / PRECISION_REDONDEO : null);
-
-                detalleCriterios.add(detalle);
-            }
-
-            if (!ponderada && !criterios.isEmpty()) {
-                puntuacionTotal = puntuacionTotal / criterios.size();
-            }
-
-            entry.put("puntuacionTotal", Math.round(puntuacionTotal * PRECISION_REDONDEO) / PRECISION_REDONDEO);
-            entry.put("criterios", detalleCriterios);
-
-            ranking.add(entry);
         }
 
         return ranking;
