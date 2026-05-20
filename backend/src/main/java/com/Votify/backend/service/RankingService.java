@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,8 +58,8 @@ public class RankingService {
                           UsuarioRepository usuarioRepository,
                           EstrategiaRankingSimple estrategiaSimple,
                           EstrategiaRankingPuntos estrategiaPuntos,
-                          EstrategiaRankingMulticriterio estrategiaMulticriterio,
-                          EstrategiaRankingMulticriterioPonderada estrategiaMulticriterioPonderada) {
+                          @Qualifier("estrategiaRankingMulticriterio") EstrategiaRankingMulticriterio estrategiaMulticriterio,
+                          @Qualifier("estrategiaRankingMulticriterioPonderada") EstrategiaRankingMulticriterioPonderada estrategiaMulticriterioPonderada) {
 
         this.votacionProyectoRepository = votacionProyectoRepository;
         this.votoRepository = votoRepository;
