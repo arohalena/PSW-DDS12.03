@@ -68,6 +68,12 @@ public class VotacionMO extends ModeloBaseMO {
     @Column(nullable = false)
     private boolean comentarioObligatorio;
 
+    @Column(name = "resultados_publicados", nullable = false)
+    private boolean resultadosPublicados;
+
+    @Column(name = "fecha_publicacion_resultados")
+    private OffsetDateTime fechaPublicacionResultados;
+
     @Transient
     @JsonProperty("estadoActual")
     public EstadoVotacionMO getEstadoActual() {
