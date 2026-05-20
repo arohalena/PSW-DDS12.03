@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -181,8 +182,8 @@ public class RankingService {
 
     private List<Map<String, Object>> rankingMixto(UUID eventoId, UUID votacionId, VotacionMO votacion) {
 
-        int pesoPopular = votacion.getPesoPorcentajePopular() != null ? votacion.getPesoPorcentajePopular() : 50;
-        int pesoJurado  = votacion.getPesoPorcentajeJurado()  != null ? votacion.getPesoPorcentajeJurado()  : 50;
+        int pesoPopular = Objects.requireNonNullElse(votacion.getPesoPorcentajePopular(), 50);
+        int pesoJurado  = Objects.requireNonNullElse(votacion.getPesoPorcentajeJurado(),  50);
 
         List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
         long votantesActivos = votoRepository.countDistinctVotantesByEventoId(eventoId);
