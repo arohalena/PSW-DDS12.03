@@ -23,20 +23,26 @@ function DashboardScreen() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [evs, projs, users] = await Promise.all([
-          getEventos().catch(() => []),
-          getProyectos().catch(() => []),
-          getUsuarios().catch(() => []),
-        ]);
-        setEventos(evs);
-        setProyectos(projs);
-        setUsuarios(users);
+        // Eventos siempre, los demás solo si es ORGANIZADOR
+        if (rol === "ORGANIZADOR") {
+          const [evs, projs, users] = await Promise.all([
+            getEventos().catch(() => []),
+            getProyectos().catch(() => []),
+            getUsuarios().catch(() => []),
+          ]);
+          setEventos(evs);
+          setProyectos(projs);
+          setUsuarios(users);
+        } else {
+          const evs = await getEventos().catch(() => []);
+          setEventos(evs);
+        }
       } finally {
         setLoading(false);
       }
     }
     loadData();
-  }, []);
+  }, [rol]);
 
   if (loading) {
     return <div className="dashboard-loading">Cargando dashboard…</div>;
