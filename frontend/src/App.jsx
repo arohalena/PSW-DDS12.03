@@ -1,31 +1,31 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "./common/AppLayout";
+import { getUsuarioLogueado } from "./services/sessionService";
 import "./App.css";
 
-import DashboardScreen from "./screens/dashboard/DashboardScreen";
-import EventsListScreen from "./screens/event/EventsListScreen";
-import CreateEventScreen from "./screens/event/CreateEventScreen";
-import LoginScreen from "./screens/login/LoginScreen";
-import RegisterScreen from "./screens/login/RegisterScreen";
-import UserManagementScreen from "./screens/user/UserManagementScreen";
-import ProjectsScreen from "./screens/project/ProjectsScreen";
-import ProjectVotingDetailScreen from "./screens/voting/ProjectVotingDetailScreen";
-import RankingScreen from "./screens/ranking/RankingScreen";
-import MyProjectDashboardScreen from "./screens/dashboard/MyProjectDashboardScreen";
-import EventDetailScreen from "./screens/event/EventDetailScreen";
-import ProjectDetailScreen from "./screens/project/ProjectDetailScreen";
-import PopularVotingScreen from "./screens/voting/PopularVotingScreen";
-import EditVotingScreen from "./screens/voting/EditVotingScreen";
-import AuditoriaScreen from "./screens/auditoria/AuditoriaScreen";
-import { getUsuarioLogueado } from "./services/sessionService";
+// Lazy loading: cada pantalla se descarga solo cuando se navega a ella
+const DashboardScreen            = lazy(() => import("./screens/dashboard/DashboardScreen"));
+const EventsListScreen           = lazy(() => import("./screens/event/EventsListScreen"));
+const CreateEventScreen          = lazy(() => import("./screens/event/CreateEventScreen"));
+const LoginScreen                = lazy(() => import("./screens/login/LoginScreen"));
+const RegisterScreen             = lazy(() => import("./screens/login/RegisterScreen"));
+const UserManagementScreen       = lazy(() => import("./screens/user/UserManagementScreen"));
+const ProjectsScreen             = lazy(() => import("./screens/project/ProjectsScreen"));
+const ProjectVotingDetailScreen  = lazy(() => import("./screens/voting/ProjectVotingDetailScreen"));
+const RankingScreen              = lazy(() => import("./screens/ranking/RankingScreen"));
+const MyProjectDashboardScreen   = lazy(() => import("./screens/dashboard/MyProjectDashboardScreen"));
+const EventDetailScreen          = lazy(() => import("./screens/event/EventDetailScreen"));
+const ProjectDetailScreen        = lazy(() => import("./screens/project/ProjectDetailScreen"));
+const PopularVotingScreen        = lazy(() => import("./screens/voting/PopularVotingScreen"));
+const EditVotingScreen           = lazy(() => import("./screens/voting/EditVotingScreen"));
+const AuditoriaScreen            = lazy(() => import("./screens/auditoria/AuditoriaScreen"));
 
-// Verifica sesion
 function PrivateRoute({ children }) {
   const usuario = localStorage.getItem("usuarioLogueado");
   return usuario ? children : <Navigate to="/login" replace />;
 }
 
-// Verifica sesion Y rol permitido
 function RoleRoute({ children, roles }) {
   const usuario = getUsuarioLogueado();
   if (!usuario) return <Navigate to="/login" replace />;
@@ -41,128 +41,131 @@ function PrivatePage({ children, roles }) {
   );
 }
 
+function LoadingFallback() {
+  return (
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "100vh",
+      fontFamily: "system-ui, sans-serif",
+      color: "#666"
+    }}>
+      Cargando...
+    </div>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Públicas */}
-        <Route path="/login"    element={<LoginScreen />}    />
-        <Route path="/registro" element={<RegisterScreen />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          <Route path="/login"    element={<LoginScreen />}    />
+          <Route path="/registro" element={<RegisterScreen />} />
+          <Route
+            path="/"
+            element={
+              <PrivatePage>
+                <DashboardScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Dashboard — todos los roles logueados */}
-        <Route
-          path="/"
-          element={
-            <PrivatePage>
-              <DashboardScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/eventos"
+            element={
+              <PrivatePage>
+                <EventsListScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Eventos — todos */}
-        <Route
-          path="/eventos"
-          element={
-            <PrivatePage>
-              <EventsListScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/eventos/crear"
+            element={
+              <PrivatePage roles={["ORGANIZADOR"]}>
+                <CreateEventScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Crear evento — solo ORGANIZADOR */}
-        <Route
-          path="/eventos/crear"
-          element={
-            <PrivatePage roles={["ORGANIZADOR"]}>
-              <CreateEventScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/eventos/:eventoId"
+            element={
+              <PrivatePage>
+                <EventDetailScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Detalle evento — todos */}
-        <Route
-          path="/eventos/:eventoId"
-          element={
-            <PrivatePage>
-              <EventDetailScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/eventos/:eventoId/proyectos/:proyectoId"
+            element={
+              <PrivatePage>
+                <ProjectDetailScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Detalle proyecto — todos */}
-        <Route
-          path="/eventos/:eventoId/proyectos/:proyectoId"
-          element={
-            <PrivatePage>
-              <ProjectDetailScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/eventos/:eventoId/votaciones/:votingId/proyectos/:proyectoId/votar"
+            element={
+              <PrivatePage roles={["JURADO", "COMPETIDOR", "PUBLICO", "ESPECTADOR", "ORGANIZADOR"]}>
+                <ProjectVotingDetailScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Votar - todos */}
-        <Route
-          path="/eventos/:eventoId/votaciones/:votingId/proyectos/:proyectoId/votar"
-          element={
-            <PrivatePage roles={["JURADO", "COMPETIDOR", "PUBLICO", "ESPECTADOR", "ORGANIZADOR"]}>
-              <ProjectVotingDetailScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/eventos/:eventoId/votaciones/:votingId/resultados"
+            element={
+              <PrivatePage>
+                <RankingScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Resultados/Ranking — todos */}
-        <Route
-          path="/eventos/:eventoId/votaciones/:votingId/resultados"
-          element={
-            <PrivatePage>
-              <RankingScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/proyectos"
+            element={
+              <PrivatePage roles={["ORGANIZADOR", "JURADO"]}>
+                <ProjectsScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Proyectos globales — ORGANIZADOR y JURADO */}
-        <Route
-          path="/proyectos"
-          element={
-            <PrivatePage roles={["ORGANIZADOR", "JURADO"]}>
-              <ProjectsScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/usuarios"
+            element={
+              <PrivatePage roles={["ORGANIZADOR"]}>
+                <UserManagementScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Gestión de usuarios — solo ORGANIZADOR */}
-        <Route
-          path="/usuarios"
-          element={
-            <PrivatePage roles={["ORGANIZADOR"]}>
-              <UserManagementScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/configuracion"
+            element={
+              <PrivatePage roles={["COMPETIDOR", "ORGANIZADOR"]}>
+                <MyProjectDashboardScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Mi Proyecto — solo COMPETIDOR */}
-        <Route
-          path="/configuracion"
-          element={
-            <PrivatePage roles={["COMPETIDOR", "ORGANIZADOR"]}>
-              <MyProjectDashboardScreen />
-            </PrivatePage>
-          }
-        />
+          <Route
+            path="/auditoria"
+            element={
+              <PrivatePage roles={["ORGANIZADOR", "JURADO", "COMPETIDOR"]}>
+                <AuditoriaScreen />
+              </PrivatePage>
+            }
+          />
 
-        {/* Auditoría — ORGANIZADOR JURADO y COMPETIDOR */}
-        <Route
-          path="/auditoria"
-          element={
-            <PrivatePage roles={["ORGANIZADOR", "JURADO", "COMPETIDOR"]}>
-              <AuditoriaScreen />
-            </PrivatePage>
-          }
-        />
-
-        {/* Redirect comodin */}
-        <Route path="/votar" element={<Navigate to="/eventos" replace />} />
-        <Route path="*"      element={<Navigate to="/"        replace />} />
-      </Routes>
+          <Route path="/votar" element={<Navigate to="/eventos" replace />} />
+          <Route path="*"      element={<Navigate to="/"        replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
