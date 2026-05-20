@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.CriterioEvaluacionMO;
 import com.Votify.backend.model.EquipoMO;
+import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.ModoRankingMO;
 import com.Votify.backend.model.RolMO;
@@ -73,10 +74,11 @@ public class RankingService {
         }
 
         if (modo == ModoRankingMO.MANUAL) {
-            return aplicarOrdenManual(ranking, votacionId);
+            List<Map<String, Object>> rankingManual = aplicarOrdenManual(ranking, votacionId);
+            return marcarResultadoFinal(rankingManual, votacion);
         }
 
-        return ordenarYNumerar(ranking);
+        return marcarResultadoFinal(ordenarYNumerar(ranking), votacion);
     }
 
     @Transactional
@@ -398,5 +400,32 @@ public class RankingService {
         }
 
         return ranking;
+    }
+
+    private List<Map<String, Object>> marcarResultadoFinal(List<Map<String, Object>> ranking, VotacionMO votacion) {
+        boolean cerrada = votacion.getEstadoActual() == EstadoVotacionMO.CERRADA;
+        boolean publicado = votacion.isResultadosPublicados();
+        boolean resultadoFinal = cerrada && publicado;
+
+        for (Map<String, Object> entry : ranking) {
+            int posicion = ((Number) entry.get("posicion")).intValue();
+            entry.put("votacionCerrada", cerrada);
+            entry.put("resultadosPublicados", publicado);
+            entry.put("resultadoFinal", resultadoFinal);
+            entry.put("fechaPublicacionResultados", votacion.getFechaPublicacionResultados());
+            entry.put("ganador", resultadoFinal && posicion <= 3);
+            entry.put("tipoPremio", resultadoFinal && posicion <= 3 ? tipoPremio(posicion) : null);
+        }
+
+        return ranking;
+    }
+
+    private String tipoPremio(int posicion) {
+        return switch (posicion) {
+            case 1 -> "ORO";
+            case 2 -> "PLATA";
+            case 3 -> "BRONCE";
+            default -> null;
+        };
     }
 }

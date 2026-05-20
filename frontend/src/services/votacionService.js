@@ -179,6 +179,26 @@ export async function cerrarVotacion(id) {
   return r.json();
 }
 
+export async function publicarResultadosVotacion(id) {
+  const r = await fetch(`${VOTACIONES_URL}/${id}/publicar-resultados`, { method: "POST" });
+
+  if (!r.ok){
+    throw new Error((await r.text()) || "No se pudieron publicar los resultados");
+  }
+
+  return r.json();
+}
+
+export async function retirarResultadosVotacion(id) {
+  const r = await fetch(`${VOTACIONES_URL}/${id}/retirar-resultados`, { method: "POST" });
+
+  if (!r.ok){
+    throw new Error((await r.text()) || "No se pudo retirar la publicaciÃ³n de resultados");
+  }
+
+  return r.json();
+}
+
 export async function deleteVotacion(id) {
   const response = await fetch(`${VOTACIONES_URL}/${id}`, {
     method: "DELETE",

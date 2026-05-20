@@ -258,6 +258,28 @@ public class VotacionService extends GenericService<VotacionMO> {
     }
 
     @Transactional
+    public VotacionMO publicarResultados(UUID id) {
+        VotacionMO v = findById(id);
+
+        if (v.getEstadoActual() != EstadoVotacionMO.CERRADA) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Solo se pueden publicar resultados de una votaciÃ³n cerrada.");
+        }
+
+        v.setResultadosPublicados(true);
+        v.setFechaPublicacionResultados(OffsetDateTime.now());
+        return votacionRepository.save(v);
+    }
+
+    @Transactional
+    public VotacionMO retirarPublicacionResultados(UUID id) {
+        VotacionMO v = findById(id);
+        v.setResultadosPublicados(false);
+        v.setFechaPublicacionResultados(null);
+        return votacionRepository.save(v);
+    }
+    
+    @Transactional
     public int aplicarTransicionesAutomaticas() {
         int cambios = 0;
         for (VotacionMO v : votacionRepository.findAll()) {
