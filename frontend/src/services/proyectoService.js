@@ -164,3 +164,14 @@ export async function deleteProyecto(id) {
     throw new Error(errorText || "No se pudo eliminar el proyecto.");
   }
 }
+
+export async function getVistaGestionProyectos() {
+  const response = await fetch(`${API_URL}/gestion/vista`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo cargar la vista de gestión.");
+  }
+
+  return response.json();
+}

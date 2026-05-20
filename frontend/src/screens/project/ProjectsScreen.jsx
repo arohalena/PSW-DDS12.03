@@ -15,7 +15,7 @@ import {
 import {
   createProyectoGestionado,
   deleteProyecto,
-  getProyectos,
+  getVistaGestionProyectos,
   meterProyectoEnEvento,
   quitarProyectoDeEvento,
   updateProyectoGestionado,
@@ -586,34 +586,37 @@ function ProjectsScreen() {
       setLoading(true);
       setError("");
 
-      const [proyectosData, equiposData, eventosData] = await Promise.all([
-        getProyectos().catch(() => []),
+      const [vistaProyectos, equiposData, eventosData] = await Promise.all([
+        getVistaGestionProyectos().catch(() => []),
         getEquipos().catch(() => []),
         getEventos().catch(() => []),
       ]);
 
-      setProyectos(proyectosData || []);
-      setEquipos(equiposData || []);
-      setEventos(eventosData || []);
+      const proyectosNormalizados = (vistaProyectos || []).map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        descripcion: p.descripcion,
+        tipoCategoria: p.tipoCategoria,
+        equipo: p.equipo,   
+        evento: p.evento,   
+      }));
 
       const map = {};
+      (vistaProyectos || []).forEach((p) => {
+        map[p.id] = (p.votaciones || []).map((v) => ({
+          id: v.relacionId,
+          votacion: {
+            id: v.votacionId,
+            nombre: v.nombre,
+            tipo: v.tipo,
+            modalidad: v.modalidad,
+          },
+        }));
+      });
 
-      for (const evento of eventosData || []) {
-        const votaciones = await getVotacionesByEvento(evento.id).catch(() => []);
-
-        for (const votacion of votaciones || []) {
-          const relaciones = await getVotacionProyectosByVotacion(votacion.id).catch(() => []);
-
-          relaciones.forEach((relacion) => {
-            const projectId = relacion.proyecto?.id;
-            if (!projectId) return;
-
-            if (!map[projectId]) map[projectId] = [];
-            map[projectId].push({ ...relacion, votacion });
-          });
-        }
-      }
-
+      setProyectos(proyectosNormalizados);
+      setEquipos(equiposData || []);
+      setEventos(eventosData || []);
       setRelationsByProject(map);
     } catch (err) {
       setError(err.message || "No se pudieron cargar los proyectos.");
