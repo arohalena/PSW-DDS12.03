@@ -145,4 +145,11 @@ public class ProyectoService extends GenericService<ProyectoMO> {
 
         proyectoRepository.deleteById(proyecto.getId());
     }
+
+    public List<ProyectoMO> findAllConRelaciones() {
+
+        return proyectoRepository.findAllConRelaciones();
+        
+    }
+    
 }

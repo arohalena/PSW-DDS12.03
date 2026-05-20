@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.Votify.backend.dto.CrearProyectoRequest;
 import com.Votify.backend.dto.MiProyectoDashboardResponse;
 import com.Votify.backend.dto.ProyectoGestionRequest;
+import com.Votify.backend.dto.ProyectoGestionViewDTO;
 import com.Votify.backend.facade.ProyectoFacade;
 import com.Votify.backend.model.ProyectoMO;
 
@@ -80,5 +81,10 @@ public class ProyectoController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable UUID id) {
         proyectoFacade.delete(id);
+    }
+
+    @GetMapping("/gestion/vista")
+    public List<ProyectoGestionViewDTO> vistaGestion() {
+        return proyectoFacade.getVistaGestion();
     }
 }

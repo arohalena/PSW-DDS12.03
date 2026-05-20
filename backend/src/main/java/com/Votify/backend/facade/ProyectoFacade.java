@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import com.Votify.backend.domain.Proyecto;
 import com.Votify.backend.dto.CrearProyectoRequest;
 import com.Votify.backend.dto.MiProyectoDashboardResponse;
 import com.Votify.backend.dto.ProyectoGestionRequest;
+import com.Votify.backend.dto.ProyectoGestionViewDTO;
 import com.Votify.backend.factory.CreadorProyecto;
 import com.Votify.backend.factory.CreadorProyectoIA;
 import com.Votify.backend.factory.CreadorProyectoSostenibilidad;
@@ -288,5 +290,51 @@ public class ProyectoFacade {
             default -> throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST, "No se reconoce la categoría: " + tipoCategoria);
         };
+    }
+
+    public List<ProyectoGestionViewDTO> getVistaGestion() {
+
+        List<ProyectoMO> proyectos = proyectoService.findAllConRelaciones();
+
+        List<UUID> ids = proyectos.stream().map(ProyectoMO::getId).toList();
+
+        Map<UUID, List<VotacionProyectoMO>> relacionesPorProyecto =
+            votacionProyectoService.findRelacionesByProyectoIds(ids).stream()
+                .collect(Collectors.groupingBy(vp -> vp.getProyecto().getId()));
+
+        return proyectos.stream()
+            .map(p -> toViewDTO(p, relacionesPorProyecto.getOrDefault(p.getId(), List.of())))
+            .toList();
+    }
+
+    private ProyectoGestionViewDTO toViewDTO(ProyectoMO p, List<VotacionProyectoMO> relaciones) {
+
+        ProyectoGestionViewDTO.RefDTO equipoRef = p.getEquipo() == null
+            ? null
+            : new ProyectoGestionViewDTO.RefDTO(p.getEquipo().getId(), p.getEquipo().getNombre());
+
+        ProyectoGestionViewDTO.RefDTO eventoRef = p.getEvento() == null
+            ? null
+            : new ProyectoGestionViewDTO.RefDTO(p.getEvento().getId(), p.getEvento().getNombre());
+
+        List<ProyectoGestionViewDTO.VotacionRefDTO> votacionesRef = relaciones.stream()
+            .map(vp -> new ProyectoGestionViewDTO.VotacionRefDTO(
+                vp.getId(),
+                vp.getVotacion().getId(),
+                vp.getVotacion().getNombre(),
+                vp.getVotacion().getTipo() != null ? vp.getVotacion().getTipo().name() : null,
+                vp.getVotacion().getModalidad() != null ? vp.getVotacion().getModalidad().name() : null
+            ))
+            .toList();
+
+        return new ProyectoGestionViewDTO(
+            p.getId(),
+            p.getNombre(),
+            p.getDescripcion(),
+            p.getTipoCategoria(),
+            equipoRef,
+            eventoRef,
+            votacionesRef
+        );
     }
 }
