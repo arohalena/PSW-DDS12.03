@@ -1,5 +1,7 @@
 package com.Votify.backend.service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,6 +56,10 @@ class RankingServiceTest {
         return v;
     }
 
+    private List<Map<String, Object>> rankingMutableVacio() {
+        return new ArrayList<>();
+    }
+
     @Test
     void calcularRanking_modalidadSimple_delegaSoloEnEstrategiaSimple() {
 
@@ -62,7 +68,7 @@ class RankingServiceTest {
         VotacionMO votacion = votacionConModalidad(ModalidadVotacionMO.SIMPLE);
 
         when(votacionRepository.findById(votacionId)).thenReturn(Optional.of(votacion));
-        when(estrategiaSimple.calcular(eventoId, votacionId)).thenReturn(List.<Map<String, Object>>of());
+        when(estrategiaSimple.calcular(eventoId, votacionId)).thenReturn(rankingMutableVacio());
 
         rankingService.calcularRanking(eventoId, votacionId);
 
@@ -80,7 +86,7 @@ class RankingServiceTest {
         VotacionMO votacion = votacionConModalidad(ModalidadVotacionMO.PUNTOS);
 
         when(votacionRepository.findById(votacionId)).thenReturn(Optional.of(votacion));
-        when(estrategiaPuntos.calcular(eventoId, votacionId)).thenReturn(List.<Map<String, Object>>of());
+        when(estrategiaPuntos.calcular(eventoId, votacionId)).thenReturn(rankingMutableVacio());
 
         rankingService.calcularRanking(eventoId, votacionId);
 
@@ -98,7 +104,7 @@ class RankingServiceTest {
         VotacionMO votacion = votacionConModalidad(ModalidadVotacionMO.MULTICRITERIO);
 
         when(votacionRepository.findById(votacionId)).thenReturn(Optional.of(votacion));
-        when(estrategiaMulticriterio.calcular(eventoId, votacionId)).thenReturn(List.<Map<String, Object>>of());
+        when(estrategiaMulticriterio.calcular(eventoId, votacionId)).thenReturn(rankingMutableVacio());
 
         rankingService.calcularRanking(eventoId, votacionId);
 
@@ -116,7 +122,7 @@ class RankingServiceTest {
         VotacionMO votacion = votacionConModalidad(ModalidadVotacionMO.MULTICRITERIO_PONDERADA);
 
         when(votacionRepository.findById(votacionId)).thenReturn(Optional.of(votacion));
-        when(estrategiaMulticriterioPonderada.calcular(eventoId, votacionId)).thenReturn(List.<Map<String, Object>>of());
+        when(estrategiaMulticriterioPonderada.calcular(eventoId, votacionId)).thenReturn(rankingMutableVacio());
 
         rankingService.calcularRanking(eventoId, votacionId);
 
@@ -133,17 +139,20 @@ class RankingServiceTest {
         UUID votacionId = UUID.randomUUID();
         VotacionMO votacion = votacionConModalidad(ModalidadVotacionMO.SIMPLE);
 
-        Map<String, Object> proyectoBajo = new java.util.LinkedHashMap<>();
+        Map<String, Object> proyectoBajo = new LinkedHashMap<>();
         proyectoBajo.put("proyectoNombre", "Bajo");
         proyectoBajo.put("puntuacionTotal", 2.0);
 
-        Map<String, Object> proyectoAlto = new java.util.LinkedHashMap<>();
+        Map<String, Object> proyectoAlto = new LinkedHashMap<>();
         proyectoAlto.put("proyectoNombre", "Alto");
         proyectoAlto.put("puntuacionTotal", 7.0);
 
+        List<Map<String, Object>> rankingMock = new ArrayList<>();
+        rankingMock.add(proyectoBajo);
+        rankingMock.add(proyectoAlto);
+
         when(votacionRepository.findById(votacionId)).thenReturn(Optional.of(votacion));
-        when(estrategiaSimple.calcular(eventoId, votacionId))
-            .thenReturn(List.of(proyectoBajo, proyectoAlto));
+        when(estrategiaSimple.calcular(eventoId, votacionId)).thenReturn(rankingMock);
 
         List<Map<String, Object>> resultado = rankingService.calcularRanking(eventoId, votacionId);
 
