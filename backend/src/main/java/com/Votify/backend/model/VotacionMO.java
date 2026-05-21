@@ -4,9 +4,10 @@ import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.Votify.backend.state.EstadoVotacion;
+import com.Votify.backend.state.EstadoVotacionFactory;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
@@ -75,74 +76,61 @@ public class VotacionMO extends ModeloBaseMO {
     private OffsetDateTime fechaPublicacionResultados;
 
     @Transient
+    @JsonIgnore
+    private EstadoVotacion estadoVotacion;
+
+    @Transient
     @JsonProperty("estadoActual")
     public EstadoVotacionMO getEstadoActual() {
-        if (estado == EstadoVotacionMO.CERRADA) {
-            return EstadoVotacionMO.CERRADA;
-        }
-        if (estado == EstadoVotacionMO.PAUSADA) {
-            return EstadoVotacionMO.PAUSADA;
-        }
-
-        OffsetDateTime ahora = OffsetDateTime.now();
-
-        if (fin != null && ahora.isAfter(fin)) {
-            return EstadoVotacionMO.CERRADA;
-        }
-
-        if (estado == EstadoVotacionMO.ABIERTA) {
-            return EstadoVotacionMO.ABIERTA;
-        }
-
-        if (inicio != null && ahora.isBefore(inicio)) {
-            return EstadoVotacionMO.PENDIENTE;
-        }
-
-        return EstadoVotacionMO.ABIERTA;
+        return estado;
     }
 
-    //Transiciones de estado
-
     public void abrir() {
-        this.estado = EstadoVotacionMO.ABIERTA;
+        estadoVotacionActual().abrir(this);
     }
 
     public void pausar() {
-        if (this.estado == EstadoVotacionMO.CERRADA) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "No se puede pausar una votación cerrada.");
-        }
-        this.estado = EstadoVotacionMO.PAUSADA;
+        estadoVotacionActual().pausar(this);
     }
 
     public void reanudar() {
-        if (this.estado != EstadoVotacionMO.PAUSADA) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Solo se puede reanudar una votación pausada.");
-        }
-        this.estado = EstadoVotacionMO.ABIERTA;
+        estadoVotacionActual().reanudar(this);
     }
 
-    public void cerrar() {
-        this.estado = EstadoVotacionMO.CERRADA;
+     public void cerrar() {
+        estadoVotacionActual().cerrar(this);
+    }
+
+    public void publicarResultados() {
+        estadoVotacionActual().publicarResultados(this);
+    }
+
+    public void emitirVoto() {
+        estadoVotacionActual().emitirVoto(this);
     }
 
     public boolean aplicarTransicionPorFechas() {
-        OffsetDateTime ahora = OffsetDateTime.now();
-
-        if (fin != null && ahora.isAfter(fin) && estado != EstadoVotacionMO.CERRADA) {
-            this.estado = EstadoVotacionMO.CERRADA;
-            return true;
-        }
-
-        if (estado == EstadoVotacionMO.PENDIENTE
-                && inicio != null
-                && !ahora.isBefore(inicio)
-                && (fin == null || ahora.isBefore(fin))) {
-            this.estado = EstadoVotacionMO.ABIERTA;
-            return true;
-        }
-
-        return false;
+        return estadoVotacionActual().verificarExpiracion(this);
     }
+
+    public void verificarExpiracion() {
+        estadoVotacionActual().verificarExpiracion(this);
+    }
+
+    public void cambiarEstado(EstadoVotacionMO nuevoEstado) {
+        this.estado = nuevoEstado;
+        this.estadoVotacion = EstadoVotacionFactory.desde(nuevoEstado);
+    }
+
+    public void setEstado(EstadoVotacionMO estado) {
+        cambiarEstado(estado);
+    }
+
+    private EstadoVotacion estadoVotacionActual() {
+        if (estadoVotacion == null || estadoVotacion.tipo() != estado) {
+            estadoVotacion = EstadoVotacionFactory.desde(estado);
+        }
+        return estadoVotacion;
+    }
+
 }

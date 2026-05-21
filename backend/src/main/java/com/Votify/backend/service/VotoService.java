@@ -11,7 +11,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.CompetidorMO;
 import com.Votify.backend.model.EquipoMO;
-import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.RolMO;
 import com.Votify.backend.model.TipoVotacionMO;
@@ -94,13 +93,7 @@ public class VotoService extends GenericService<VotoMO> {
     }
 
     public void validarEstadoYFechas(VotacionMO votacion) {
-        EstadoVotacionMO actual = votacion.getEstadoActual();
-        switch (actual) {
-            case PENDIENTE -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación todavía no ha comenzado.");
-            case PAUSADA   -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación está pausada.");
-            case CERRADA   -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación ya ha finalizado.");
-            default -> { /* ABIERTA: ok */ }
-        }
+        votacion.emitirVoto();
     }
 
     public void validarMaximoYDuplicado(VotacionMO votacion, VotacionProyectoMO vp, String anonTokenHash) {

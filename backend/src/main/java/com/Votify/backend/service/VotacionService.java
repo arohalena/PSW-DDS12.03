@@ -260,14 +260,8 @@ public class VotacionService extends GenericService<VotacionMO> {
     @Transactional
     public VotacionMO publicarResultados(UUID id) {
         VotacionMO v = findById(id);
-
-        if (v.getEstadoActual() != EstadoVotacionMO.CERRADA) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Solo se pueden publicar resultados de una votaciÃ³n cerrada.");
-        }
-
-        v.setResultadosPublicados(true);
-        v.setFechaPublicacionResultados(OffsetDateTime.now());
+        v.verificarExpiracion();
+        v.publicarResultados();
         return votacionRepository.save(v);
     }
 
