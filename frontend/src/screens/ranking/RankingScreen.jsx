@@ -305,10 +305,10 @@ function RankingScreen() {
                   <span>${entry.equipoNombre || "Equipo no disponible"}</span>
                 </div>
                 <p class="muted">por alcanzar el</p>
-                <div class="position">${entry.posicion}.Âº lugar - Premio ${premio}</div>
-                <p class="muted">${votacionSeleccionada?.nombre || "VotaciÃ³n"} · ${eventos.find((ev) => ev.id === eventoId)?.nombre || "Votify"}</p>
+                <div class="position">${entry.posicion}º lugar - Premio ${premio}</div>
+                <p class="muted">${votacionSeleccionada?.nombre || "Votación"} · ${eventos.find((ev) => ev.id === eventoId)?.nombre || "Votify"}</p>
                 <div class="meta">
-                  PuntuaciÃ³n final: ${puntuacion} · Emitido el ${fecha}
+                  Puntuación final: ${puntuacion} · Emitido el ${fecha}
                 </div>
               </section>
               <div class="actions">
@@ -595,10 +595,10 @@ function RankingScreen() {
       {ranking.length > 0 && votacionCerrada && (
         <section className={`ranking-final-status ${resultadoFinal ? "published" : "pending"}`}>
           <div>
-            <strong>{resultadoFinal ? "Resultados finales publicados" : "VotaciÃ³n cerrada pendiente de publicaciÃ³n"}</strong>
+            <strong>{resultadoFinal ? "Resultados finales publicados" : "Votación cerrada pendiente de publicación"}</strong>
             <p>
               {resultadoFinal
-                ? "El ranking ya es definitivo y los certificados estÃ¡n disponibles para los ganadores."
+                ? "El ranking ya es definitivo y los certificados están disponibles para los ganadores."
                 : "Revisa el ranking, ajusta el orden si hace falta y publica los resultados finales para activar certificados."}
             </p>
           </div>
@@ -981,7 +981,7 @@ function RankingScreen() {
                       {getPositionBadge(ganador.posicion)}
                       <div>
                         <strong>{ganador.proyectoNombre}</strong>
-                        <span>{ganador.equipoNombre || "Equipo no disponible"} Â· Premio {ganador.tipoPremio}</span>
+                        <span>{ganador.equipoNombre || "Equipo no disponible"} · Premio {ganador.tipoPremio}</span>
                       </div>
                     </div>
 
