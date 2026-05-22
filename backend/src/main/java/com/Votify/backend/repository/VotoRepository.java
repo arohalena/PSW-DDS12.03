@@ -16,6 +16,8 @@ public interface VotoRepository extends JpaRepository<VotoMO, UUID> {
     long countByVotacionProyecto_Votacion_IdAndAnonTokenHash(UUID votacionId, String anonTokenHash);
 
     boolean existsByVotacionProyecto_IdAndAnonTokenHash(UUID votacionProyectoId, String anonTokenHash);
+    
+    boolean existsByUsuario_IdAndVotacionProyecto_Votacion_Id(UUID usuarioId, UUID votacionId);
 
     long countByVotacionProyecto_Id(UUID votacionProyectoId);
 

@@ -21,7 +21,6 @@ import com.Votify.backend.model.ComentarioMO;
 import com.Votify.backend.model.CriterioEvaluacionMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.PuntuacionCriterioMO;
-import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoCriterioMO;
@@ -32,6 +31,8 @@ import com.Votify.backend.service.PuntuacionCriterioService;
 import com.Votify.backend.service.VotacionProyectoService;
 import com.Votify.backend.service.VotoCriterioService;
 import com.Votify.backend.service.VotoService;
+import com.Votify.backend.service.UsuarioService;
+import com.Votify.backend.model.UsuarioMO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,6 +42,7 @@ public class VotoFacade {
 
     private final VotoService votoService;
     private final VotacionProyectoService votacionProyectoService;
+    private final UsuarioService usuarioService;
     private final CriterioEvaluacionService criterioEvaluacionService;
     private final PuntuacionCriterioService puntuacionCriterioService;
     private final VotoCriterioService votoCriterioService;
@@ -48,17 +50,16 @@ public class VotoFacade {
 
     @Transactional
     public VotoMO votarSimple(EmitirVotoSimpleRequest request) {
-        votoService.validarRequestBase(request.votacionProyectoId(), request.anonTokenHash());
-
         VotacionProyectoMO vp = votacionProyectoService.obtener(request.votacionProyectoId());
-        VotacionMO votacion = vp.getVotacion();
+        votoService.validarVoto(
+            request.usuarioId(),
+            vp.getVotacion().getId(),
+            request.votacionProyectoId(),
+            request.anonTokenHash(),
+            request.comentario()
+        );
 
-        votoService.exigirModalidad(votacion, ModalidadVotacionMO.SIMPLE);
-        votoService.validarComentarios(votacion, request.comentario());
-        UsuarioMO usuario = votoService.validarJurado(votacion, request.usuarioId());
-        votoService.validarEstadoYFechas(votacion);
-        votoService.validarAutoVotacion(votacion, vp, request.usuarioId());
-        votoService.validarMaximoYDuplicado(votacion, vp, request.anonTokenHash());
+        UsuarioMO usuario = request.usuarioId() != null ? usuarioService.obtener(request.usuarioId()) : null;
 
         VotoMO guardado = votoService.save(
             new VotoMO(vp, request.anonTokenHash(), usuario, BigDecimal.ONE)
@@ -71,20 +72,20 @@ public class VotoFacade {
 
     @Transactional
     public VotoMO votarPuntos(EmitirVotoPuntosRequest request) {
-        votoService.validarRequestBase(request.votacionProyectoId(), request.anonTokenHash());
         if (request.puntuacion() == null || request.puntuacion() < 1 || request.puntuacion() > 10) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La puntuación debe estar entre 1 y 10.");
         }
 
         VotacionProyectoMO vp = votacionProyectoService.obtener(request.votacionProyectoId());
-        VotacionMO votacion = vp.getVotacion();
+        votoService.validarVoto(
+            request.usuarioId(),
+            vp.getVotacion().getId(),
+            request.votacionProyectoId(),
+            request.anonTokenHash(),
+            request.comentario()
+        );
 
-        votoService.exigirModalidad(votacion, ModalidadVotacionMO.PUNTOS);
-        votoService.validarComentarios(votacion, request.comentario());
-        UsuarioMO usuario = votoService.validarJurado(votacion, request.usuarioId());
-        votoService.validarEstadoYFechas(votacion);
-        votoService.validarAutoVotacion(votacion, vp, request.usuarioId());
-        votoService.validarMaximoYDuplicado(votacion, vp, request.anonTokenHash());
+        UsuarioMO usuario = request.usuarioId() != null ? usuarioService.obtener(request.usuarioId()) : null;
 
         VotoMO guardado = votoService.save(
             new VotoMO(vp, request.anonTokenHash(), usuario, BigDecimal.valueOf(request.puntuacion()))
@@ -99,19 +100,16 @@ public class VotoFacade {
 
     @Transactional
     public VotoMO votarMulticriterio(EmitirEvaluacionRequest request) {
-        votoService.validarRequestBase(request.votacionProyectoId(), request.anonTokenHash());
-
         VotacionProyectoMO vp = votacionProyectoService.obtener(request.votacionProyectoId());
+        votoService.validarVoto(
+            request.usuarioId(),
+            vp.getVotacion().getId(),
+            request.votacionProyectoId(),
+            request.anonTokenHash(),
+            request.comentario()
+        );
+
         VotacionMO votacion = vp.getVotacion();
-
-        votoService.validarComentarios(votacion, request.comentario());
-        votoService.exigirModalidadMulticriterio(votacion);
-
-        UsuarioMO usuario = votoService.validarJurado(votacion, request.usuarioId());
-        votoService.validarEstadoYFechas(votacion);
-        votoService.validarAutoVotacion(votacion, vp, request.usuarioId());
-        votoService.validarMaximoYDuplicado(votacion, vp, request.anonTokenHash());
-
         List<CriterioEvaluacionMO> criterios = criterioEvaluacionService.findByEventoId(votacion.getEvento().getId());
         if (criterios.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La votación no tiene criterios configurados.");
@@ -154,9 +152,8 @@ public class VotoFacade {
         if (votacion.getModalidad() == ModalidadVotacionMO.MULTICRITERIO) {
             total = total.divide(BigDecimal.valueOf(criterios.size()), 2, RoundingMode.HALF_UP);
         }
-
         VotoMO guardado = votoService.save(
-            new VotoMO(vp, request.anonTokenHash(), usuario, total)
+            new VotoMO(vp, request.anonTokenHash(), usuarioService.obtener(request.usuarioId()), total)
         );
 
         for (CriterioEvaluacionMO c : criterios) {
