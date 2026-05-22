@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
-import { Trophy, Medal, Award, Download, ArrowUp, ArrowDown, Save } from "lucide-react";
+import { Trophy, Medal, Award, Download, ArrowUp, ArrowDown, Save, FileText, Star, CheckCircle } from "lucide-react";
 import { getEventos } from "../../services/eventoService";
-import { getVotacionesByEvento } from "../../services/votacionService";
+import { getVotacionesByEvento, publicarResultadosVotacion } from "../../services/votacionService";
 import {
   getRanking,
   getCriteriosByEvento,
@@ -26,6 +26,7 @@ function RankingScreen() {
   const [modo, setModo] = useState("AUTOMATICO");
   const [ordenSucio, setOrdenSucio] = useState(false);
   const [guardandoOrden, setGuardandoOrden] = useState(false);
+  const [publicandoResultados, setPublicandoResultados] = useState(false);
   const [aviso, setAviso] = useState("");
 
   const usuario = useMemo(() => getUsuarioLogueado(), []);
@@ -128,6 +129,13 @@ function RankingScreen() {
   const esSimple = modalidad === "SIMPLE";
   const esPuntos = modalidad === "PUNTOS";
   const esMixta  = votacionSeleccionada?.tipo === "MIXTA";
+  const votacionCerrada = votacionSeleccionada?.estadoActual === "CERRADA" || votacionSeleccionada?.estado === "CERRADA" || ranking[0]?.votacionCerrada;
+  const resultadosPublicados = Boolean(votacionSeleccionada?.resultadosPublicados || ranking[0]?.resultadosPublicados);
+  const resultadoFinal = Boolean(votacionCerrada && resultadosPublicados);
+  const ganadores = useMemo(
+    () => ranking.filter((entry) => entry.ganador || entry.posicion <= 3).slice(0, 3),
+    [ranking]
+  );
 
   const selectedProject = useMemo(() => {
     return ranking.find((entry) => entry.proyectoId === selectedProjectId) || ranking[0] || null;
@@ -216,6 +224,104 @@ function RankingScreen() {
     }
   };
 
+  const handlePublicarResultados = async () => {
+    if (!puedeEditar || !votacionId || !votacionCerrada) return;
+
+    try {
+      setPublicandoResultados(true);
+      setError("");
+      setAviso("");
+
+      const votacionActualizada = await publicarResultadosVotacion(votacionId);
+      setVotaciones((prev) =>
+        prev.map((v) => (v.id === votacionId ? { ...v, ...votacionActualizada } : v))
+      );
+
+      const data = await getRanking(eventoId, votacionId);
+      setRanking(data);
+      setAviso("Resultados finales publicados. Ya puedes generar certificados para los ganadores.");
+    } catch (err) {
+      setError(err.message || "No se pudieron publicar los resultados");
+    } finally {
+      setPublicandoResultados(false);
+    }
+  };
+
+  const generarCertificado = (entry) => {
+    const fecha = new Date().toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const premio = entry.tipoPremio || (entry.posicion === 1 ? "ORO" : entry.posicion === 2 ? "PLATA" : "BRONCE");
+    const puntuacion = formatearNumero(entry.puntuacionTotal ?? entry.totalVotos ?? 0);
+    const ventana = window.open("", "_blank", "width=1000,height=720");
+
+    if (!ventana) {
+      setError("No se pudo abrir la vista del certificado. Revisa si el navegador bloqueÃ³ la ventana emergente.");
+      return;
+    }
+
+    ventana.document.write(`
+      <!doctype html>
+      <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Certificado ${entry.proyectoNombre}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { margin: 0; font-family: Georgia, "Times New Roman", serif; background: #f3f4f6; color: #111827; }
+            .page { min-height: 100vh; display: grid; place-items: center; padding: 32px; }
+            .certificate { width: min(980px, 100%); aspect-ratio: 1.414 / 1; background: linear-gradient(135deg, #f8fafc, #eef2ff); border: 10px double #4f46e5; padding: 56px; text-align: center; box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18); }
+            .seal { width: 92px; height: 92px; border-radius: 999px; margin: 0 auto 22px; display: grid; place-items: center; background: #facc15; color: #713f12; font-size: 42px; font-family: Arial, sans-serif; font-weight: 800; }
+            h1 { margin: 0; font-size: 42px; color: #312e81; }
+            .line { width: 140px; height: 4px; background: #4f46e5; margin: 18px auto 30px; border-radius: 999px; }
+            .muted { color: #4b5563; font-size: 19px; margin: 0 0 14px; }
+            .project { margin: 18px auto; padding: 22px; background: white; border: 1px solid #c7d2fe; border-radius: 14px; max-width: 680px; }
+            .project strong { display: block; color: #4338ca; font-size: 34px; margin-bottom: 8px; }
+            .project span { font-family: Arial, sans-serif; font-size: 18px; color: #374151; }
+            .position { font-size: 30px; font-weight: 800; color: #111827; margin: 14px 0 8px; font-family: Arial, sans-serif; }
+            .meta { margin-top: 32px; font-family: Arial, sans-serif; color: #374151; font-size: 15px; }
+            .actions { margin-top: 20px; text-align: center; }
+            button { border: 0; border-radius: 10px; padding: 12px 18px; background: #4f46e5; color: white; font: 600 14px Arial, sans-serif; cursor: pointer; }
+            @media print {
+              body { background: white; }
+              .page { padding: 0; }
+              .certificate { width: 100vw; height: 70.7vw; box-shadow: none; border-width: 8px; }
+              .actions { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <main>
+              <section class="certificate">
+                <div class="seal">${entry.posicion}</div>
+                <h1>Certificado de Reconocimiento</h1>
+                <div class="line"></div>
+                <p class="muted">Se otorga a</p>
+                <div class="project">
+                  <strong>${entry.proyectoNombre}</strong>
+                  <span>${entry.equipoNombre || "Equipo no disponible"}</span>
+                </div>
+                <p class="muted">por alcanzar el</p>
+                <div class="position">${entry.posicion}º lugar - Premio ${premio}</div>
+                <p class="muted">${votacionSeleccionada?.nombre || "Votación"} · ${eventos.find((ev) => ev.id === eventoId)?.nombre || "Votify"}</p>
+                <div class="meta">
+                  Puntuación final: ${puntuacion} · Emitido el ${fecha}
+                </div>
+              </section>
+              <div class="actions">
+                <button onclick="window.print()">Descargar / imprimir PDF</button>
+              </div>
+            </main>
+          </div>
+        </body>
+      </html>
+    `);
+    ventana.document.close();
+  };
+  
   const getPositionBadge = (posicion) => {
     if (posicion === 1) {
       return (
@@ -375,6 +481,18 @@ function RankingScreen() {
         </div>
 
         <div className="ranking-header-actions">
+          {puedeEditar && votacionCerrada && !resultadosPublicados && (
+            <button
+              type="button"
+              className="primary-btn ranking-action-btn"
+              onClick={handlePublicarResultados}
+              disabled={publicandoResultados || ranking.length === 0}
+            >
+              <CheckCircle size={16} />
+              {publicandoResultados ? "Publicando..." : "Publicar resultados finales"}
+            </button>
+          )}
+
           <button
             type="button"
             className="primary-btn ranking-action-btn"
@@ -473,6 +591,20 @@ function RankingScreen() {
 
       {aviso && <div className="feedback-card">{aviso}</div>}
       {error && <div className="feedback-card error-box">{error}</div>}
+
+      {ranking.length > 0 && votacionCerrada && (
+        <section className={`ranking-final-status ${resultadoFinal ? "published" : "pending"}`}>
+          <div>
+            <strong>{resultadoFinal ? "Resultados finales publicados" : "Votación cerrada pendiente de publicación"}</strong>
+            <p>
+              {resultadoFinal
+                ? "El ranking ya es definitivo y los certificados están disponibles para los ganadores."
+                : "Revisa el ranking, ajusta el orden si hace falta y publica los resultados finales para activar certificados."}
+            </p>
+          </div>
+          {resultadoFinal && <CheckCircle size={24} />}
+        </section>
+      )}
 
       {!loading && votaciones.length === 0 && (
         <div className="feedback-card warning-box">
@@ -807,6 +939,65 @@ function RankingScreen() {
               </aside>
             )}
           </section>
+
+          {resultadoFinal && ganadores.length > 0 && (
+            <section className="ranking-awards-panel">
+              <div className="ranking-awards-header">
+                <div>
+                  <h2>Premios y certificados</h2>
+                  <p>Genera certificados para los ganadores de la votaciÃ³n publicada.</p>
+                </div>
+                <Award size={28} />
+              </div>
+
+              <div className="ranking-podium">
+                {[2, 1, 3].map((posicion) => {
+                  const ganador = ganadores.find((entry) => entry.posicion === posicion);
+                  if (!ganador) return null;
+
+                  return (
+                    <article key={ganador.votacionProyectoId} className={`ranking-podium-card position-${posicion}`}>
+                      <div className="ranking-podium-medal">
+                        {getPositionBadge(posicion)}
+                      </div>
+                      <div className="ranking-podium-step">#{posicion}</div>
+                      <div className="ranking-podium-info">
+                        <strong>{ganador.proyectoNombre}</strong>
+                        <span>{ganador.equipoNombre || "Equipo no disponible"}</span>
+                        <div>
+                          <Star size={14} />
+                          {formatearNumero(ganador.puntuacionTotal ?? ganador.totalVotos)}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="ranking-certificate-list">
+                {ganadores.map((ganador) => (
+                  <article key={ganador.votacionProyectoId} className="ranking-certificate-row">
+                    <div className="ranking-certificate-main">
+                      {getPositionBadge(ganador.posicion)}
+                      <div>
+                        <strong>{ganador.proyectoNombre}</strong>
+                        <span>{ganador.equipoNombre || "Equipo no disponible"} · Premio {ganador.tipoPremio}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="primary-btn ranking-action-btn"
+                      onClick={() => generarCertificado(ganador)}
+                    >
+                      <FileText size={16} />
+                      Generar certificado
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
     </main>

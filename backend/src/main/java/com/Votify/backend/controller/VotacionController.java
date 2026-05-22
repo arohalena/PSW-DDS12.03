@@ -75,4 +75,18 @@ public class VotacionController extends GenericController<VotacionMO> {
         return votacionService.cerrar(id);
         
     }
+
+    @PostMapping("/{id}/publicar-resultados")
+    public VotacionMO publicarResultados(@PathVariable UUID id) {
+
+        return votacionService.publicarResultados(id);
+
+    }
+
+    @PostMapping("/{id}/retirar-resultados")
+    public VotacionMO retirarPublicacionResultados(@PathVariable UUID id) {
+
+        return votacionService.retirarPublicacionResultados(id);
+
+    }
 }

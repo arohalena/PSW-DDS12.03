@@ -19,6 +19,7 @@ import "../../styles/events.css";
 const tiposVotacion = [
   { value: "POPULAR", label: "Popular" },
   { value: "JURADO", label: "Jurado" },
+  { value: "MIXTA", label: "Mixta" },
 ];
 
 const modalidades = [
@@ -76,12 +77,20 @@ function createVotingConfig() {
     id: crypto.randomUUID(),
     nombre: "Nueva votación",
     tipo: "POPULAR",
+    pesoPorcentajePopular: 50,
+    pesoPorcentajeJurado: 50,
     modalidad: "SIMPLE",
     maxSelecciones: 1,
     comentariosActivos: true,
     comentarioObligatorio: true,
     criteria: [],
   };
+}
+
+function sanitizeWeight(value) {
+  const number = Number(value);
+  if (Number.isNaN(number)) return 0;
+  return Math.min(100, Math.max(0, number));
 }
 
 function CreateEventScreen() {
@@ -299,6 +308,15 @@ function CreateEventScreen() {
         return "Todas las votaciones deben tener nombre.";
       }
 
+      if (config.tipo === "MIXTA") {
+        const popular = Number(config.pesoPorcentajePopular || 0);
+        const jurado = Number(config.pesoPorcentajeJurado || 0);
+
+        if (popular + jurado !== 100) {
+          return `La votacion mixta "${config.nombre}" debe sumar 100% entre voto popular y jurado.`;
+        }
+      }
+
       if (needsCriteria(config.modalidad)) {
         const validCriteria = config.criteria.filter((criterion) => criterion.nombre.trim());
 
@@ -353,6 +371,8 @@ function CreateEventScreen() {
           eventoId: eventoCreado.id,
           nombre: config.nombre.trim(),
           tipo: config.tipo,
+          pesoPorcentajePopular: config.tipo === "MIXTA" ? Number(config.pesoPorcentajePopular) : null,
+          pesoPorcentajeJurado: config.tipo === "MIXTA" ? Number(config.pesoPorcentajeJurado) : null,
           modalidad: config.modalidad,
           estado: "ABIERTA",
           maxSelecciones: Number(config.maxSelecciones || 1),
@@ -659,6 +679,44 @@ function CreateEventScreen() {
                         />
                       </label>
                     </div>
+                    
+                    {config.tipo === "MIXTA" ? (
+                      <div className="event-grid two-columns">
+                        <label className="event-field">
+                          <span>Peso voto popular (%)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={config.pesoPorcentajePopular}
+                            onChange={(event) => {
+                              const value = sanitizeWeight(event.target.value);
+                              updateVotingConfig(config.id, {
+                                pesoPorcentajePopular: value,
+                                pesoPorcentajeJurado: 100 - value,
+                              });
+                            }}
+                          />
+                        </label>
+
+                        <label className="event-field">
+                          <span>Peso jurado (%)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={config.pesoPorcentajeJurado}
+                            onChange={(event) => {
+                              const value = sanitizeWeight(event.target.value);
+                              updateVotingConfig(config.id, {
+                                pesoPorcentajeJurado: value,
+                                pesoPorcentajePopular: 100 - value,
+                              });
+                            }}
+                          />
+                        </label>
+                      </div>
+                    ) : null}
                     
                     <div className="voting-comments-config">
                       <label className="voting-toggle-row">

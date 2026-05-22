@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.EquipoMO;
+import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.ModoRankingMO;
 import com.Votify.backend.model.RolMO;
@@ -24,7 +25,12 @@ import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoMO;
+<<<<<<< HEAD
 import com.Votify.backend.repository.EquipoRepository;
+=======
+import com.Votify.backend.repository.CriterioEvaluacionRepository;
+import com.Votify.backend.repository.PuntuacionCriterioRepository;
+>>>>>>> a270b1b02eca3a5f507424dd86870cd71b0a47bc
 import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
@@ -42,7 +48,6 @@ public class RankingService {
 
     private final VotacionProyectoRepository votacionProyectoRepository;
     private final VotoRepository votoRepository;
-    private final EquipoRepository equipoRepository;
     private final VotacionRepository votacionRepository;
     private final UsuarioRepository usuarioRepository;
 
@@ -98,10 +103,11 @@ public class RankingService {
         }
 
         if (modo == ModoRankingMO.MANUAL) {
-            return aplicarOrdenManual(ranking, votacionId);
+            List<Map<String, Object>> rankingManual = aplicarOrdenManual(ranking, votacionId);
+            return marcarResultadoFinal(rankingManual, votacion);
         }
 
-        return ordenarYNumerar(ranking);
+        return marcarResultadoFinal(ordenarYNumerar(ranking), votacion);
     }
 
     @Transactional
@@ -292,7 +298,7 @@ public class RankingService {
         entry.put("proyectoNombre", vp.getProyecto().getNombre());
         entry.put("votacionProyectoId", vp.getId());
 
-        EquipoMO equipo = equipoRepository.findByProyecto_Id(vp.getProyecto().getId());
+        EquipoMO equipo = vp.getProyecto().getEquipo();
         entry.put("equipoNombre", equipo != null ? equipo.getNombre() : null);
 
         entry.put("votantesActivos", votantesActivos);
@@ -312,5 +318,32 @@ public class RankingService {
         }
 
         return ranking;
+    }
+
+    private List<Map<String, Object>> marcarResultadoFinal(List<Map<String, Object>> ranking, VotacionMO votacion) {
+        boolean cerrada = votacion.getEstadoActual() == EstadoVotacionMO.CERRADA;
+        boolean publicado = votacion.isResultadosPublicados();
+        boolean resultadoFinal = cerrada && publicado;
+
+        for (Map<String, Object> entry : ranking) {
+            int posicion = ((Number) entry.get("posicion")).intValue();
+            entry.put("votacionCerrada", cerrada);
+            entry.put("resultadosPublicados", publicado);
+            entry.put("resultadoFinal", resultadoFinal);
+            entry.put("fechaPublicacionResultados", votacion.getFechaPublicacionResultados());
+            entry.put("ganador", resultadoFinal && posicion <= 3);
+            entry.put("tipoPremio", resultadoFinal && posicion <= 3 ? tipoPremio(posicion) : null);
+        }
+
+        return ranking;
+    }
+
+    private String tipoPremio(int posicion) {
+        return switch (posicion) {
+            case 1 -> "ORO";
+            case 2 -> "PLATA";
+            case 3 -> "BRONCE";
+            default -> null;
+        };
     }
 }
