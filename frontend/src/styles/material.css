@@ -7,14 +7,16 @@
   --success: #10b981;
 }
 
-.container {
+.project-materials {
   font-family: 'Inter', sans-serif;
   background: white;
   padding: 32px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  max-width: auto;
-  margin: auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .header {

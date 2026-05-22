@@ -81,7 +81,7 @@ export function ProjectMaterials ({ proyectoId }) {
   };
 
   return (
-    <div className="container">
+    <div className="project-materials">
       <header className="header">
         <div className="title-section">
           <h2>Material del Proyecto</h2>
