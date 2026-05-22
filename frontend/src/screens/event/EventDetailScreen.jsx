@@ -33,7 +33,7 @@ import {
   pausarVotacion,
   reanudarVotacion,
 } from "../../services/votacionService";
-import { esOrganizador } from "../../services/sessionService";
+import { esOrganizador, getEventAccessStorageKey } from "../../services/sessionService";
 import CreateVotingModal from "./CreateVotingModal";
 import EventProjectCard from "./EventProjectCard";
 import "../../styles/events.css";
@@ -94,7 +94,7 @@ function getEventCode(evento) {
 
 function hasEventAccess(eventoId, evento, puedeGestionar) {
   if (!isPrivateEvent(evento) || puedeGestionar) return true;
-  return localStorage.getItem(`votify_event_access_${eventoId}`) === "true";
+  return localStorage.getItem(getEventAccessStorageKey(eventoId)) === "true";
 }
 
 function votingLabel(votacion) {
@@ -156,7 +156,7 @@ function EventAccessModal({ event, onClose, onSuccess }) {
       const expectedCode = getEventCode(event);
 
       if (expectedCode && code.trim().toUpperCase() === expectedCode.toUpperCase()) {
-        localStorage.setItem(`votify_event_access_${event.id}`, "true");
+        localStorage.setItem(getEventAccessStorageKey(event.id), "true");
         onSuccess();
         return;
       }
@@ -164,7 +164,7 @@ function EventAccessModal({ event, onClose, onSuccess }) {
       const eventoPorCodigo = await getEventoByCodigo(code.trim());
 
       if (String(eventoPorCodigo.id) === String(event.id)) {
-        localStorage.setItem(`votify_event_access_${event.id}`, "true");
+        localStorage.setItem(getEventAccessStorageKey(event.id), "true");
         onSuccess();
         return;
       }

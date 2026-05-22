@@ -1,4 +1,5 @@
 import { getEventoByCodigo } from "../../services/eventoService";
+import { getEventAccessStorageKey } from "../../services/sessionService";
 
 import { useState } from "react";
 import {
@@ -30,7 +31,7 @@ export default function EventAccessModal({ event, onClose, onSuccess }) {
       const expectedCode = getEventCode(event);
 
       if (expectedCode && code.trim().toUpperCase() === expectedCode.toUpperCase()) {
-        localStorage.setItem(`votify_event_access_${event.id}`, "true");
+        localStorage.setItem(getEventAccessStorageKey(event.id), "true");
         onSuccess();
         return;
       }
@@ -38,7 +39,7 @@ export default function EventAccessModal({ event, onClose, onSuccess }) {
       const eventoPorCodigo = await getEventoByCodigo(code.trim());
 
       if (String(eventoPorCodigo.id) === String(event.id)) {
-        localStorage.setItem(`votify_event_access_${event.id}`, "true");
+        localStorage.setItem(getEventAccessStorageKey(event.id), "true");
         onSuccess();
         return;
       }

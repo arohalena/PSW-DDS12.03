@@ -13,7 +13,7 @@ import {
 import { getEventos } from "../../services/eventoService";
 import { getProyectosByEvento } from "../../services/proyectoService";
 import { getVotantesPorEvento } from "../../services/votacionService";
-import { esOrganizador } from "../../services/sessionService";
+import { esOrganizador, getEventAccessStorageKey } from "../../services/sessionService";
 import EventAccessModal from "./EventAccessModal";
 import "../../styles/events.css";
 
@@ -68,7 +68,7 @@ function isPrivateEvent(evento) {
 
 function hasEventAccess(evento, puedeGestionarEventos) {
   if (!isPrivateEvent(evento) || puedeGestionarEventos) return true;
-  return localStorage.getItem(`votify_event_access_${evento.id}`) === "true";
+  return localStorage.getItem(getEventAccessStorageKey(evento.id)) === "true";
 }
 
 

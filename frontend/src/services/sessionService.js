@@ -52,3 +52,7 @@ export function getVotingToken() {
 
   return token;
 }
+
+export function getEventAccessStorageKey(eventoId) {
+  return `votify_event_access_${getVotingToken()}_${eventoId}`;
+}
