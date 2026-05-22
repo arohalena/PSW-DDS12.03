@@ -25,7 +25,6 @@ import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
-import com.Votify.backend.repository.EquipoRepository;
 import com.Votify.backend.repository.PuntuacionCriterioRepository;
 import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
@@ -42,7 +41,6 @@ public class RankingService {
     private final PuntuacionCriterioRepository puntuacionRepository;
     private final VotacionProyectoRepository votacionProyectoRepository;
     private final VotoRepository votoRepository;
-    private final EquipoRepository equipoRepository;
     private final VotacionRepository votacionRepository;
     private final UsuarioRepository usuarioRepository;
 
@@ -380,7 +378,7 @@ public class RankingService {
         entry.put("proyectoNombre", vp.getProyecto().getNombre());
         entry.put("votacionProyectoId", vp.getId());
 
-        EquipoMO equipo = equipoRepository.findByProyecto_Id(vp.getProyecto().getId());
+        EquipoMO equipo = vp.getProyecto().getEquipo();
         entry.put("equipoNombre", equipo != null ? equipo.getNombre() : null);
 
         entry.put("votantesActivos", votantesActivos);

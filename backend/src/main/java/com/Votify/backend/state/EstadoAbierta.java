@@ -18,13 +18,18 @@ public class EstadoAbierta extends EstadoVotacionBase {
 
     @Override
     public void pausar(VotacionMO votacion) {
-        votacion.cambiarEstado(EstadoVotacionMO.PAUSADA);
+        cambiarEstado(votacion, EstadoVotacionMO.PAUSADA);
+    }
+
+    @Override
+    public void cerrar(VotacionMO votacion) {
+        cambiarEstado(votacion, EstadoVotacionMO.CERRADA);
     }
 
     @Override
     public void emitirVoto(VotacionMO votacion) {
         if (verificarExpiracion(votacion)) {
-            votoNoPermitido("La votación ya ha finalizado.");
+            votacion.emitirVoto();
         }
     }
 
@@ -32,7 +37,7 @@ public class EstadoAbierta extends EstadoVotacionBase {
     public boolean verificarExpiracion(VotacionMO votacion) {
         OffsetDateTime fin = votacion.getFin();
         if (fin != null && OffsetDateTime.now().isAfter(fin)) {
-            votacion.cambiarEstado(EstadoVotacionMO.CERRADA);
+            cambiarEstado(votacion, EstadoVotacionMO.CERRADA);
             return true;
         }
 

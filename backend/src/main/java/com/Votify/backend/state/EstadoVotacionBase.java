@@ -8,6 +8,10 @@ import com.Votify.backend.model.VotacionMO;
 
 abstract class EstadoVotacionBase implements EstadoVotacion {
 
+    protected void cambiarEstado(VotacionMO votacion, EstadoVotacionMO nuevoEstado) {
+        votacion.cambiarEstado(nuevoEstado);
+    }
+    
     protected void transicionNoPermitida(String mensaje) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, mensaje);
     }
@@ -33,12 +37,17 @@ abstract class EstadoVotacionBase implements EstadoVotacion {
 
      @Override
     public void cerrar(VotacionMO votacion) {
-        votacion.cambiarEstado(EstadoVotacionMO.CERRADA);
+        transicionNoPermitida("No se puede cerrar una votacion en estado " + tipo() + ".");
     }
 
     @Override
     public void publicarResultados(VotacionMO votacion) {
         transicionNoPermitida("Solo se pueden publicar resultados de una votación cerrada.");
+    }
+
+    @Override
+    public void emitirVoto(VotacionMO votacion) {
+        votoNoPermitido("No se puede votar en estado " + tipo() + ".");
     }
 
     @Override

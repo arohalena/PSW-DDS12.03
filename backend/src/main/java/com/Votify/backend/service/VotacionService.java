@@ -291,6 +291,8 @@ public class VotacionService extends GenericService<VotacionMO> {
         VotacionMO votacion = votacionRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada."));
 
+        validarVotacionSinVotos(id);
+
         for (VotacionProyectoMO votacionProyecto : votacionProyectoRepository.findByVotacion_Id(id)) {
             comentarioRepository.deleteAll(
                 comentarioRepository.findByVotacionProyecto_Id(votacionProyecto.getId())
@@ -314,8 +316,30 @@ public class VotacionService extends GenericService<VotacionMO> {
         votacionRepository.delete(votacion);
     }
 
+    public boolean tieneVotos(UUID id) {
+        return votoRepository.countByVotacionProyecto_Votacion_Id(id) > 0;
+    }
+
+    public void validarVotacionSinVotos(UUID id) {
+        if (tieneVotos(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "No se puede eliminar una votacion con votos emitidos. Los votos son inmutables.");
+        }
+    }
+
+    public void validarEventoSinVotos(UUID eventoId) {
+        for (VotacionMO votacion : votacionRepository.findByEvento_Id(eventoId)) {
+            if (tieneVotos(votacion.getId())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede eliminar un evento con votaciones que ya tienen votos emitidos.");
+            }
+        }
+    }
+   
     @Transactional
     public void eliminarTodasDeEvento(UUID eventoId) {
+        validarEventoSinVotos(eventoId);
+        
         for (VotacionMO v : votacionRepository.findByEvento_Id(eventoId)) {
             delete(v.getId());
         }

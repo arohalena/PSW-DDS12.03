@@ -593,16 +593,28 @@ function UserManagementScreen() {
     });
   }, [competidores, search, asignacionesPorCompetidor]);
 
+  const getProyectosDelEquipo = (equipo) => {
+    return proyectos.filter(
+      (proyecto) =>
+        String(proyecto.equipo?.id) === String(equipo.id) ||
+        String(equipo.proyecto?.id) === String(proyecto.id)
+    );
+  };
+  
   const filteredEquipos = useMemo(() => {
     return equipos.filter((equipo) => {
       const miembrosTexto = (asignacionesPorEquipo[equipo.id] || [])
         .map((a) => `${a.competidor?.nombre || ""} ${a.competidor?.email || ""}`)
         .join(" ");
 
-      const text = `${equipo.nombre || ""} ${equipo.evento?.nombre || ""} ${equipo.proyecto?.nombre || ""} ${miembrosTexto}`.toLowerCase();
+      const proyectosTexto = getProyectosDelEquipo(equipo)
+        .map((proyecto) => proyecto.nombre)
+        .join(" ");
+
+      const text = `${equipo.nombre || ""} ${equipo.evento?.nombre || ""} ${proyectosTexto} ${miembrosTexto}`.toLowerCase();
       return text.includes(search.toLowerCase());
     });
-  }, [equipos, search, asignacionesPorEquipo]);
+  }, [equipos, search, asignacionesPorEquipo, proyectos]);
 
   async function handleSubmitUser(data) {
     if (editingUser) {
@@ -858,6 +870,7 @@ async function handleDeleteEquipo(equipo) {
               <div className="equipos-grid">
                 {filteredEquipos.map((equipo) => {
                   const asignaciones = asignacionesPorEquipo[equipo.id] || [];
+                  const proyectosEquipo = getProyectosDelEquipo(equipo);
 
                   return (
                     <article className="equipo-card" key={equipo.id}>
@@ -870,8 +883,12 @@ async function handleDeleteEquipo(equipo) {
                       </div>
 
                       <div className="equipo-project">
-                        <span>Proyecto asociado</span>
-                        <strong>{equipo.proyecto?.nombre || "Sin proyecto"}</strong>
+                        <span>Proyectos asociados</span>
+                        {proyectosEquipo.length > 0 ? (
+                          <strong>{proyectosEquipo.map((proyecto) => proyecto.nombre).join(", ")}</strong>
+                        ) : (
+                          <strong>Sin proyecto</strong>
+                        )}
                       </div>
 
                       <div className="equipo-members">

@@ -13,6 +13,9 @@ public final class EstadoVotacionFactory {
     }
 
     public static EstadoVotacion desde(EstadoVotacionMO estado) {
+        if (estado == null) {
+            return PENDIENTE;
+        }
         return switch (estado) {
             case PENDIENTE -> PENDIENTE;
             case ABIERTA -> ABIERTA;

@@ -374,6 +374,8 @@ function ProjectVotingDetailScreen() {
     if (!proyectoBase) return null;
 
     const equipo =
+      proyectoBase.equipo ||
+      equipos.find((eq) => String(eq.id) === String(proyectoBase.equipo?.id)) ||
       equipos.find((eq) => String(eq.proyecto?.id) === String(proyectoId)) ||
       null;
 

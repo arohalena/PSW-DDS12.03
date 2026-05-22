@@ -56,7 +56,16 @@ export async function deleteEvento(id) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo eliminar el evento");
+    throw new Error(await extraerMensajeError(response, "No se pudo eliminar el evento"));
+  }
+}
+
+async function extraerMensajeError(response, fallback) {
+  const texto = await response.text();
+  try {
+    const json = JSON.parse(texto);
+    return json.message || json.error || fallback;
+  } catch {
+    return texto || fallback;
   }
 }
