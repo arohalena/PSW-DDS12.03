@@ -25,12 +25,7 @@ import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoMO;
-<<<<<<< HEAD
 import com.Votify.backend.repository.EquipoRepository;
-=======
-import com.Votify.backend.repository.CriterioEvaluacionRepository;
-import com.Votify.backend.repository.PuntuacionCriterioRepository;
->>>>>>> a270b1b02eca3a5f507424dd86870cd71b0a47bc
 import com.Votify.backend.repository.UsuarioRepository;
 import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
@@ -48,6 +43,7 @@ public class RankingService {
 
     private final VotacionProyectoRepository votacionProyectoRepository;
     private final VotoRepository votoRepository;
+    private final EquipoRepository equipoRepository;
     private final VotacionRepository votacionRepository;
     private final UsuarioRepository usuarioRepository;
 
@@ -203,7 +199,6 @@ public class RankingService {
 
             List<VotoMO> todosLosVotos = votoRepository.findByVotacionProyecto_Id(vp.getId());
 
-            // Separar votos de jurado
             List<VotoMO> votosJurado  = new ArrayList<>();
             List<VotoMO> votosPopular = new ArrayList<>();
 
@@ -217,9 +212,7 @@ public class RankingService {
                 }
             }
 
-            // Calcular puntuación popular
             double puntosPopular = calcularPuntuacionVotos(votosPopular, votacion.getModalidad());
-            // Calcular puntuación jurado
             double puntosJurado  = calcularPuntuacionVotos(votosJurado,  votacion.getModalidad());
 
             double puntuacionTotal = (puntosPopular * pesoPopular / 100.0) + (puntosJurado * pesoJurado / 100.0);
@@ -240,7 +233,6 @@ public class RankingService {
         return ranking;
     }
 
-    // Calcular la puntuación de un conjunto de votos según la modalidad
     private double calcularPuntuacionVotos(List<VotoMO> votos, ModalidadVotacionMO modalidad) {
         if (votos.isEmpty()) return 0;
 
