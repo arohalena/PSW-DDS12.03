@@ -993,6 +993,7 @@
   background: #ffffff;
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
   transition: 0.18s ease;
+  cursor: pointer;
 }
 
 .project-pro-card:hover {

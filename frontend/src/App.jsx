@@ -109,6 +109,15 @@ function App() {
           />
 
           <Route
+            path="/proyectos/:projectId"
+            element={
+              <PrivatePage>
+                <ProjectDetailScreen />
+              </PrivatePage>
+            }
+          />
+
+          <Route
             path="/eventos/:eventoId/votaciones/:votingId/proyectos/:proyectoId/votar"
             element={
               <PrivatePage roles={["JURADO", "COMPETIDOR", "PUBLICO", "ESPECTADOR", "ORGANIZADOR"]}>

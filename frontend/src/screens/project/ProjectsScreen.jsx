@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CheckCircle,
   Edit3,
@@ -561,6 +562,7 @@ function ConfirmModal({ open, title, message, warning, onCancel, onConfirm }) {
 }
 
 function ProjectsScreen() {
+  const navigate = useNavigate();
   const [proyectos, setProyectos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [eventos, setEventos] = useState([]);
@@ -677,6 +679,17 @@ function ProjectsScreen() {
       withVoting: enrichedProjects.filter((p) => p.relations.length > 0).length,
     };
   }, [enrichedProjects]);
+
+  function goToProjectDetail(proyecto) {
+    const eventoId = proyecto.evento?.id;
+
+    if (eventoId) {
+      navigate(`/eventos/${eventoId}/proyectos/${proyecto.id}`);
+      return;
+    }
+
+    navigate(`/proyectos/${proyecto.id}`);
+  }
 
   async function handleSubmitProject(form) {
     try {
@@ -867,7 +880,19 @@ function ProjectsScreen() {
         ) : (
           <div className="projects-pro-grid">
             {filteredProjects.map((proyecto) => (
-              <article className="project-pro-card" key={proyecto.id}>
+              <article
+                className="project-pro-card"
+                key={proyecto.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => goToProjectDetail(proyecto)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    goToProjectDetail(proyecto);
+                  }
+                }}
+              >
                 <div className="project-pro-card-header">
                   <div className="project-pro-avatar">
                     {proyecto.nombre?.charAt(0)?.toUpperCase() || "P"}
@@ -913,7 +938,8 @@ function ProjectsScreen() {
                     <button
                       type="button"
                       className="project-edit-btn"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setEditingProject(proyecto);
                         setProjectModalOpen(true);
                       }}
@@ -925,7 +951,10 @@ function ProjectsScreen() {
                     <button
                       type="button"
                       className="project-assign-btn"
-                      onClick={() => setParticipationProject(proyecto)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setParticipationProject(proyecto);
+                      }}
                     >
                       <Link2 size={15} />
                       Participación
@@ -933,7 +962,10 @@ function ProjectsScreen() {
                     <button
                       type="button"
                       className="project-danger-btn"
-                      onClick={() => setConfirmDeleteProject(proyecto)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDeleteProject(proyecto);
+                      }}
                     >
                       <Trash2 size={15} />
                       Eliminar
