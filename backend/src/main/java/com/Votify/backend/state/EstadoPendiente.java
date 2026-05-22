@@ -13,20 +13,22 @@ public class EstadoPendiente extends EstadoVotacionBase{
 
     @Override
     public void abrir(VotacionMO votacion) {
-        votacion.cambiarEstado(EstadoVotacionMO.ABIERTA);
+        cambiarEstado(votacion, EstadoVotacionMO.ABIERTA);
     }
 
     @Override
     public void cerrar(VotacionMO votacion) {
-        votacion.cambiarEstado(EstadoVotacionMO.CERRADA);
+        cambiarEstado(votacion, EstadoVotacionMO.CERRADA);
     }
 
     @Override
     public void emitirVoto(VotacionMO votacion) {
-        verificarExpiracion(votacion);
-        if (votacion.getEstado() != EstadoVotacionMO.ABIERTA) {
-            votoNoPermitido("La votación todavía no ha comenzado.");
+        if (verificarExpiracion(votacion)) {
+            votacion.emitirVoto();
+            return;
         }
+
+        votoNoPermitido("La votacion todavia no ha comenzado.");
     }
 
     @Override
@@ -34,12 +36,12 @@ public class EstadoPendiente extends EstadoVotacionBase{
         OffsetDateTime ahora = OffsetDateTime.now();
 
         if (votacion.getFin() != null && ahora.isAfter(votacion.getFin())) {
-            votacion.cambiarEstado(EstadoVotacionMO.CERRADA);
+            cambiarEstado(votacion, EstadoVotacionMO.CERRADA);
             return true;
         }
 
         if (votacion.getInicio() != null && !ahora.isBefore(votacion.getInicio())) {
-            votacion.cambiarEstado(EstadoVotacionMO.ABIERTA);
+            cambiarEstado(votacion, EstadoVotacionMO.ABIERTA);
             return true;
         }
 

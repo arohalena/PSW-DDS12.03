@@ -114,7 +114,10 @@ public class VotoService extends GenericService<VotoMO> {
         Optional<CompetidorMO> competidorOpt = competidorService.findByUsuarioIdOpt(usuarioId);
         if (competidorOpt.isEmpty()) return;
 
-        EquipoMO equipo = equipoService.findByProyectoId(vp.getProyecto().getId());
+        EquipoMO equipo = vp.getProyecto().getEquipo();
+        if (equipo == null) {
+            equipo = equipoService.findByProyectoId(vp.getProyecto().getId());
+        }
         if (equipo == null) return;
 
         boolean esMiembro = competidorEventoService.esMiembroDeEquipo(competidorOpt.get().getId(), equipo.getId());

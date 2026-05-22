@@ -14,23 +14,29 @@ public class EstadoPausada extends EstadoVotacionBase {
 
     @Override
     public void reanudar(VotacionMO votacion) {
-        votacion.cambiarEstado(EstadoVotacionMO.ABIERTA);
+        cambiarEstado(votacion, EstadoVotacionMO.ABIERTA);
+    }
+
+    @Override
+    public void cerrar(VotacionMO votacion) {
+        cambiarEstado(votacion, EstadoVotacionMO.CERRADA);
     }
 
     @Override
     public void emitirVoto(VotacionMO votacion) {
-        verificarExpiracion(votacion);
-        if (votacion.getEstado() == EstadoVotacionMO.CERRADA) {
-            votoNoPermitido("La votación ya ha finalizado.");
+        if (verificarExpiracion(votacion)) {
+            votacion.emitirVoto();
+            return;
         }
-        votoNoPermitido("La votación está pausada.");
+
+        votoNoPermitido("La votacion esta pausada.");
     }
 
     @Override
     public boolean verificarExpiracion(VotacionMO votacion) {
         OffsetDateTime fin = votacion.getFin();
         if (fin != null && OffsetDateTime.now().isAfter(fin)) {
-            votacion.cambiarEstado(EstadoVotacionMO.CERRADA);
+            cambiarEstado(votacion, EstadoVotacionMO.CERRADA);
             return true;
         }
 

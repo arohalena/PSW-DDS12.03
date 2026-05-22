@@ -276,6 +276,7 @@
 
 .secondary-btn:disabled,
 .primary-btn:disabled,
+.danger-btn:disabled,
 .event-field input:disabled,
 .event-field select:disabled,
 .event-field textarea:disabled {
@@ -1623,6 +1624,11 @@
 
 .delete-voting-btn:hover {
   background: #fecaca;
+}
+
+.delete-voting-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 /* =========================

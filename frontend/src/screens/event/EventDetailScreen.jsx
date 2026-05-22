@@ -109,7 +109,7 @@ function votingSubtitle(votacion) {
     MULTICRITERIO_PONDERADA: "Ponderada",
   };
 
-  const tipo = votacion?.tipo === "JURADO" ? "Jurado" : "Popular";
+  const tipo = votacion?.tipo === "MIXTA" ? "Mixta" : votacion?.tipo === "JURADO" ? "Jurado" : "Popular";
   const modalidad = modalidadMap[votacion?.modalidad] || votacion?.modalidad || "Sin modalidad";
 
   return `${tipo} · ${modalidad} · Máx. ${votacion?.maxSelecciones || 1}`;
@@ -314,6 +314,7 @@ function EventDetailScreen() {
   const [selectedVotingId, setSelectedVotingId] = useState("");
   const [votacionProyectos, setVotacionProyectos] = useState([]);
   const [voteCounts, setVoteCounts] = useState({});
+  const [votesByVotingId, setVotesByVotingId] = useState({});
   const [loading, setLoading] = useState(true);
   const [accessModalOpen, setAccessModalOpen] = useState(false);
   const [createVotingModalOpen, setCreateVotingModalOpen] = useState(false);
@@ -388,12 +389,41 @@ function EventDetailScreen() {
     loadVotingProjects();
   }, [selectedVotingId]);
 
+  useEffect(() => {
+    async function loadAllVotingCounts() {
+      if (!votaciones.length) {
+        setVotesByVotingId({});
+        return;
+      }
+
+      const countsByVoting = {};
+
+      await Promise.all(
+        votaciones.map(async (votacion) => {
+          const relaciones = await getVotacionProyectosByVotacion(votacion.id).catch(() => []);
+          const total = await (relaciones || []).reduce(async (sumPromise, relacion) => {
+            const sum = await sumPromise;
+            const count = await getConteoVotos(relacion.id).catch(() => 0);
+            return sum + Number(count || 0);
+          }, Promise.resolve(0));
+
+          countsByVoting[votacion.id] = total;
+        })
+      );
+
+      setVotesByVotingId(countsByVoting);
+    }
+
+    loadAllVotingCounts();
+  }, [votaciones]);
+  
   const selectedVoting = useMemo(
     () => votaciones.find((v) => String(v.id) === String(selectedVotingId)),
     [votaciones, selectedVotingId]
   );
 
   const selectedVotingEstado = getVotingEstado(selectedVoting);
+  const eventHasVotes = Object.values(votesByVotingId).some((value) => Number(value || 0) > 0);
 
   const relacionesByProjectId = useMemo(() => {
     const map = new Map();
@@ -408,6 +438,12 @@ function EventDetailScreen() {
   }, [votacionProyectos]);
 
   async function confirmDeleteEvento() {
+    if (eventHasVotes) {
+      setError("No se puede eliminar un evento con votos emitidos.");
+      setDeleteEventModalOpen(false);
+      return;
+    }
+
     try {
       setDeletingEvent(true);
       setError("");
@@ -430,6 +466,11 @@ function EventDetailScreen() {
   }
 
   function openDeleteVotingModal(votacion) {
+    if (Number(votesByVotingId[votacion.id] || 0) > 0) {
+      setError("No se puede eliminar una votacion con votos emitidos.");
+      return;
+    }
+
     setVotingToDelete(votacion);
     setDeleteVotingModalOpen(true);
   }
@@ -634,6 +675,8 @@ function EventDetailScreen() {
                 className="danger-btn"
                 type="button"
                 onClick={() => setDeleteEventModalOpen(true)}
+                disabled={eventHasVotes}
+                title={eventHasVotes ? "No se puede eliminar un evento con votos emitidos" : "Eliminar evento"}
               >
                 <Trash2 size={17} />
                 Eliminar Evento
@@ -736,7 +779,7 @@ function EventDetailScreen() {
 
                   {puedeGestionar ? (
                     <div className="voting-control-buttons">
-                      {estado === "PENDIENTE" || estado === "CERRADA" ? (
+                      {estado === "PENDIENTE" ? (
                         <button
                           type="button"
                           className="voting-control-btn open"
@@ -784,6 +827,7 @@ function EventDetailScreen() {
                         type="button"
                         className="delete-voting-btn"
                         onClick={() => openDeleteVotingModal(votacion)}
+                        disabled={Number(votesByVotingId[votacion.id] || 0) > 0}
                         title="Eliminar votación"
                       >
                         <Trash2 size={15} />
@@ -891,7 +935,7 @@ function EventDetailScreen() {
                 type="button"
                 className="danger-btn"
                 onClick={confirmDeleteEvento}
-                disabled={deletingEvent}
+                disabled={deletingEvent || eventHasVotes}
               >
                 <Trash2 size={17} />
                 {deletingEvent ? "Eliminando..." : "Eliminar evento"}
