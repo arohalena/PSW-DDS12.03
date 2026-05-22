@@ -25,6 +25,8 @@ import "../../styles/my-project-dashboard.css";
 
 import { ProjectMaterials } from "../../common/ProjectMaterials";
 
+import { MaterialGallery } from "../../common/MaterialGallery";
+
 const EMPTY_FORM = {
   nombre: "",
   descripcion: "",
@@ -748,10 +750,27 @@ function MyProjectDashboardScreen() {
               )}
             </article>
           </section>
+            <section className="mock-card mock-gallery-card">
+              <div className="mock-section-heading">
+                <div>
+                  <h2>Galería del proyecto</h2>
+                  <p>Capturas, demo y material visual del proyecto.</p>
+                </div>
+              </div>
 
-            <ProjectMaterials 
-              proyectoId={selectedProject?.id} 
-            />
+              <MaterialGallery proyectoId={selectedProject?.id} />
+            </section>
+
+            <section className="mock-card mock-upload-card">
+              <div className="mock-section-heading">
+                <div>
+                  <h2>Subir material</h2>
+                  <p>Adjunta nuevos archivos para este proyecto.</p>
+                </div>
+              </div>
+
+              <ProjectMaterials proyectoId={selectedProject?.id} />
+            </section>
 
           <section className="participant-comments-card">
             <div className="participant-card-header">
