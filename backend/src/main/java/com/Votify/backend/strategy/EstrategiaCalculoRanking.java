@@ -29,7 +29,10 @@ public abstract class EstrategiaCalculoRanking {
         entry.put("proyectoNombre", vp.getProyecto().getNombre());
         entry.put("votacionProyectoId", vp.getId());
 
-        EquipoMO equipo = equipoRepository.findByProyecto_Id(vp.getProyecto().getId());
+        EquipoMO equipo = vp.getProyecto().getEquipo();
+        if (equipo == null) {
+            equipo = equipoRepository.findByProyecto_Id(vp.getProyecto().getId());
+        }
         entry.put("equipoNombre", equipo != null ? equipo.getNombre() : null);
 
         entry.put("votantesActivos", votantesActivos);
