@@ -789,10 +789,6 @@ function RankingScreen() {
               <article className="ranking-table-card">
                 <div className="ranking-card-title">
                   <h2>Ranking Completo</h2>
-                  <button type="button">
-                    <Eye size={16} />
-                    Ver detalles por criterio
-                  </button>
                 </div>
 
                 <div className="ranking-table-list">
@@ -849,7 +845,6 @@ function RankingScreen() {
                       <div className="ranking-row-score">
                         <div>
                           <strong>{formatearScorePrincipal(entry)}</strong>
-                          <TrendingUp size={16} />
                         </div>
                         <span>{etiquetaScorePrincipal()}</span>
                       </div>
