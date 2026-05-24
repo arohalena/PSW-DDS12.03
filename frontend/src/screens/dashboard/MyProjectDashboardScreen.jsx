@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart3,
   CalendarDays,
   Edit3,
   Eye,
   FolderKanban,
+  Image,
   MessageSquare,
   Plus,
   Star,
@@ -21,9 +23,9 @@ import {
 } from "../../services/proyectoService";
 import { asignarProyectoAVotacion, getVotacionesByEvento } from "../../services/votacionService";
 import { getUsuarioLogueado } from "../../services/sessionService";
-import "../../styles/my-project-dashboard.css";
-
+import { MaterialGallery } from "../../common/MaterialGallery";
 import { ProjectMaterials } from "../../common/ProjectMaterials";
+import "../../styles/my-project-dashboard.css";
 
 const EMPTY_FORM = {
   nombre: "",
@@ -34,8 +36,10 @@ const EMPTY_FORM = {
   votacionIds: [],
 };
 
+const DASHBOARD_CACHE_PREFIX = "votify:mi-proyecto-dashboard:";
+
 function votingLabel(votacion) {
-  return votacion?.nombre || `${votacion?.tipo || "Votación"} · ${votacion?.modalidad || ""}`;
+  return votacion?.nombre || `${votacion?.tipo || "Votacion"} - ${votacion?.modalidad || ""}`;
 }
 
 function getProjectEventId(proyecto) {
@@ -50,6 +54,13 @@ function isMulticriterio(votacion) {
   return votacion?.modalidad === "MULTICRITERIO" || votacion?.modalidad === "MULTICRITERIO_PONDERADA";
 }
 
+function formatScore(value) {
+  if (value === undefined || value === null || value === "") return "-";
+  const num = Number(value);
+  if (Number.isNaN(num)) return "-";
+  return Number.isInteger(num) ? String(num) : num.toFixed(2);
+}
+
 function getInitials(value = "") {
   return (
     value
@@ -61,6 +72,19 @@ function getInitials(value = "") {
   );
 }
 
+function normalizeDashboardProject(item) {
+  const proyecto = item?.proyecto || item;
+
+  return {
+    ...item,
+    proyecto,
+    equipo: item?.equipo || proyecto?.equipo || null,
+    evento: item?.evento || proyecto?.evento || null,
+    votaciones: item?.votaciones || [],
+    comentarios: item?.comentarios || [],
+  };
+}
+
 function MiniRadarChart({ data }) {
   const size = 260;
   const center = size / 2;
@@ -69,7 +93,7 @@ function MiniRadarChart({ data }) {
 
   if (safeData.length === 0) return null;
 
-  function point(index, value = 5) {
+  function getPoint(index, value = 5) {
     const angle = (Math.PI * 2 * index) / safeData.length - Math.PI / 2;
     const currentRadius = radius * (Number(value || 0) / 5);
 
@@ -81,19 +105,19 @@ function MiniRadarChart({ data }) {
 
   const polygonPoints = safeData
     .map((item, index) => {
-      const point = point(index, item.value);
-      return `${point.x},${point.y}`;
+      const chartPoint = getPoint(index, item.value);
+      return `${chartPoint.x},${chartPoint.y}`;
     })
     .join(" ");
 
   return (
     <div className="my-project-radar">
-      <svg viewBox={`0 0 ${size} ${size}`}>
+      <svg viewBox={`0 0 ${size} ${size}`} aria-label="Grafico radar de evaluacion">
         {[1, 2, 3, 4, 5].map((level) => {
           const gridPoints = safeData
             .map((_, index) => {
-              const point = point(index, level);
-              return `${point.x},${point.y}`;
+              const chartPoint = getPoint(index, level);
+              return `${chartPoint.x},${chartPoint.y}`;
             })
             .join(" ");
 
@@ -101,8 +125,8 @@ function MiniRadarChart({ data }) {
         })}
 
         {safeData.map((item, index) => {
-          const end = point(index, 5);
-          const label = point(index, 6.25);
+          const end = getPoint(index, 5);
+          const label = getPoint(index, 6.25);
 
           return (
             <g key={item.label}>
@@ -123,8 +147,8 @@ function MiniRadarChart({ data }) {
         <polygon points={polygonPoints} className="radar-value-shape" />
 
         {safeData.map((item, index) => {
-          const point = point(index, item.value);
-          return <circle key={item.label} cx={point.x} cy={point.y} r="4" className="radar-point" />;
+          const chartPoint = getPoint(index, item.value);
+          return <circle key={item.label} cx={chartPoint.x} cy={chartPoint.y} r="4" className="radar-point" />;
         })}
       </svg>
     </div>
@@ -153,15 +177,25 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
   }, [open, editingProject, equipos]);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!open || !form.eventoId || editing) {
       setVotaciones([]);
       if (!editing) setForm((prev) => ({ ...prev, votacionIds: [] }));
-      return;
+      return undefined;
     }
 
     getVotacionesByEvento(form.eventoId)
-      .then((data) => setVotaciones(data || []))
-      .catch(() => setVotaciones([]));
+      .then((data) => {
+        if (!cancelled) setVotaciones(data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setVotaciones([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, form.eventoId, editing]);
 
   if (!open) return null;
@@ -192,7 +226,7 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
     }
 
     if (!editing && form.eventoId && form.votacionIds.length === 0) {
-      setError("Si eliges un evento, debes seleccionar al menos una votación.");
+      setError("Si eliges un evento, debes seleccionar al menos una votacion.");
       return;
     }
 
@@ -213,7 +247,7 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
             <p>Solo puedes elegir equipos en los que participas. El evento es opcional.</p>
           </div>
 
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} aria-label="Cerrar">
             <X size={20} />
           </button>
         </div>
@@ -229,7 +263,7 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
           </label>
 
           <label className="my-project-field">
-            <span>Descripción</span>
+            <span>Descripcion</span>
             <textarea
               rows="4"
               value={form.descripcion}
@@ -240,7 +274,7 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
 
           <div className="my-project-form-grid">
             <label className="my-project-field">
-              <span>Categoría</span>
+              <span>Categoria</span>
               <select
                 value={form.tipoCategoria}
                 onChange={(e) => setForm((prev) => ({ ...prev, tipoCategoria: e.target.value }))}
@@ -297,10 +331,10 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
 
           {!editing && form.eventoId ? (
             <div>
-              <span className="my-project-mini-label">Votaciones donde participará</span>
+              <span className="my-project-mini-label">Votaciones donde participara</span>
 
               {votaciones.length === 0 ? (
-                <div className="feedback-card warning-box">Este evento todavía no tiene votaciones.</div>
+                <div className="feedback-card warning-box">Este evento todavia no tiene votaciones.</div>
               ) : (
                 <div className="my-project-voting-grid">
                   {votaciones.map((votacion) => {
@@ -322,7 +356,7 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
                       >
                         <strong>{votingLabel(votacion)}</strong>
                         <span>
-                          {votacion.tipo} · {votacion.modalidad}
+                          {votacion.tipo} - {votacion.modalidad}
                         </span>
                       </button>
                     );
@@ -350,7 +384,9 @@ function ProjectModal({ open, editingProject, equipos, eventos, proyectos, onClo
 }
 
 function MyProjectDashboardScreen() {
+  const navigate = useNavigate();
   const usuario = useMemo(() => getUsuarioLogueado(), []);
+  const cacheKey = usuario?.id ? `${DASHBOARD_CACHE_PREFIX}${usuario.id}` : "";
 
   const [dashboard, setDashboard] = useState(null);
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -358,67 +394,96 @@ function MyProjectDashboardScreen() {
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function load() {
-    try {
-      setLoading(true);
-      setError("");
-
-      if (!usuario?.id) {
-        throw new Error("No hay usuario autenticado.");
+  const applyDashboard = useCallback((data) => {
+    setDashboard(data);
+    setSelectedProjectId((current) => {
+      const projects = data?.proyectosDashboard || [];
+      if (current && projects.some((item) => String(item.proyecto?.id || item.id) === String(current))) {
+        return current;
       }
 
-      const data = await getMiProyectoDashboard(usuario.id);
-      setDashboard(data);
+      return projects[0]?.proyecto?.id || projects[0]?.id || "";
+    });
+  }, []);
 
-      setSelectedProjectId((current) => {
-        if (current && data.proyectosDashboard?.some((item) => String(item.proyecto.id) === String(current))) {
-          return current;
+  const load = useCallback(
+    async ({ silent = false } = {}) => {
+      try {
+        if (!usuario?.id) {
+          throw new Error("No hay usuario autenticado.");
         }
 
-        return data.proyectosDashboard?.[0]?.proyecto?.id || "";
-      });
-    } catch (err) {
-      setError(err.message || "No se pudo cargar Mi Proyecto.");
-    } finally {
-      setLoading(false);
-    }
-  }
+        if (!silent) setLoading(true);
+        setRefreshing(silent);
+        setError("");
+
+        const data = await getMiProyectoDashboard(usuario.id);
+        applyDashboard(data);
+        if (cacheKey) sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (err) {
+        setError(err.message || "No se pudo cargar Mi Proyecto.");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [applyDashboard, cacheKey, usuario?.id]
+  );
 
   useEffect(() => {
-    load();
-  }, [usuario?.id]);
+    let hasCache = false;
 
-  const proyectosDashboard = dashboard?.proyectosDashboard || [];
+    if (cacheKey) {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          applyDashboard(JSON.parse(cached));
+          setLoading(false);
+          hasCache = true;
+        }
+      } catch {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+
+    load({ silent: hasCache });
+  }, [applyDashboard, cacheKey, load]);
+
+  const proyectosDashboard = useMemo(
+    () => (dashboard?.proyectosDashboard || []).map(normalizeDashboardProject),
+    [dashboard]
+  );
 
   const selectedItem = useMemo(
     () =>
-      proyectosDashboard.find((item) => String(item.proyecto.id) === String(selectedProjectId)) ||
+      proyectosDashboard.find((item) => String(item.proyecto?.id) === String(selectedProjectId)) ||
       proyectosDashboard[0] ||
       null,
     [proyectosDashboard, selectedProjectId]
   );
 
   const selectedProject = selectedItem?.proyecto || null;
-  const selectedVotaciones = selectedItem?.votaciones || [];
+  const selectedVotaciones = useMemo(() => selectedItem?.votaciones || [], [selectedItem]);
+
   const comentarios = useMemo(() => {
-  if (selectedItem?.comentarios) {
-    return selectedItem.comentarios;
-  }
+    if (selectedItem?.comentarios?.length) return selectedItem.comentarios;
 
-  if (
-    dashboard?.comentarios &&
-    dashboard?.proyecto?.id &&
-    selectedProject?.id &&
-    String(dashboard.proyecto.id) === String(selectedProject.id)
-  ) {
-    return dashboard.comentarios;
-  }
+    if (
+      dashboard?.comentarios &&
+      dashboard?.proyecto?.id &&
+      selectedProject?.id &&
+      String(dashboard.proyecto.id) === String(selectedProject.id)
+    ) {
+      return dashboard.comentarios;
+    }
 
-  return [];
-}, [selectedItem, dashboard, selectedProject]);
+    return [];
+  }, [selectedItem, dashboard, selectedProject]);
+
   useEffect(() => {
     setSelectedVotingId((current) => {
       if (current && selectedVotaciones.some((item) => String(item.votacion?.id) === String(current))) {
@@ -427,7 +492,7 @@ function MyProjectDashboardScreen() {
 
       return selectedVotaciones[0]?.votacion?.id || "";
     });
-  }, [selectedProjectId, selectedVotaciones.length]);
+  }, [selectedProjectId, selectedVotaciones]);
 
   const selectedVotingItem = useMemo(
     () =>
@@ -439,24 +504,23 @@ function MyProjectDashboardScreen() {
 
   const hasEvent = Boolean(selectedItem?.evento);
   const selectedVotingIsMulti = isMulticriterio(selectedVotingItem?.votacion);
-
   const rankingEntry = selectedVotingItem?.rankingEntry || null;
   const rankingList = selectedVotingItem?.ranking || [];
 
   const radarData = useMemo(() => {
     if (!selectedVotingIsMulti || !rankingEntry?.criterios?.length) return [];
 
-    return rankingEntry.criterios.map((criterio) => ({
+    return rankingEntry.criterios.slice(0, 8).map((criterio) => ({
       label: criterio.criterioNombre || criterio.nombre || "Criterio",
-      value: Number(criterio.promedio || 0),
+      value: Math.min(Math.max(Number(criterio.promedio || 0), 0), 5),
     }));
   }, [rankingEntry, selectedVotingIsMulti]);
 
-  const posicion = rankingEntry?.posicion || "—";
-  const puntuacionFinal =
-    rankingEntry?.puntuacionTotal !== undefined && rankingEntry?.puntuacionTotal !== null
-      ? Number(rankingEntry.puntuacionTotal).toFixed(2)
-      : "—";
+  const posicion = rankingEntry?.posicion || "-";
+  const posicionNumero = Number(rankingEntry?.posicion || 0);
+  const puntuacionFinal = formatScore(rankingEntry?.puntuacionTotal);
+  const eventId = selectedItem?.evento?.id || getProjectEventId(selectedProject);
+  const votingId = selectedVotingItem?.votacion?.id;
 
   async function handleSubmitProject(form) {
     try {
@@ -478,8 +542,8 @@ function MyProjectDashboardScreen() {
       } else {
         const created = await createProyectoGestionado(payload);
 
-        for (const votacionId of form.votacionIds || []) {
-          await asignarProyectoAVotacion(votacionId, created.id).catch(() => null);
+        for (const formVotingId of form.votacionIds || []) {
+          await asignarProyectoAVotacion(formVotingId, created.id).catch(() => null);
         }
 
         setSuccess("Proyecto creado correctamente.");
@@ -487,7 +551,7 @@ function MyProjectDashboardScreen() {
 
       setProjectModalOpen(false);
       setEditingProject(null);
-      await load();
+      await load({ silent: true });
     } catch (err) {
       setError(err.message || "No se pudo guardar el proyecto.");
     }
@@ -496,7 +560,11 @@ function MyProjectDashboardScreen() {
   if (loading) {
     return (
       <main className="participant-dashboard-page">
-        <div className="feedback-card">Cargando Mi Proyecto...</div>
+        <section className="my-project-loading-card">
+          <div />
+          <strong>Cargando Mi Proyecto...</strong>
+          <span>Preparando tus datos de proyecto y ranking.</span>
+        </section>
       </main>
     );
   }
@@ -506,10 +574,12 @@ function MyProjectDashboardScreen() {
       <header className="my-project-topbar">
         <div>
           <h1>Mi Proyecto</h1>
-          <p>Vista personal del competidor, rendimiento, feedback y contexto de ranking.</p>
+          <p>Gestiona tu proyecto, material, rendimiento y feedback desde un solo sitio.</p>
         </div>
 
         <div className="my-project-actions">
+          {refreshing ? <span className="my-project-refresh-pill">Actualizando...</span> : null}
+
           {proyectosDashboard.length > 1 ? (
             <select
               className="my-project-selector"
@@ -557,7 +627,7 @@ function MyProjectDashboardScreen() {
       {!selectedItem ? (
         <section className="my-project-empty-card">
           <FolderKanban size={34} />
-          <h2>No tienes proyectos todavía</h2>
+          <h2>No tienes proyectos todavia</h2>
           <p>Puedes crear uno usando uno de tus equipos.</p>
           <button
             type="button"
@@ -573,49 +643,75 @@ function MyProjectDashboardScreen() {
         </section>
       ) : (
         <>
-          <section className="my-project-hero">
-            <div>
-              <span className="my-project-kicker">Proyecto seleccionado</span>
-              <h2>{selectedProject.nombre}</h2>
-              <p>{selectedProject.descripcion || "Sin descripción disponible."}</p>
+          <section className="my-project-hero-row">
+            <div className="my-project-hero">
+              <div className="my-project-hero-main">
+                <h2>{selectedProject.nombre}</h2>
 
-              <div className="my-project-hero-meta">
-                <span>
-                  <Users size={15} />
-                  {selectedItem.equipo?.nombre || "Sin equipo"}
-                </span>
-                <span>
-                  <CalendarDays size={15} />
-                  {selectedItem.evento?.nombre || "Sin evento"}
-                </span>
-                <span>
-                  <Target size={15} />
-                  {selectedProject.tipoCategoria || "Sin categoría"}
-                </span>
+                <div className="my-project-hero-meta">
+                  <span>
+                    <Users size={15} />
+                    {selectedItem.equipo?.nombre || "Sin equipo"}
+                  </span>
+                  <span>
+                    <CalendarDays size={15} />
+                    {selectedItem.evento?.nombre || "Sin evento"}
+                  </span>
+                  <span>
+                    <Target size={15} />
+                    {selectedProject.tipoCategoria || "Sin categoria"}
+                  </span>
+                </div>
+
+                <div className="my-project-hero-actions">
+                  <button
+                    type="button"
+                    className="my-project-hero-button light"
+                    disabled={!eventId}
+                    onClick={() => navigate(`/eventos/${eventId}/proyectos/${selectedProject.id}`)}
+                  >
+                    <Eye size={16} />
+                    Ver detalle
+                  </button>
+                  <button
+                    type="button"
+                    className="my-project-hero-button"
+                    disabled={!eventId || !votingId}
+                    onClick={() => navigate(`/eventos/${eventId}/votaciones/${votingId}/resultados`)}
+                  >
+                    <BarChart3 size={16} />
+                    Ver resultados
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="my-project-rank-card">
+            <aside className={`my-project-rank-card rank-${posicionNumero > 0 && posicionNumero <= 3 ? posicionNumero : "default"}`}>
               {hasEvent ? (
                 <>
-                  <Trophy size={38} />
-                  <span>Posición</span>
+                  <Trophy size={34} />
+                  <span>Posicion</span>
                   <strong>{posicion}</strong>
                   <small>
                     {rankingList.length > 0
                       ? `entre ${rankingList.length} proyectos`
-                      : "sin ranking todavía"}
+                      : "sin ranking todavia"}
                   </small>
                 </>
               ) : (
                 <>
-                  <FolderKanban size={38} />
+                  <FolderKanban size={34} />
                   <span>Sin evento</span>
-                  <strong>—</strong>
-                  <small>Este proyecto aún no compite en ningún evento.</small>
+                  <strong>-</strong>
+                  <small>Este proyecto aun no compite en ningun evento.</small>
                 </>
               )}
-            </div>
+            </aside>
+          </section>
+
+          <section className="my-project-description-card">
+            <span>Descripcion del proyecto</span>
+            <p>{selectedProject.descripcion || "Sin descripcion disponible."}</p>
           </section>
 
           <section className="participant-stats-grid">
@@ -634,18 +730,8 @@ function MyProjectDashboardScreen() {
                 <Star size={18} />
               </div>
               <div>
-                <p>Puntuación final</p>
-                <strong>{hasEvent ? puntuacionFinal : "—"}</strong>
-              </div>
-            </article>
-
-            <article className="participant-stat-card">
-              <div className="participant-stat-icon slate">
-                <Eye size={18} />
-              </div>
-              <div>
-                <p>Vistas</p>
-                <strong>{selectedItem.vistas || 0}</strong>
+                <p>Puntuacion final</p>
+                <strong>{hasEvent ? puntuacionFinal : "-"}</strong>
               </div>
             </article>
 
@@ -662,10 +748,10 @@ function MyProjectDashboardScreen() {
 
           <section className="my-project-main-grid">
             <article className="my-project-card">
-              <div className="participant-card-header">
+              <div className="participant-card-header my-project-evaluation-header">
                 <div className="participant-card-title">
                   <BarChart3 size={18} />
-                  <h3>Perfil de evaluación</h3>
+                  <h3>Perfil de evaluacion</h3>
                 </div>
 
                 {selectedVotaciones.length > 1 ? (
@@ -675,7 +761,7 @@ function MyProjectDashboardScreen() {
                     onChange={(e) => setSelectedVotingId(e.target.value)}
                   >
                     {selectedVotaciones.map((item) => (
-                      <option key={item.votacionProyectoId} value={item.votacion?.id}>
+                      <option key={item.votacionProyectoId || item.votacion?.id} value={item.votacion?.id}>
                         {votingLabel(item.votacion)}
                       </option>
                     ))}
@@ -692,15 +778,15 @@ function MyProjectDashboardScreen() {
                     {!hasEvent
                       ? "Proyecto sin evento"
                       : !selectedVotingIsMulti
-                        ? "Votación sin criterios"
-                        : "Sin evaluaciones todavía"}
+                        ? "Votacion sin criterios"
+                        : "Sin evaluaciones todavia"}
                   </strong>
                   <p>
                     {!hasEvent
-                      ? "Cuando lo metas en un evento aparecerá su evaluación."
+                      ? "Cuando lo metas en un evento aparecera su evaluacion."
                       : !selectedVotingIsMulti
-                        ? "Esta votación no es multicriterio, por eso no tiene gráfico radar."
-                        : "Cuando haya puntuaciones por criterio se mostrará el perfil de evaluación."}
+                        ? "Esta votacion no es multicriterio, por eso no tiene grafico radar."
+                        : "Cuando haya puntuaciones por criterio se mostrara el perfil de evaluacion."}
                   </p>
                 </div>
               )}
@@ -716,42 +802,60 @@ function MyProjectDashboardScreen() {
 
               {hasEvent ? (
                 <div className="my-project-ranking-context">
-                  <div>
-                    <span>Votación analizada</span>
+                  <div className="my-project-ranking-row wide">
+                    <span>Votacion analizada</span>
                     <strong>{votingLabel(selectedVotingItem?.votacion)}</strong>
                   </div>
 
-                  <div>
-                    <span>Posición actual</span>
+                  <div className="my-project-ranking-row">
+                    <span>Posicion actual</span>
                     <strong>{posicion}</strong>
                   </div>
 
-                  <div>
-                    <span>Puntuación final</span>
+                  <div className="my-project-score-highlight">
+                    <span>Puntuacion final</span>
                     <strong>{puntuacionFinal}</strong>
                   </div>
 
-                  <div>
+                  <div className="my-project-ranking-row">
                     <span>Proyectos en ranking</span>
-                    <strong>{rankingList.length || "—"}</strong>
+                    <strong>{rankingList.length || "-"}</strong>
                   </div>
                 </div>
               ) : (
                 <div className="my-project-no-event-panel compact">
                   <strong>Sin ranking disponible</strong>
-                  <p>
-                    {!hasEvent
-                      ? "El proyecto todavía no participa en ningún evento."
-                      : "El ranking solo se muestra para votaciones multicriterio."}
-                  </p>
+                  <p>El proyecto todavia no participa en ningun evento.</p>
                 </div>
               )}
             </article>
           </section>
 
-            <ProjectMaterials 
-              proyectoId={selectedProject?.id} 
-            />
+          <section className="my-project-material-grid">
+            <article className="my-project-card">
+              <div className="participant-card-header">
+                <div className="participant-card-title">
+                  <Image size={18} />
+                  <h3>Galeria del proyecto</h3>
+                </div>
+              </div>
+              <div className="my-project-material-body">
+                <MaterialGallery proyectoId={selectedProject?.id} />
+              </div>
+            </article>
+
+            <article className="my-project-card">
+              <div className="participant-card-header">
+                <div className="participant-card-title">
+                  <Plus size={18} />
+                  <h3>Subir material</h3>
+                </div>
+              </div>
+              <div className="my-project-material-body">
+                <ProjectMaterials proyectoId={selectedProject?.id} />
+              </div>
+            </article>
+          </section>
 
           <section className="participant-comments-card">
             <div className="participant-card-header">
@@ -766,7 +870,7 @@ function MyProjectDashboardScreen() {
             </div>
 
             {comentarios.length === 0 ? (
-              <div className="feedback-card">Todavía no hay feedback sobre este proyecto.</div>
+              <div className="feedback-card">Todavia no hay feedback sobre este proyecto.</div>
             ) : (
               <div className="participant-comments-list">
                 {comentarios.map((comentario) => (
@@ -777,7 +881,7 @@ function MyProjectDashboardScreen() {
                       </div>
                       <div>
                         <p className="participant-comment-author">
-                          {comentario.usuario?.nombre || "Anónimo"}
+                          {comentario.usuario?.nombre || "Anonimo"}
                         </p>
                         <p className="participant-comment-date">
                           {comentario.createdAt

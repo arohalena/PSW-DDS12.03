@@ -9,8 +9,6 @@ function DashboardPublico({ usuario, eventos }) {
 
   return (
     <div className="dashboard-page">
-
-      {/* Cabecera */}
       <div className="dashboard-header">
         <div>
           <h1>Bienvenido, {usuario?.nombre || "Visitante"} </h1>
@@ -18,7 +16,6 @@ function DashboardPublico({ usuario, eventos }) {
         </div>
       </div>
 
-      {/* Acciones rápidas */}
       <div className="dashboard-quick-grid">
         <QuickCard
           to="/eventos"
@@ -36,7 +33,6 @@ function DashboardPublico({ usuario, eventos }) {
         />
       </div>
 
-      {/* Eventos disponibles */}
       <section className="dashboard-card">
         <div className="dashboard-card-header">
           <div>
@@ -52,9 +48,9 @@ function DashboardPublico({ usuario, eventos }) {
                 <div>
                   <div className="dashboard-event-title">
                     <h3>{ev.nombre}</h3>
-                    <span className="pill pill-green">Votación activa</span>
+                    <span className="pill pill-green">Votacion activa</span>
                   </div>
-                  <p>{ev.descripcion || "Evento de votación abierto al público."}</p>
+                  <p>{ev.descripcion || "Evento de votacion abierto al publico."}</p>
                   <div className="dashboard-event-meta">
                     <span>Fin: {formatDate(getEventoFechaFin(ev))}</span>
                   </div>
@@ -64,12 +60,11 @@ function DashboardPublico({ usuario, eventos }) {
             ))
           ) : (
             <div className="dashboard-empty">
-              No hay eventos con votación activa en este momento.
+              No hay eventos con votacion activa en este momento.
             </div>
           )}
         </div>
       </section>
-
     </div>
   );
 }

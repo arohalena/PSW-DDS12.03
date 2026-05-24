@@ -2680,7 +2680,7 @@
 
 .project-balanced-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-columns: minmax(0, 0.92fr) 390px;
   gap: 1.15rem;
   align-items: stretch;
 }
@@ -3019,6 +3019,28 @@
 .project-balanced-comments {
   display: grid;
   gap: 0.7rem;
+}
+
+.project-balanced-comments {
+  max-height: 390px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  scrollbar-color: #1e40af #e0e7ff;
+  scrollbar-width: thin;
+}
+
+.project-balanced-comments::-webkit-scrollbar {
+  width: 10px;
+}
+
+.project-balanced-comments::-webkit-scrollbar-track {
+  background: #e0e7ff;
+  border-radius: 999px;
+}
+
+.project-balanced-comments::-webkit-scrollbar-thumb {
+  background: #1e40af;
+  border-radius: 999px;
 }
 
 .project-balanced-member,
