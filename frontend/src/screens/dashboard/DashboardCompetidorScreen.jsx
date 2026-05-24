@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Calendar, Eye, Star, Trophy, Users } from "lucide-react";
+import { ArrowRight, Calendar, FolderKanban } from "lucide-react";
 
 import { QuickCard } from "../../components/QuickCard";
-import { StatCard } from "../../components/StatCard";
 import { isActiveEvent, formatDate, getEventoFechaInicio, getEventoFechaFin } from "../../components/dashboardUtils";
 import { getMiProyectoDashboard } from "../../services/proyectoService";
+
+const COMPETITOR_DASHBOARD_CACHE_PREFIX = "votify:dashboard-competidor:v3:";
 
 function normalizeId(value) {
   return value === undefined || value === null ? "" : String(value);
@@ -15,9 +16,58 @@ function getProyectoFromDashboardItem(item) {
   return item?.proyecto || item;
 }
 
+function normalizeDashboardItem(item) {
+  const proyecto = getProyectoFromDashboardItem(item);
+
+  return {
+    ...item,
+    proyecto,
+    evento: item?.evento || proyecto?.evento || null,
+  };
+}
+
+function getEventRefsFromProjectItem(item) {
+  const proyecto = getProyectoFromDashboardItem(item);
+  const refs = [
+    item?.evento,
+    proyecto?.evento,
+    item?.eventoId,
+    proyecto?.eventoId,
+    item?.votacion?.evento,
+    item?.votacion?.eventoId,
+  ];
+
+  (item?.votaciones || []).forEach((votacionItem) => {
+    refs.push(
+      votacionItem?.evento,
+      votacionItem?.eventoId,
+      votacionItem?.votacion?.evento,
+      votacionItem?.votacion?.eventoId
+    );
+  });
+
+  return refs.filter(Boolean);
+}
+
+function getEventIdFromRef(ref) {
+  return normalizeId(typeof ref === "object" ? ref.id : ref);
+}
+
 function DashboardCompetidor({ usuario, eventos }) {
-  const [miProyecto, setMiProyecto] = useState(null);
+  const cacheKey = usuario?.id ? `${COMPETITOR_DASHBOARD_CACHE_PREFIX}${usuario.id}` : "";
+  const [miProyecto, setMiProyecto] = useState(() => {
+    if (!cacheKey) return null;
+
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      sessionStorage.removeItem(cacheKey);
+      return null;
+    }
+  });
   const [loadingProyecto, setLoadingProyecto] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!usuario?.id) {
@@ -25,18 +75,39 @@ function DashboardCompetidor({ usuario, eventos }) {
       return;
     }
 
+    let cancelled = false;
+    const hasCachedData = Boolean(miProyecto);
+
+    setLoadingProyecto(!hasCachedData);
+    setRefreshing(hasCachedData);
+
     getMiProyectoDashboard(usuario.id)
-      .then(setMiProyecto)
-      .catch(() => setMiProyecto(null))
-      .finally(() => setLoadingProyecto(false));
-  }, [usuario?.id]);
+      .then((data) => {
+        if (cancelled) return;
+        setMiProyecto(data);
+        if (cacheKey) sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      })
+      .catch(() => {
+        if (!cancelled && !hasCachedData) setMiProyecto(null);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingProyecto(false);
+          setRefreshing(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey, usuario?.id]);
 
   const proyectosDashboard = useMemo(() => {
     if (Array.isArray(miProyecto?.proyectosDashboard) && miProyecto.proyectosDashboard.length > 0) {
-      return miProyecto.proyectosDashboard;
+      return miProyecto.proyectosDashboard.map(normalizeDashboardItem);
     }
 
-    return miProyecto?.proyecto ? [miProyecto.proyecto] : [];
+    return miProyecto?.proyecto ? [normalizeDashboardItem(miProyecto.proyecto)] : [];
   }, [miProyecto]);
 
   const proyectosPorEvento = useMemo(() => {
@@ -44,20 +115,19 @@ function DashboardCompetidor({ usuario, eventos }) {
 
     proyectosDashboard.forEach((item) => {
       const proyecto = getProyectoFromDashboardItem(item);
-      const eventoId =
-        proyecto?.evento?.id ||
-        proyecto?.eventoId ||
-        item?.evento?.id ||
-        item?.eventoId ||
-        item?.votacion?.evento?.id ||
-        item?.votacion?.eventoId;
+      const eventIds = Array.from(
+        new Set(getEventRefsFromProjectItem(item).map(getEventIdFromRef).filter(Boolean))
+      );
 
-      if (!eventoId) return;
+      eventIds.forEach((key) => {
+        const proyectosEvento = map.get(key) || [];
 
-      const key = normalizeId(eventoId);
-      const proyectosEvento = map.get(key) || [];
-      proyectosEvento.push(proyecto);
-      map.set(key, proyectosEvento);
+        if (!proyectosEvento.some((current) => normalizeId(current?.id) === normalizeId(proyecto?.id))) {
+          proyectosEvento.push(proyecto);
+        }
+
+        map.set(key, proyectosEvento);
+      });
     });
 
     return map;
@@ -69,85 +139,56 @@ function DashboardCompetidor({ usuario, eventos }) {
       if (evento?.id) byId.set(normalizeId(evento.id), evento);
     };
 
-    if (Array.isArray(miProyecto?.eventos)) {
-      miProyecto.eventos.forEach(addEvento);
-    }
-
-    [
-      miProyecto?.evento,
-      miProyecto?.proyecto?.evento,
-      miProyecto?.proyectoPrincipal?.evento,
-    ].forEach(addEvento);
-
     proyectosPorEvento.forEach((_, eventoKey) => {
-      const evento = eventos.find((item) => normalizeId(item.id) === eventoKey);
-      addEvento(evento);
+      const matchingProjectItem = proyectosDashboard.find((item) =>
+        getEventRefsFromProjectItem(item).some((ref) => getEventIdFromRef(ref) === eventoKey)
+      );
+
+      const eventRefFromProject = getEventRefsFromProjectItem(matchingProjectItem).find(
+        (ref) => getEventIdFromRef(ref) === eventoKey && typeof ref === "object"
+      );
+
+      addEvento(
+        eventRefFromProject ||
+          eventos.find((item) => normalizeId(item.id) === eventoKey)
+      );
     });
 
     return Array.from(byId.values());
-  }, [eventos, miProyecto, proyectosPorEvento]);
+  }, [eventos, proyectosDashboard, proyectosPorEvento]);
 
-  const eventosActivos = eventosCompetidor.filter(isActiveEvent);
-  const proyectoPrincipal = proyectosDashboard[0] || null;
-  const rankingEntry = proyectoPrincipal?.votaciones?.find((v) => v.rankingEntry)?.rankingEntry || null;
-
-  const posicion = rankingEntry?.posicion ?? "-";
-  const puntuacion = rankingEntry?.puntuacionTotal ?? rankingEntry?.totalVotos ?? "-";
-  const totalVotos = proyectosDashboard.reduce((sum, item) => sum + Number(item.totalVotos || 0), 0);
-  const vistas = proyectosDashboard.reduce((sum, item) => sum + Number(item.vistas || 0), 0);
-  const nombreProyecto = getProyectoFromDashboardItem(proyectoPrincipal)?.nombre ?? null;
+  const eventosOrdenados = useMemo(
+    () =>
+      [...eventosCompetidor].sort((a, b) =>
+        String(getEventoFechaInicio(a) || "").localeCompare(String(getEventoFechaInicio(b) || ""))
+      ),
+    [eventosCompetidor]
+  );
 
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
         <div>
           <h1>Bienvenido, {usuario?.nombre || "Competidor"} </h1>
-          <p>Panel de competidor - Gestiona tu proyecto y revisa tu progreso</p>
+          <p>Panel de competidor - Gestiona tus proyectos y entra a tus eventos.</p>
         </div>
-      </div>
-
-      <div className="dashboard-stats-grid">
-        <div className="dash-stat-card dash-stat-card--hero">
-          <Trophy size={32} style={{ opacity: 0.85, marginBottom: 8 }} />
-          <p className="dash-stat-label">Tu Posicion</p>
-          <strong className="dash-stat-value">
-            {loadingProyecto ? "..." : `#${posicion}`}
-          </strong>
-        </div>
-        <StatCard
-          label="Puntuacion"
-          value={loadingProyecto ? "..." : puntuacion}
-          icon={Star}
-          colorClass="orange"
-        />
-        <StatCard
-          label="Votos"
-          value={loadingProyecto ? "..." : totalVotos}
-          icon={Users}
-          colorClass="purple"
-        />
-        <StatCard
-          label="Vistas"
-          value={loadingProyecto ? "..." : vistas}
-          icon={Eye}
-          colorClass="blue"
-        />
+        {refreshing ? <span className="dashboard-refresh-pill">Actualizando...</span> : null}
       </div>
 
       <div className="dashboard-quick-grid">
         <QuickCard
           to="/configuracion"
           iconColor="purple"
-          Icon={Trophy}
-          title="Mi Proyecto"
-          description="Gestiona tu proyecto y sube material."
+          Icon={FolderKanban}
+          title="Mis Proyectos"
+          description="Gestiona tus proyectos, material y feedback."
         />
         <QuickCard
           to="/eventos"
           iconColor="blue"
           Icon={Calendar}
-          title="Ver Eventos"
-          description="Explora los eventos en los que participas."
+          title="Eventos"
+          description="Revisa los eventos donde participa alguno de tus proyectos."
         />
       </div>
 
@@ -155,13 +196,15 @@ function DashboardCompetidor({ usuario, eventos }) {
         <div className="dashboard-card-header">
           <div>
             <h2>Mis Eventos</h2>
-            <p>Eventos donde tu proyecto compite.</p>
+            <p>Solo aparecen eventos donde tienes un proyecto participando.</p>
           </div>
           <Link className="dashboard-link" to="/eventos">Ver todos</Link>
         </div>
         <div className="dashboard-events-list">
-          {eventosActivos.length > 0 ? (
-            eventosActivos.slice(0, 3).map((ev) => {
+          {loadingProyecto && proyectosDashboard.length === 0 ? (
+            <div className="dashboard-empty">Cargando tus eventos...</div>
+          ) : eventosOrdenados.length > 0 ? (
+            eventosOrdenados.map((ev) => {
               const proyectosEvento = proyectosPorEvento.get(normalizeId(ev.id)) || [];
               const nombresProyecto = proyectosEvento
                 .map((proyecto) => proyecto?.nombre)
@@ -172,13 +215,15 @@ function DashboardCompetidor({ usuario, eventos }) {
                   <div>
                     <div className="dashboard-event-title">
                       <h3>{ev.nombre}</h3>
-                      <span className="pill pill-green">Activo</span>
+                      <span className={`pill ${isActiveEvent(ev) ? "pill-green" : "pill-gray"}`}>
+                        {isActiveEvent(ev) ? "Activo" : "No activo"}
+                      </span>
                     </div>
 
-                    {(nombresProyecto.length > 0 || nombreProyecto) && (
+                    {nombresProyecto.length > 0 && (
                       <p>
-                        Tu proyecto:{" "}
-                        <strong>{nombresProyecto.join(", ") || nombreProyecto}</strong>
+                        {nombresProyecto.length === 1 ? "Proyecto" : "Proyectos"}:{" "}
+                        <strong>{nombresProyecto.join(", ")}</strong>
                       </p>
                     )}
 
@@ -194,7 +239,7 @@ function DashboardCompetidor({ usuario, eventos }) {
             })
           ) : (
             <div className="dashboard-empty">
-              No participas en eventos activos todavia.{" "}
+              No participas en eventos con proyectos todavia.{" "}
               <Link to="/eventos">Explorar eventos</Link>
             </div>
           )}
