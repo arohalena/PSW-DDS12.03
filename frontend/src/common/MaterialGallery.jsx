@@ -83,6 +83,25 @@ export function MaterialGallery({ proyectoId }) {
     );
   };
 
+  const obtenerMiniatura = (material) => {
+    const url = descargarMaterial(material.id);
+    const tipo = getTipo(material.tipoMime);
+
+    if (tipo === 'imagen') {
+      return (
+        <div className="material-thumb">
+          <img src={url} alt={material.nombre} loading="lazy" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="material-icon">
+        {getIcono(material.tipoMime)}
+      </div>
+    );
+  };
+
   if (loading) {
     return <div className="material-gallery">Cargando materiales...</div>;
   }
@@ -103,14 +122,12 @@ export function MaterialGallery({ proyectoId }) {
               className={`material-card material-${tipo}`}
               onClick={() => setSelectedMedia(material)}
             >
-              <div className="material-icon">
-                {getIcono(material.tipoMime)}
-              </div>
+              {obtenerMiniatura(material)}
               <div className="material-info">
                 <strong>{material.nombre}</strong>
                 <span className="material-type">{tipo}</span>
               </div>
-              <button className="material-view-btn">
+              <button type="button" className="material-view-btn">
                 <Eye size={18} />
               </button>
             </div>

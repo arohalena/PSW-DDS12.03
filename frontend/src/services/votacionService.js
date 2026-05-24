@@ -75,6 +75,17 @@ export async function getConteoVotos(votacionProyectoId) {
   return response.json();
 }
 
+export async function getVotosByVotacionProyecto(votacionProyectoId) {
+  const response = await fetch(`${VOTOS_URL}/votacion-proyecto/${votacionProyectoId}`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudieron cargar los votos del proyecto");
+  }
+
+  return response.json();
+}
+
 export async function yaHaVotadoProyecto(votacionProyectoId, token) {
   const response = await fetch(
     `${VOTOS_URL}/votacion-proyecto/${votacionProyectoId}/ya-votado?token=${encodeURIComponent(token)}`
