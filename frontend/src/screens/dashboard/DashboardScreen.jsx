@@ -16,15 +16,37 @@ import DashboardJurado from "./DashboardJuradoScreen";
 import DashboardCompetidor from "./DashboardCompetidorScreen";
 import DashboardPublico from "./DashboardPublicoScreen";
 
+const DASHBOARD_EVENTS_CACHE_PREFIX = "votify:dashboard-eventos:";
+
+function readSessionJson(key, fallback) {
+  if (!key) return fallback;
+
+  try {
+    const cached = sessionStorage.getItem(key);
+    return cached ? JSON.parse(cached) : fallback;
+  } catch {
+    sessionStorage.removeItem(key);
+    return fallback;
+  }
+}
+
 function DashboardScreen() {
-  const [eventos, setEventos] = useState([]);
+  const usuario = useMemo(() => getUsuarioLogueado(), []);
+  const rol = usuario?.rol;
+  const eventsCacheKey =
+    rol === "COMPETIDOR" || rol === "PUBLICO"
+      ? `${DASHBOARD_EVENTS_CACHE_PREFIX}${rol}`
+      : "";
+  const cachedEventos = useMemo(
+    () => readSessionJson(eventsCacheKey, []),
+    [eventsCacheKey]
+  );
+
+  const [eventos, setEventos] = useState(cachedEventos);
   const [proyectos, setProyectos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [juradoEventData, setJuradoEventData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const usuario = useMemo(() => getUsuarioLogueado(), []);
-  const rol = usuario?.rol;
+  const [loading, setLoading] = useState(cachedEventos.length === 0);
 
   useEffect(() => {
     async function loadData() {
@@ -104,6 +126,9 @@ function DashboardScreen() {
         } else {
           const evs = await getEventos().catch(() => []);
           setEventos(evs);
+          if (eventsCacheKey) {
+            sessionStorage.setItem(eventsCacheKey, JSON.stringify(evs));
+          }
           setJuradoEventData([]);
         }
       } finally {
@@ -112,7 +137,7 @@ function DashboardScreen() {
     }
 
     loadData();
-  }, [rol, usuario?.id]);
+  }, [eventsCacheKey, rol, usuario?.id]);
 
   if (loading) {
     return <div className="dashboard-loading">Cargando dashboard...</div>;
