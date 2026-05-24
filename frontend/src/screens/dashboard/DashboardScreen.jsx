@@ -1,21 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { getEventos }    from "../../services/eventoService";
-import { getProyectos }  from "../../services/proyectoService";
-import { getUsuarios }   from "../../services/usuarioService";
+import { getEventos } from "../../services/eventoService";
+import { getProyectos, getProyectosByEvento } from "../../services/proyectoService";
+import { getUsuarios } from "../../services/usuarioService";
+import {
+  getVotacionProyectosByVotacion,
+  getVotacionesByEvento,
+  getVotosByVotacionProyecto,
+} from "../../services/votacionService";
 import { getUsuarioLogueado } from "../../services/sessionService";
 import "../../styles/dashboard.css";
 import "../../styles/dashboard-roles.css";
 
 import DashboardOrganizador from "./DashboardOrganizadorScreen";
-import DashboardJurado      from "./DashboardJuradoScreen";
-import DashboardCompetidor  from "./DashboardCompetidorScreen";
-import DashboardPublico     from "./DashboardPublicoScreen";
+import DashboardJurado from "./DashboardJuradoScreen";
+import DashboardCompetidor from "./DashboardCompetidorScreen";
+import DashboardPublico from "./DashboardPublicoScreen";
 
 function DashboardScreen() {
-  const [eventos,   setEventos]   = useState([]);
+  const [eventos, setEventos] = useState([]);
   const [proyectos, setProyectos] = useState([]);
-  const [usuarios,  setUsuarios]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
+  const [usuarios, setUsuarios] = useState([]);
+  const [juradoEventData, setJuradoEventData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const usuario = useMemo(() => getUsuarioLogueado(), []);
   const rol = usuario?.rol;
@@ -23,7 +29,6 @@ function DashboardScreen() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Eventos siempre, los demás solo si es ORGANIZADOR
         if (rol === "ORGANIZADOR") {
           const [evs, projs, users] = await Promise.all([
             getEventos().catch(() => []),
@@ -33,19 +38,84 @@ function DashboardScreen() {
           setEventos(evs);
           setProyectos(projs);
           setUsuarios(users);
+          setJuradoEventData([]);
+        } else if (rol === "JURADO") {
+          const evs = await getEventos().catch(() => []);
+          const eventData = await Promise.all(
+            evs.map(async (evento) => {
+              const [votaciones, proyectosEvento] = await Promise.all([
+                getVotacionesByEvento(evento.id).catch(() => []),
+                getProyectosByEvento(evento.id).catch(() => []),
+              ]);
+
+              const votacionesJurado = (votaciones || []).filter(
+                (votacion) => votacion.tipo === "JURADO" || votacion.tipo === "MIXTA"
+              );
+
+              const relacionesPorVotacion = await Promise.all(
+                votacionesJurado.map(async (votacion) => {
+                  const relaciones = await getVotacionProyectosByVotacion(votacion.id).catch(() => []);
+                  const relacionesConVotos = await Promise.all(
+                    (relaciones || []).map(async (relacion) => ({
+                      relacion,
+                      votos: await getVotosByVotacionProyecto(relacion.id).catch(() => []),
+                    }))
+                  );
+
+                  return { votacion, relaciones: relacionesConVotos };
+                })
+              );
+
+              const evaluacionesUsuario = relacionesPorVotacion.flatMap(({ votacion, relaciones }) =>
+                relaciones.flatMap(({ relacion, votos }) =>
+                  (votos || [])
+                    .filter((voto) => {
+                      const votoUsuarioId =
+                        voto.usuario?.id ||
+                        voto.usuarioId ||
+                        voto.votante?.id ||
+                        voto.votanteId ||
+                        voto.jurado?.id ||
+                        voto.juradoId;
+
+                      return usuario?.id && String(votoUsuarioId) === String(usuario.id);
+                    })
+                    .map((voto) => ({ votacion, relacion, voto }))
+                )
+              );
+
+              return {
+                evento,
+                votaciones,
+                proyectos: proyectosEvento,
+                votacionesJurado,
+                relacionesPorVotacion,
+                evaluacionesUsuario,
+              };
+            })
+          );
+
+          const eventosJurado = eventData
+            .filter(({ votacionesJurado }) => votacionesJurado.length > 0)
+            .map(({ evento }) => evento);
+
+          setEventos(eventosJurado);
+          setJuradoEventData(eventData);
         } else {
           const evs = await getEventos().catch(() => []);
           setEventos(evs);
+          setJuradoEventData([]);
         }
       } finally {
         setLoading(false);
       }
     }
+
     loadData();
-  }, [rol]);
+  }, [rol, usuario?.id]);
 
   if (loading) {
-    return <div className="dashboard-loading">Cargando dashboard…</div>;
+    return <div className="dashboard-loading">Cargando dashboard...</div>;
   }
 
   if (rol === "ORGANIZADOR") {
@@ -60,7 +130,7 @@ function DashboardScreen() {
   }
 
   if (rol === "JURADO") {
-    return <DashboardJurado usuario={usuario} eventos={eventos} />;
+    return <DashboardJurado usuario={usuario} eventos={eventos} eventData={juradoEventData} />;
   }
 
   if (rol === "COMPETIDOR") {

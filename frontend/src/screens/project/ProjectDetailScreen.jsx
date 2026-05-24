@@ -11,7 +11,7 @@ import {
   Users,
   Vote,
 } from "lucide-react";
-import { getProyectos } from "../../services/proyectoService";
+import { getProyectoById, getProyectos } from "../../services/proyectoService";
 import { getEventos } from "../../services/eventoService";
 import { getEquipos } from "../../services/equipoService";
 import { getComentariosByProyecto } from "../../services/comentarioService";
@@ -24,6 +24,8 @@ import {
 import { getRanking } from "../../services/criterioService";
 import { MaterialGallery } from "../../common/MaterialGallery";
 import "../../styles/projects.css";
+
+const PROJECT_DETAIL_CACHE_PREFIX = "votify:project-detail:";
 
 function initials(name = "", email = "") {
   const base = name || email || "P";
@@ -138,20 +140,40 @@ function ProjectDetailScreen() {
   const eventoFinalId = eventoId || proyecto?.evento?.id || evento?.id;
 
   useEffect(() => {
+    const cacheKey = `${PROJECT_DETAIL_CACHE_PREFIX}${idProyecto}:${eventoId || "any"}`;
+
     async function load() {
       try {
-        setLoading(true);
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setProyecto(parsed.proyecto || null);
+          setEvento(parsed.evento || null);
+          setEquipo(parsed.equipo || null);
+          setMiembros(parsed.miembros || []);
+          setVotacionesProyecto(parsed.votacionesProyecto || []);
+          setComentarios(parsed.comentarios || []);
+          setVoteCountsByRelation(parsed.voteCountsByRelation || {});
+          setRankingByVotingId(parsed.rankingByVotingId || {});
+          setSelectedVotingId(parsed.selectedVotingId || "");
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+
         setError("");
 
-        const [proyectosData, eventosData, equiposData] = await Promise.all([
-          getProyectos().catch(() => []),
+        const [proyectoById, eventosData, equiposData, comentariosData] = await Promise.all([
+          getProyectoById(idProyecto).catch(async () => {
+            const proyectosData = await getProyectos().catch(() => []);
+            return proyectosData.find((p) => String(p.id) === String(idProyecto)) || null;
+          }),
           getEventos().catch(() => []),
           getEquipos().catch(() => []),
+          getComentariosByProyecto(idProyecto).catch(() => []),
         ]);
 
-        const proyectoEncontrado = proyectosData.find(
-          (p) => String(p.id) === String(idProyecto)
-        );
+        const proyectoEncontrado = proyectoById;
 
         if (!proyectoEncontrado) {
           throw new Error("No se encontro el proyecto.");
@@ -173,8 +195,6 @@ function ProjectDetailScreen() {
         setProyecto(proyectoEncontrado);
         setEvento(eventoEncontrado);
         setEquipo(equipoEncontrado);
-
-        const comentariosData = await getComentariosByProyecto(idProyecto).catch(() => []);
         setComentarios(comentariosData || []);
 
         if (effectiveEventoId) {
@@ -187,22 +207,6 @@ function ProjectDetailScreen() {
               (asignacion) =>
                 String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
             );
-
-            if (asignacionesEquipo.length === 0) {
-              const todasAsignaciones = [];
-
-              await Promise.all(
-                (eventosData || []).map(async (eventoItem) => {
-                  const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
-                  todasAsignaciones.push(...asignaciones);
-                })
-              );
-
-              asignacionesEquipo = todasAsignaciones.filter(
-                (asignacion) =>
-                  String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
-              );
-            }
           }
 
           const miembrosEquipo = asignacionesEquipo
@@ -216,35 +220,48 @@ function ProjectDetailScreen() {
           setMiembros(miembrosEquipo);
 
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
-          const relaciones = [];
-
-          for (const votacion of votaciones || []) {
-            const proyectosVotacion = await getVotacionProyectosByVotacion(votacion.id).catch(() => []);
-            const relacion = proyectosVotacion.find(
+          const relaciones = (
+            await Promise.all(
+              (votaciones || []).map(async (votacion) => {
+                const proyectosVotacion = await getVotacionProyectosByVotacion(votacion.id).catch(() => []);
+                const relacion = proyectosVotacion.find(
               (item) => String(item.proyecto?.id) === String(idProyecto)
             );
 
-            if (relacion) {
-              relaciones.push({ ...relacion, votacion });
-            }
-          }
+                return relacion ? { ...relacion, votacion } : null;
+              })
+            )
+          ).filter(Boolean);
 
           setVotacionesProyecto(relaciones);
 
-          const counts = {};
-          const rankings = {};
-          for (const relacion of relaciones) {
-            counts[relacion.id] = Number(await getConteoVotos(relacion.id).catch(() => 0));
-            if (relacion.votacion?.id) {
-              rankings[relacion.votacion.id] = await getRanking(
-                effectiveEventoId,
-                relacion.votacion.id
-              ).catch(() => []);
-            }
-          }
+          const countEntries = await Promise.all(
+            relaciones.map(async (relacion) => [
+              relacion.id,
+              Number(await getConteoVotos(relacion.id).catch(() => 0)),
+            ])
+          );
+
+          const rankingEntries = await Promise.all(
+            relaciones
+              .filter((relacion) => relacion.votacion?.id)
+              .map(async (relacion) => [
+                relacion.votacion.id,
+                await getRanking(effectiveEventoId, relacion.votacion.id).catch(() => []),
+              ])
+          );
+
+          const counts = Object.fromEntries(countEntries);
+          const rankings = Object.fromEntries(rankingEntries);
 
           setVoteCountsByRelation(counts);
           setRankingByVotingId(rankings);
+          const nextSelectedVotingId =
+            selectedVotingId &&
+            relaciones.some((relacion) => String(relacion.votacion?.id) === String(selectedVotingId))
+              ? selectedVotingId
+              : relaciones[0]?.votacion?.id || "";
+
           setSelectedVotingId((current) => {
             if (
               current &&
@@ -255,12 +272,41 @@ function ProjectDetailScreen() {
 
             return relaciones[0]?.votacion?.id || "";
           });
+
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              proyecto: proyectoEncontrado,
+              evento: eventoEncontrado,
+              equipo: equipoEncontrado,
+              miembros: miembrosEquipo,
+              votacionesProyecto: relaciones,
+              comentarios: comentariosData || [],
+              voteCountsByRelation: counts,
+              rankingByVotingId: rankings,
+              selectedVotingId: nextSelectedVotingId,
+            })
+          );
         } else {
           setMiembros([]);
           setVotacionesProyecto([]);
           setVoteCountsByRelation({});
           setRankingByVotingId({});
           setSelectedVotingId("");
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              proyecto: proyectoEncontrado,
+              evento: eventoEncontrado,
+              equipo: equipoEncontrado,
+              miembros: [],
+              votacionesProyecto: [],
+              comentarios: comentariosData || [],
+              voteCountsByRelation: {},
+              rankingByVotingId: {},
+              selectedVotingId: "",
+            })
+          );
         }
       } catch (err) {
         setError(err.message || "No se pudo cargar el proyecto.");
@@ -387,6 +433,10 @@ function ProjectDetailScreen() {
         <article className="project-balanced-main">
           <div className="project-balanced-tags">
             <span>{getCategoryLabel(proyecto.tipoCategoria)}</span>
+            <span className="success">Proyecto activo</span>
+            {selectedVoting ? (
+              <span className={selectedVotingStateClass}>{selectedVotingState}</span>
+            ) : null}
           </div>
 
           <h1>{proyecto.nombre}</h1>
