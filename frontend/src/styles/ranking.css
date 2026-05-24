@@ -13,15 +13,18 @@
 .ranking-breadcrumbs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #64748b;
-  font-size: 14px;
-  margin-bottom: 16px;
+  gap: 0.5rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
 }
 
-.ranking-breadcrumbs strong {
-  color: #111827;
+.ranking-breadcrumbs a {
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 700;
 }
+
+
 
 .ranking-context-header {
   background: #fff;
@@ -770,7 +773,7 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  overflow: visible;
+  overflow: hidden;
   text-align: center;
   padding: 126px 18px 18px;
 }
@@ -780,7 +783,6 @@
   position: absolute;
   inset: 0 0 auto;
   height: 90px;
-  border-radius: 10px 10px 0 0;
 }
 
 .ranking-award-card.position-1 {

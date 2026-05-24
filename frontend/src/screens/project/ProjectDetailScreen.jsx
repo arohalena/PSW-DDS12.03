@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BarChart3,
   Calendar,
+  CheckCircle2,
   MessageCircle,
   Star,
   Trophy,
@@ -43,7 +44,78 @@ function getCategoryLabel(category) {
 }
 
 function votingLabel(votacion) {
-  return votacion?.nombre || `${votacion?.tipo || "Votación"} + ${votacion?.modalidad || ""}`;
+  return votacion?.nombre || `${votacion?.tipo || "Votacion"} - ${votacion?.modalidad || ""}`;
+}
+
+function modalityLabel(modalidad) {
+  switch (modalidad) {
+    case "SIMPLE":
+      return "Voto simple";
+    case "PUNTOS":
+      return "Puntos";
+    case "MULTICRITERIO":
+      return "Multicriterio";
+    case "MULTICRITERIO_PONDERADA":
+      return "Multicriterio ponderada";
+    default:
+      return modalidad || "Sin modalidad";
+  }
+}
+
+function votingTypeLabel(tipo) {
+  switch (tipo) {
+    case "POPULAR":
+      return "Popular";
+    case "JURADO":
+      return "Jurado";
+    case "MIXTA":
+      return "Mixta";
+    default:
+      return tipo || "Votacion";
+  }
+}
+
+function votingStateLabel(votacion) {
+  const estado = votacion?.estadoActual || votacion?.estado || "ABIERTA";
+  switch (estado) {
+    case "PENDIENTE":
+      return "Pendiente";
+    case "PAUSADA":
+      return "Pausada";
+    case "CERRADA":
+      return "Cerrada";
+    default:
+      return "Abierta";
+  }
+}
+
+function resolveEquipoForProject(project, equipos = []) {
+  if (project?.equipo) return project.equipo;
+
+  return (
+    equipos.find((item) => String(item.id) === String(project?.equipoId)) ||
+    equipos.find((item) => String(item.proyecto?.id) === String(project?.id)) ||
+    null
+  );
+}
+
+function formatScore(value) {
+  const num = Number(value || 0);
+  return Number.isInteger(num) ? String(num) : num.toFixed(2);
+}
+
+function formatFive(value) {
+  const num = Number(value || 0);
+  return Math.min(Math.max(num, 0), 5).toFixed(1);
+}
+
+function formatDate(value) {
+  if (!value) return "Sin fecha";
+  return new Date(value).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function ProjectDetailScreen() {
@@ -82,19 +154,10 @@ function ProjectDetailScreen() {
         );
 
         if (!proyectoEncontrado) {
-          throw new Error("No se encontró el proyecto.");
+          throw new Error("No se encontro el proyecto.");
         }
 
-        const equipoEncontrado =
-          proyectoEncontrado.equipo ||
-          equiposData.find(
-            (item) => String(item.id) === String(proyectoEncontrado.equipo?.id)
-          ) ||
-          equiposData.find(
-            (item) => String(item.proyecto?.id) === String(idProyecto)
-          ) ||
-          null;
-
+        const equipoEncontrado = resolveEquipoForProject(proyectoEncontrado, equiposData);
         const effectiveEventoId =
           eventoId ||
           proyectoEncontrado?.evento?.id ||
@@ -117,40 +180,40 @@ function ProjectDetailScreen() {
         if (effectiveEventoId) {
           let asignacionesEquipo = [];
 
-        if (equipoEncontrado?.id) {
-          const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+          if (equipoEncontrado?.id) {
+            const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-          asignacionesEquipo = asignacionesEventoActual.filter(
-            (asignacion) =>
-              String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
-          );
-
-          if (asignacionesEquipo.length === 0) {
-            const todasAsignaciones = [];
-
-            await Promise.all(
-              (eventosData || []).map(async (eventoItem) => {
-                const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
-                todasAsignaciones.push(...asignaciones);
-              })
-            );
-
-            asignacionesEquipo = todasAsignaciones.filter(
+            asignacionesEquipo = asignacionesEventoActual.filter(
               (asignacion) =>
                 String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
             );
+
+            if (asignacionesEquipo.length === 0) {
+              const todasAsignaciones = [];
+
+              await Promise.all(
+                (eventosData || []).map(async (eventoItem) => {
+                  const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
+                  todasAsignaciones.push(...asignaciones);
+                })
+              );
+
+              asignacionesEquipo = todasAsignaciones.filter(
+                (asignacion) =>
+                  String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+              );
+            }
           }
-        }
 
-        const miembrosEquipo = asignacionesEquipo
-          .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
-          .filter(Boolean)
-          .filter(
-            (competidor, index, array) =>
-              array.findIndex((item) => String(item.id) === String(competidor.id)) === index
-          );
+          const miembrosEquipo = asignacionesEquipo
+            .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
+            .filter(Boolean)
+            .filter(
+              (competidor, index, array) =>
+                array.findIndex((item) => String(item.id) === String(competidor.id)) === index
+            );
 
-        setMiembros(miembrosEquipo);
+          setMiembros(miembrosEquipo);
 
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
           const relaciones = [];
@@ -221,60 +284,50 @@ function ProjectDetailScreen() {
 
   const selectedVoting = selectedVotingRelation?.votacion || null;
   const selectedVotes = selectedVotingRelation
-  ? voteCountsByRelation[selectedVotingRelation.id] || 0
-  : 0;
+    ? voteCountsByRelation[selectedVotingRelation.id] || 0
+    : 0;
 
-const selectedRankingEntry = useMemo(() => {
-  if (!selectedVoting?.id || !proyecto?.id) return null;
+  const selectedRankingEntry = useMemo(() => {
+    if (!selectedVoting?.id || !proyecto?.id) return null;
 
-  const ranking = rankingByVotingId[selectedVoting.id] || [];
+    const ranking = rankingByVotingId[selectedVoting.id] || [];
 
-  return (
-    ranking.find((entry) => String(entry.proyectoId) === String(proyecto.id)) ||
-    null
-  );
-}, [rankingByVotingId, selectedVoting, proyecto]);
-
-function formatScore(value) {
-  const num = Number(value || 0);
-  return Number.isInteger(num) ? String(num) : num.toFixed(2);
-}
-
-function formatFive(value) {
-  const num = Number(value || 0);
-  return Math.min(Math.max(num, 0), 5).toFixed(1);
-}
-
-const selectedScoreLabel = useMemo(() => {
-  if (!selectedVoting) return "—";
-
-  if (selectedVoting.modalidad === "SIMPLE") {
-    return String(selectedRankingEntry?.totalVotos ?? selectedVotes);
-  }
-
-  if (selectedVoting.modalidad === "PUNTOS") {
-    return formatScore(
-      selectedRankingEntry?.mediaPuntos ??
-        selectedRankingEntry?.puntuacionTotal ??
-        0
+    return (
+      ranking.find((entry) => String(entry.proyectoId) === String(proyecto.id)) ||
+      null
     );
-  }
+  }, [rankingByVotingId, selectedVoting, proyecto]);
 
-  return selectedRankingEntry?.puntuacionTotal !== undefined
-    ? formatFive(selectedRankingEntry.puntuacionTotal)
-    : "—";
-}, [selectedVoting, selectedRankingEntry, selectedVotes]);
+  const selectedScoreLabel = useMemo(() => {
+    if (!selectedVoting) return "-";
 
-const selectedScoreText = useMemo(() => {
-  if (!selectedVoting) return "Sin votación";
+    if (selectedVoting.modalidad === "SIMPLE") {
+      return String(selectedRankingEntry?.totalVotos ?? selectedVotes);
+    }
 
-  if (selectedVoting.modalidad === "SIMPLE") return "Votos";
-  if (selectedVoting.modalidad === "PUNTOS") return "Media /10";
-  if (selectedVoting.modalidad === "MULTICRITERIO") return "Media /5";
-  if (selectedVoting.modalidad === "MULTICRITERIO_PONDERADA") return "Ponderada /5";
+    if (selectedVoting.modalidad === "PUNTOS") {
+      return formatScore(
+        selectedRankingEntry?.mediaPuntos ??
+          selectedRankingEntry?.puntuacionTotal ??
+          0
+      );
+    }
 
-  return "Puntuación";
-}, [selectedVoting]);
+    return selectedRankingEntry?.puntuacionTotal !== undefined
+      ? formatFive(selectedRankingEntry.puntuacionTotal)
+      : "-";
+  }, [selectedVoting, selectedRankingEntry, selectedVotes]);
+
+  const selectedScoreText = useMemo(() => {
+    if (!selectedVoting) return "Sin votacion";
+
+    if (selectedVoting.modalidad === "SIMPLE") return "Votos";
+    if (selectedVoting.modalidad === "PUNTOS") return "Media /10";
+    if (selectedVoting.modalidad === "MULTICRITERIO") return "Media /5";
+    if (selectedVoting.modalidad === "MULTICRITERIO_PONDERADA") return "Ponderada /5";
+
+    return "Puntuacion";
+  }, [selectedVoting]);
 
   const totalVotos = useMemo(() => {
     return Object.values(voteCountsByRelation).reduce(
@@ -282,6 +335,16 @@ const selectedScoreText = useMemo(() => {
       0
     );
   }, [voteCountsByRelation]);
+
+  const criteriosSeleccionados = selectedRankingEntry?.criterios || [];
+  const posicion = selectedRankingEntry?.posicion ? `#${selectedRankingEntry.posicion}` : "-";
+  const votacionesAbiertas = votacionesProyecto.filter(
+    (relacion) => votingStateLabel(relacion.votacion) === "Abierta"
+  ).length;
+  const selectedVotingState = selectedVoting ? votingStateLabel(selectedVoting) : "Sin votacion";
+  const selectedVotingStateClass = selectedVoting
+    ? `state-${(selectedVoting.estadoActual || selectedVoting.estado || "ABIERTA").toLowerCase()}`
+    : "state-empty";
 
   if (loading) {
     return (
@@ -300,78 +363,103 @@ const selectedScoreText = useMemo(() => {
   }
 
   return (
-    <main className="projects-page project-detail-page mock-project-detail">
-      <div className="project-breadcrumbs">
-        <Link to="/eventos">Eventos</Link>
-        <span>/</span>
-        {eventoFinalId ? (
-          <Link to={`/eventos/${eventoFinalId}`}>{evento?.nombre || "Evento"}</Link>
-        ) : (
-          <Link to="/proyectos">Proyectos</Link>
-        )}
-        <span>/</span>
-        <strong>{proyecto.nombre}</strong>
+    <main className="projects-page project-detail-page project-detail-balanced">
+      <div className="project-detail-topbar project-balanced-topbar">
+        <div className="project-breadcrumbs">
+          <Link to="/eventos">Eventos</Link>
+          <span>/</span>
+          {eventoFinalId ? (
+            <Link to={`/eventos/${eventoFinalId}`}>{evento?.nombre || "Evento"}</Link>
+          ) : (
+            <Link to="/proyectos">Proyectos</Link>
+          )}
+          <span>/</span>
+          <strong>{proyecto.nombre}</strong>
+        </div>
+
+        <button className="project-back-btn" type="button" onClick={() => navigate(-1)}>
+          <ArrowLeft size={16} />
+          Volver
+        </button>
       </div>
 
-      <section className="mock-project-hero">
-        <div className="mock-project-hero-main">
-          <button className="project-back-btn" type="button" onClick={() => navigate(-1)}>
-            <ArrowLeft size={16} />
-            Volver
-          </button>
-
-          <div className="mock-project-tags">
+      <section className="project-balanced-hero">
+        <article className="project-balanced-main">
+          <div className="project-balanced-tags">
             <span>{getCategoryLabel(proyecto.tipoCategoria)}</span>
-            <span className="success">Proyecto activo</span>
           </div>
 
           <h1>{proyecto.nombre}</h1>
-          <p>{proyecto.descripcion || "Proyecto participante en el evento de votación."}</p>
+          <p>{proyecto.descripcion || "Proyecto participante en el evento de votacion."}</p>
 
-          <div className="mock-project-meta-grid">
+          <div className="project-balanced-description">
+            <span>Descripcion detallada del proyecto</span>
+            <p>{proyecto.descripcion || "Este proyecto todavia no tiene una descripcion detallada registrada."}</p>
+          </div>
+
+          <div className="project-balanced-meta">
             <div>
               <Trophy size={18} />
               <span>Evento</span>
               <strong>{evento?.nombre || "Sin evento"}</strong>
             </div>
-
             <div>
               <Users size={18} />
               <span>Equipo</span>
               <strong>{equipo?.nombre || "Sin equipo"}</strong>
             </div>
-          </div>
-        </div>
-
-        <aside className="mock-project-score-card">
-          <div className="mock-score-ring">
-            <strong>{selectedScoreLabel}</strong>
-            <span>{selectedScoreText}</span>
-          </div>
-
-          <div className="mock-selected-voting">
-            <span>Votación seleccionada</span>
-            <strong>{selectedVoting ? votingLabel(selectedVoting) : "Sin votación"}</strong>
-          </div>
-
-          <div className="mock-score-stats">
             <div>
-              <strong>{totalVotos}</strong>
+              <Calendar size={18} />
+              <span>Votaciones abiertas</span>
+              <strong>{votacionesAbiertas}</strong>
+            </div>
+          </div>
+        </article>
+
+        <aside className="project-balanced-score-card">
+          <div className="project-balanced-score-head">
+            <div>
+              <span>Votacion seleccionada</span>
+              <strong>{selectedVoting ? votingLabel(selectedVoting) : "Sin votacion"}</strong>
+            </div>
+            <span className={`project-state-pill ${selectedVotingStateClass}`}>
+              {selectedVotingState}
+            </span>
+          </div>
+
+          <div className="project-balanced-score-ring">
+            <div>
+              <strong>{selectedScoreLabel}</strong>
+              <span>{selectedScoreText}</span>
+            </div>
+          </div>
+
+          <div className="project-balanced-score-stats">
+            <article>
+              <span>Posicion</span>
+              <strong>{posicion}</strong>
+            </article>
+            <article>
               <span>Total votos</span>
-            </div>
-            <div>
-              <strong>{miembros.length}</strong>
+              <strong>{totalVotos}</strong>
+            </article>
+            <article>
               <span>Miembros</span>
-            </div>
-            <div>
-              <strong>{votacionesProyecto.length}</strong>
-              <span>Votaciones</span>
-            </div>
+              <strong>{miembros.length}</strong>
+            </article>
           </div>
+
+          {selectedVoting ? (
+            <div className="project-balanced-voting-meta">
+              <span>{votingTypeLabel(selectedVoting.tipo)}</span>
+              <span>{modalityLabel(selectedVoting.modalidad)}</span>
+              <span>{selectedVotes} votos en esta votacion</span>
+            </div>
+          ) : null}
 
           {votacionesProyecto.length > 1 ? (
-            <label className="project-vote-select-field">
-              <span>Elegir votación</span>
+            <label className="project-balanced-select">
+              <span>Elegir votacion</span>
               <select
                 value={selectedVotingId}
                 onChange={(e) => setSelectedVotingId(e.target.value)}
@@ -385,70 +473,79 @@ const selectedScoreText = useMemo(() => {
             </label>
           ) : null}
 
-          <button
-            type="button"
-            className="primary-btn full-width-btn"
-            disabled={!eventoFinalId || votacionesProyecto.length === 0}
-            onClick={() => {
-              const votacionId =
-                selectedVotingId || votacionesProyecto[0]?.votacion?.id;
-
-              if (!votacionId) {
-                alert("Este proyecto no está asignado a ninguna votación.");
-                return;
-              }
-
-              navigate(
-                `/eventos/${eventoFinalId}/votaciones/${votacionId}/proyectos/${proyecto.id}/votar`
-              );
-            }}
-          >
-            <Vote size={17} />
-            Votar por este proyecto
-          </button>
-
-          {votacionesProyecto.length > 0 ? (
+          <div className="project-balanced-actions">
             <button
               type="button"
-              className="secondary-btn full-width-btn"
+              className="primary-btn full-width-btn"
+              disabled={!eventoFinalId || votacionesProyecto.length === 0}
               onClick={() => {
                 const votacionId =
                   selectedVotingId || votacionesProyecto[0]?.votacion?.id;
 
-                navigate(`/eventos/${eventoFinalId}/votaciones/${votacionId}/resultados`);
+                if (!votacionId) {
+                  alert("Este proyecto no esta asignado a ninguna votacion.");
+                  return;
+                }
+
+                navigate(
+                  `/eventos/${eventoFinalId}/votaciones/${votacionId}/proyectos/${proyecto.id}/votar`
+                );
+              }}
+            >
+              <Vote size={17} />
+              Votar por este proyecto
+            </button>
+
+            {votacionesProyecto.length > 0 ? (
+              <button
+                type="button"
+                className="secondary-btn full-width-btn"
+                onClick={() => {
+                  const votacionId =
+                    selectedVotingId || votacionesProyecto[0]?.votacion?.id;
+
+                  navigate(`/eventos/${eventoFinalId}/votaciones/${votacionId}/resultados`);
               }}
             >
               <BarChart3 size={17} />
               Ver resultados
             </button>
-          ) : null}
+            ) : null}
+          </div>
         </aside>
       </section>
 
-      <section className="mock-project-content-grid">
-        <article className="mock-card">
-          <h2>Información del equipo</h2>
-
-          <div className="mock-team-summary">
-            <div className="mock-team-avatar">{initials(equipo?.nombre)}</div>
+      <section className="project-balanced-content-grid">
+        <article className="project-balanced-card">
+          <div className="project-balanced-card-heading">
             <div>
-              <strong>{equipo?.nombre || "Sin equipo asignado"}</strong>
-              <span>
-                {miembros.length} miembro{miembros.length === 1 ? "" : "s"} registrado
-                {miembros.length === 1 ? "" : "s"}
-              </span>
+              <h2>Informacion del equipo</h2>
+              <p>Participantes vinculados al proyecto.</p>
             </div>
           </div>
 
-          <div className="mock-members-list">
+          <div className="project-balanced-team-summary">
+            <div className="project-balanced-team-title">
+              <span>
+                <Trophy size={21} />
+              </span>
+              <strong>{equipo?.nombre || "Sin equipo asignado"}</strong>
+            </div>
+            <span>
+              {miembros.length} miembro{miembros.length === 1 ? "" : "s"} registrado
+              {miembros.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          <div className="project-balanced-members">
             {miembros.length === 0 ? (
               <p className="project-muted">No hay competidores asignados al equipo en este evento.</p>
             ) : (
               miembros.map((miembro) => (
-                <div className="mock-member-row" key={miembro.id}>
+                <div className="project-balanced-member" key={miembro.id}>
                   <div>{initials(miembro.nombre, miembro.email)}</div>
                   <section>
-                    <strong>{miembro.nombre}</strong>
+                    <strong>{miembro.nombre || miembro.email}</strong>
                     <span>{miembro.email}</span>
                   </section>
                 </div>
@@ -457,32 +554,42 @@ const selectedScoreText = useMemo(() => {
           </div>
         </article>
 
-        <article className="mock-card">
-          <h2>Votaciones asociadas</h2>
+        <article className="project-balanced-card">
+          <div className="project-balanced-card-heading">
+            <div>
+              <h2>Votaciones asociadas</h2>
+              <p>Selecciona una votacion para ver su puntuacion.</p>
+            </div>
+            <CheckCircle2 size={22} />
+          </div>
 
-          <div className="mock-votings-list">
+          <div className="project-balanced-votings">
             {votacionesProyecto.length === 0 ? (
-              <p className="project-muted">Este proyecto todavía no está asignado a ninguna votación.</p>
+              <p className="project-muted">Este proyecto todavia no esta asignado a ninguna votacion.</p>
             ) : (
               votacionesProyecto.map((relacion) => {
                 const active =
                   String(relacion.votacion?.id) === String(selectedVotingId);
+                const estado = votingStateLabel(relacion.votacion);
+                const estadoClass = `state-${(relacion.votacion?.estadoActual || relacion.votacion?.estado || "ABIERTA").toLowerCase()}`;
 
                 return (
                   <button
                     type="button"
-                    className={`mock-voting-row mock-voting-row-button ${active ? "active" : ""}`}
+                    className={`project-balanced-voting-row ${active ? "active" : ""}`}
                     key={relacion.id}
                     onClick={() => setSelectedVotingId(relacion.votacion?.id || "")}
                   >
                     <div>
                       <strong>{votingLabel(relacion.votacion)}</strong>
                       <span>
-                        {relacion.votacion?.tipo} · {relacion.votacion?.modalidad} ·{" "}
-                        {voteCountsByRelation[relacion.id] || 0} votos
+                        {votingTypeLabel(relacion.votacion?.tipo)} - {modalityLabel(relacion.votacion?.modalidad)}
                       </span>
                     </div>
-                    <Star size={18} />
+                    <div className="project-balanced-voting-side">
+                      <span className={`project-state-pill ${estadoClass}`}>{estado}</span>
+                      <strong>{voteCountsByRelation[relacion.id] || 0} votos</strong>
+                    </div>
                   </button>
                 );
               })
@@ -491,10 +598,41 @@ const selectedScoreText = useMemo(() => {
         </article>
       </section>
 
-      <section className="mock-card mock-gallery-card">
-        <div className="mock-section-heading">
+      {criteriosSeleccionados.length > 0 ? (
+        <section className="project-balanced-card">
+          <div className="project-balanced-card-heading">
+            <div>
+              <h2>Desglose por criterio</h2>
+              <p>Promedios actuales de la votacion seleccionada.</p>
+            </div>
+            <Star size={22} />
+          </div>
+
+          <div className="project-balanced-criteria">
+            {criteriosSeleccionados.map((criterio) => {
+              const promedio = Number(criterio.promedio || 0);
+              const width = `${(Math.min(Math.max(promedio, 0), 5) / 5) * 100}%`;
+
+              return (
+                <article key={criterio.criterioId || criterio.criterioNombre || criterio.nombre}>
+                  <div>
+                    <span>{criterio.criterioNombre || criterio.nombre || "Criterio"}</span>
+                    <strong>{formatFive(promedio)}/5</strong>
+                  </div>
+                  <div className="project-balanced-bar">
+                    <span style={{ width }} />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="project-balanced-card project-balanced-gallery">
+        <div className="project-balanced-card-heading">
           <div>
-            <h2>Galería del proyecto</h2>
+            <h2>Galeria del proyecto</h2>
             <p>Capturas, demo y material visual del proyecto.</p>
           </div>
         </div>
@@ -502,8 +640,8 @@ const selectedScoreText = useMemo(() => {
         <MaterialGallery proyectoId={idProyecto} />
       </section>
 
-      <section className="mock-card mock-feedback-section">
-        <div className="mock-section-heading">
+      <section className="project-balanced-card">
+        <div className="project-balanced-card-heading">
           <div>
             <h2>Feedback y comentarios</h2>
             <p>Comentarios generales y comentarios asociados a criterios.</p>
@@ -511,22 +649,22 @@ const selectedScoreText = useMemo(() => {
           <span className="feedback-count">{comentarios.length}</span>
         </div>
 
-        <div className="mock-comments-list">
+        <div className="project-balanced-comments">
           {comentarios.length === 0 ? (
-            <div className="mock-empty-feedback">
+            <div className="project-balanced-empty">
               <MessageCircle size={24} />
-              <strong>Todavía no hay feedback</strong>
-              <span>Cuando el jurado o los votantes comenten, aparecerá aquí.</span>
+              <strong>Todavia no hay feedback</strong>
+              <span>Cuando el jurado o los votantes comenten, aparecera aqui.</span>
             </div>
           ) : (
             comentarios.map((comentario) => (
-              <article className="mock-comment-card" key={comentario.id}>
-                <div className="mock-comment-icon">
+              <article className="project-balanced-comment" key={comentario.id}>
+                <div className="project-comment-icon">
                   <MessageCircle size={18} />
                 </div>
 
                 <div>
-                  <div className="mock-comment-header">
+                  <div className="project-comment-header">
                     <strong>
                       {comentario.criterio?.nombre
                         ? `Criterio: ${comentario.criterio.nombre}`
