@@ -1,9 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Trash2, Vote, X } from "lucide-react";
 import { createVotacion } from "../../services/votacionService";
 import SuggestCriteriaPanel from "./SuggestCriteriaPanel";
 import BaremoTemplatesPanel from "./BaremoTemplatesPanel";
-import { useModalShortcuts } from "../../common/useModalShortcuts";
 import "../../styles/events.css";
 
 const tiposVotacion = [
@@ -79,13 +78,6 @@ function sanitizeWeight(value) {
 function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  const formRef = useRef(null);
-  const modalRef = useModalShortcuts({
-    isOpen: true,
-    onClose,
-    onSubmit: () => formRef.current?.requestSubmit(),
-  });
 
   const [config, setConfig] = useState({
     nombre: "Nueva votación",
@@ -311,14 +303,7 @@ function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCrea
 
   return (
     <div className="voting-modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <form
-        className="voting-modal"
-        onSubmit={handleSubmit}
-        ref={(node) => {
-          formRef.current = node;
-          modalRef.current = node;
-        }}
-      >
+      <form className="voting-modal" onSubmit={handleSubmit}>
         <div className="voting-modal-header">
           <div>
             <span className="voting-modal-icon">
@@ -328,7 +313,14 @@ function CreateVotingModal({ eventoId, eventoNombre, tipoEvento, onClose, onCrea
             <p>{eventoNombre}</p>
           </div>
 
-          <button type="button" className="voting-modal-close" onClick={onClose}>
+          <button
+            type="button"
+            className="voting-modal-close"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={onClose}
+            tabIndex={-1}
+            aria-label="Cerrar modal"
+          >
             <X size={20} />
           </button>
         </div>

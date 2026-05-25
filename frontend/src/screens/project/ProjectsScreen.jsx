@@ -1040,7 +1040,7 @@ function ProjectsScreen() {
                       Eliminar
                     </button>
                     {hasVotes ? (
-                      <span className="project-delete-hint">Bloqueado por votos</span>
+                      <span className="project-delete-hint">Eliminación bloqueada por votos </span>
                     ) : null}
                   </div>
                 ) : null}
