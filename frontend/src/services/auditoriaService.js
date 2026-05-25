@@ -1,4 +1,4 @@
-const API_URL = "`${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/auditoria";
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/auditoria`;
 
 export async function getRegistrosPorEvento(eventoId, votacionId = null) {
   const url = votacionId
