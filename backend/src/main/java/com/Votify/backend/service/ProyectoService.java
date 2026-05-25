@@ -123,6 +123,14 @@ public class ProyectoService extends GenericService<ProyectoMO> {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado."));
 
         for (VotacionProyectoMO votacionProyecto : votacionProyectoRepository.findByProyecto_Id(id)) {
+            long votos = votoRepository.countByVotacionProyecto_Id(votacionProyecto.getId());
+            if (votos > 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede eliminar un proyecto con votos emitidos. Los votos son inmutables.");
+            }
+        }
+
+        for (VotacionProyectoMO votacionProyecto : votacionProyectoRepository.findByProyecto_Id(id)) {
             comentarioRepository.deleteAll(comentarioRepository.findByVotacionProyecto_Id(votacionProyecto.getId()));
             puntuacionCriterioRepository.deleteAll(puntuacionCriterioRepository.findByVotacionProyecto_Id(votacionProyecto.getId()));
 

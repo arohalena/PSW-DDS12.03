@@ -334,9 +334,14 @@ public class ProyectoFacade {
                 vp.getVotacion().getId(),
                 vp.getVotacion().getNombre(),
                 vp.getVotacion().getTipo() != null ? vp.getVotacion().getTipo().name() : null,
-                vp.getVotacion().getModalidad() != null ? vp.getVotacion().getModalidad().name() : null
+                vp.getVotacion().getModalidad() != null ? vp.getVotacion().getModalidad().name() : null,
+                votoService.contarVotosPorVotacionProyecto(vp.getId())
             ))
             .toList();
+
+        long totalVotos = votacionesRef.stream()
+            .mapToLong(ProyectoGestionViewDTO.VotacionRefDTO::getTotalVotos)
+            .sum();
 
         return new ProyectoGestionViewDTO(
             p.getId(),
@@ -345,6 +350,7 @@ public class ProyectoFacade {
             p.getTipoCategoria(),
             equipoRef,
             eventoRef,
+            totalVotos,
             votacionesRef
         );
     }
