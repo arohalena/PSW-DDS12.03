@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:8090/api/comentarios";
+import API_BASE_URL from "../config/apiConfig";
+
+const API_URL = `${API_BASE_URL}/comentarios`;
 
 export async function getComentariosByProyecto(proyectoId) {
 

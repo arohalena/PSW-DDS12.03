@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:8090/api/auditoria";
+import API_BASE_URL from "../config/apiConfig";
+
+const API_URL = `${API_BASE_URL}/auditoria`;
 
 export async function getRegistrosPorEvento(eventoId, votacionId = null) {
   const url = votacionId

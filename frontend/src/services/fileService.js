@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:8090/api/material';
+import API_BASE_URL from "../config/apiConfig";
+
+const API_URL = `${API_BASE_URL}/material`;
 
 export const uploadFiles = async (files, proyectoId = null) => {
   if (!Array.isArray(files) || files.length === 0) {
