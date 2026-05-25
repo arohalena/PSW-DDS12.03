@@ -1,6 +1,6 @@
-const CRITERIOS_URL = "http://localhost:8090/api/criterios";
-const PUNTUACIONES_URL = "http://localhost:8090/api/puntuaciones";
-const RANKING_URL = "http://localhost:8090/api/ranking";
+const CRITERIOS_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/criterios`;
+const PUNTUACIONES_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/puntuaciones`;
+const RANKING_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/ranking`;
 
 export async function getCriteriosByEvento(eventoId){
 
