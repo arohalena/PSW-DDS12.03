@@ -94,7 +94,25 @@ function getEventCode(evento) {
 
 function hasEventAccess(eventoId, evento, puedeGestionar) {
   if (!isPrivateEvent(evento) || puedeGestionar) return true;
-  return localStorage.getItem(`votify_event_access_${eventoId}`) === "true";
+  return (
+    localStorage.getItem(`votify_event_access_${eventoId}`) === "true"
+  );
+}
+
+function getEventStatus(evento) {
+  const now = new Date();
+  const start = getEventStart(evento) ? new Date(getEventStart(evento)) : null;
+  const end = getEventEnd(evento) ? new Date(getEventEnd(evento)) : null;
+
+  if (start && now < start) {
+    return { label: "Planificación", className: "status-planning" };
+  }
+
+  if (end && now > end) {
+    return { label: "Finalizado", className: "status-finished" };
+  }
+
+  return { label: "Evento activo", className: "status-active" };
 }
 
 function votingLabel(votacion) {
@@ -424,6 +442,17 @@ function EventDetailScreen() {
 
   const selectedVotingEstado = getVotingEstado(selectedVoting);
   const eventHasVotes = Object.values(votesByVotingId).some((value) => Number(value || 0) > 0);
+  const selectedVotingVotes = Object.values(voteCounts).reduce(
+    (sum, value) => sum + Number(value || 0),
+    0
+  );
+  const totalEventVotes = Object.values(votesByVotingId).reduce(
+    (sum, value) => sum + Number(value || 0),
+    0
+  );
+  const openVotingCount = votaciones.filter(
+    (votacion) => getVotingEstado(votacion) === "ABIERTA"
+  ).length;
 
   const relacionesByProjectId = useMemo(() => {
     const map = new Map();
@@ -436,6 +465,14 @@ function EventDetailScreen() {
 
     return map;
   }, [votacionProyectos]);
+
+  const displayedProjects = useMemo(() => {
+    if (!selectedVoting) return proyectos;
+
+    return proyectos.filter((proyecto) =>
+      relacionesByProjectId.has(String(proyecto.id))
+    );
+  }, [proyectos, relacionesByProjectId, selectedVoting]);
 
   async function confirmDeleteEvento() {
     if (eventHasVotes) {
@@ -549,6 +586,7 @@ function EventDetailScreen() {
 
   const privateEvent = isPrivateEvent(evento);
   const canView = hasEventAccess(eventoId, evento, puedeGestionar);
+  const eventStatus = getEventStatus(evento);
 
   if (!canView) {
     return (
@@ -621,10 +659,14 @@ function EventDetailScreen() {
               </span>
             )}
 
-            <span className="event-status status-active">
+            <span className={`event-status ${eventStatus.className}`}>
+              {eventStatus.label}
+            </span>
+
+            <span className={`voting-status-chip ${getVotingEstadoClass(selectedVotingEstado)}`}>
               {selectedVoting
                 ? `Votación ${getVotingEstadoLabel(selectedVotingEstado)}`
-                : "Sin votación activa"}
+                : "Sin votación"}
             </span>
 
             {privateEvent ? (
@@ -684,13 +726,16 @@ function EventDetailScreen() {
             </>
           ) : null}
 
-          {selectedVotingId ? (
+          {votaciones.length > 0 ? (
             <button
               className="secondary-btn"
               type="button"
-              onClick={() =>
-                window.location.assign(`/eventos/${eventoId}/votaciones/${selectedVotingId}/resultados`)
-              }
+              onClick={() => {
+                const rankingVotingId = selectedVotingId || votaciones[0]?.id;
+                if (rankingVotingId) {
+                  navigate(`/eventos/${eventoId}/votaciones/${rankingVotingId}/resultados`);
+                }
+              }}
             >
               <BarChart3 size={17} />
               Ver Resultados
@@ -711,22 +756,22 @@ function EventDetailScreen() {
 
         <div>
           <Vote size={22} />
-          <strong>{votaciones.length}</strong>
-          <span>Votaciones</span>
+          <strong>{openVotingCount}</strong>
+          <span>Votaciones abiertas</span>
         </div>
 
         <div>
           <Users size={22} />
           <strong>
-            {Object.values(voteCounts).reduce((sum, value) => sum + Number(value || 0), 0)}
+            {selectedVotingVotes}
           </strong>
-          <span>Votos emitidos</span>
+          <span>Votos en selección</span>
         </div>
 
         <div>
           <CheckCircle size={22} />
-          <strong>{selectedVoting ? getVotingEstadoLabel(selectedVotingEstado) : "—"}</strong>
-          <span>Estado actual</span>
+          <strong>{totalEventVotes}</strong>
+          <span>Votos totales</span>
         </div>
       </section>
 
@@ -743,6 +788,7 @@ function EventDetailScreen() {
             Este evento todavía no tiene votaciones configuradas.
           </div>
         ) : (
+          <>
           <div className="event-detail-tabs">
             {votaciones.map((votacion) => {
               const estado = getVotingEstado(votacion);
@@ -838,6 +884,46 @@ function EventDetailScreen() {
               );
             })}
           </div>
+
+          {selectedVoting ? (
+            <div className="event-voting-overview">
+              <div className="event-voting-overview-main">
+                <div className="event-voting-overview-icon">
+                  <Vote size={20} />
+                </div>
+                <div>
+                  <span className="event-voting-overview-eyebrow">Votacion seleccionada</span>
+                  <h3>{votingLabel(selectedVoting)}</h3>
+                  <p>{votingSubtitle(selectedVoting)}</p>
+                </div>
+              </div>
+
+              <div className="event-voting-overview-metrics">
+                <span>
+                  <Calendar size={15} />
+                  {formatDate(getVotingStart(selectedVoting))} - {formatDate(getVotingEnd(selectedVoting))}
+                </span>
+                <span>
+                  <FolderKanban size={15} />
+                  {displayedProjects.length} proyectos
+                </span>
+                <span>
+                  <CheckCircle size={15} />
+                  {selectedVotingVotes} votos
+                </span>
+              </div>
+
+              <button
+                className="secondary-btn"
+                type="button"
+                onClick={() => navigate(`/eventos/${eventoId}/votaciones/${selectedVoting.id}/resultados`)}
+              >
+                <BarChart3 size={17} />
+                Ver resultados
+              </button>
+            </div>
+          ) : null}
+          </>
         )}
       </section>
 
@@ -859,11 +945,15 @@ function EventDetailScreen() {
           ) : null}
         </div>
 
-        {proyectos.length === 0 ? (
-          <div className="feedback-card">No hay proyectos asignados a este evento.</div>
+        {displayedProjects.length === 0 ? (
+          <div className="feedback-card">
+            {selectedVoting
+              ? "No hay proyectos asignados a esta votación."
+              : "No hay proyectos asignados a este evento."}
+          </div>
         ) : (
           <div className="event-detail-project-grid">
-            {proyectos.map((proyecto) => {
+            {displayedProjects.map((proyecto) => {
               const relation = relacionesByProjectId.get(String(proyecto.id));
 
               return (

@@ -3,12 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Calendar,
+  Clock,
   FolderKanban,
   Lock,
   Plus,
   Search,
   ShieldCheck,
   Users,
+  Vote,
 } from "lucide-react";
 import { getEventos } from "../../services/eventoService";
 import { getProyectosByEvento } from "../../services/proyectoService";
@@ -65,17 +67,19 @@ function isPrivateEvent(evento) {
   return Boolean(evento.codigoAccesoPublico || evento.codigoAcceso);
 }
 
-
 function hasEventAccess(evento, puedeGestionarEventos) {
   if (!isPrivateEvent(evento) || puedeGestionarEventos) return true;
-  return localStorage.getItem(`votify_event_access_${evento.id}`) === "true";
-}
 
+  return (
+    localStorage.getItem(`votify_event_access_${evento.id}`) === "true"
+  );
+}
 
 function EventsListScreen() {
   const navigate = useNavigate();
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCounts, setLoadingCounts] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("TODOS");
@@ -86,19 +90,26 @@ function EventsListScreen() {
   const puedeGestionarEventos = esOrganizador();
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadEventos() {
       try {
         setLoading(true);
         setError("");
 
         const data = await getEventos();
-        setEventos(data || []);
+        if (cancelled) return;
+
+        const safeEventos = Array.isArray(data) ? data : [];
+        setEventos(safeEventos);
+        setLoading(false);
+        setLoadingCounts(true);
 
         const projectCounts = {};
         const voterCounts = {};
 
         await Promise.all(
-          (data || []).map(async (evento) => {
+          safeEventos.map(async (evento) => {
             const [proyectos, votantes] = await Promise.all([
               getProyectosByEvento(evento.id).catch(() => []),
               getVotantesPorEvento(evento.id).catch(() => 0),
@@ -109,41 +120,75 @@ function EventsListScreen() {
           })
         );
 
+        if (cancelled) return;
         setProyectosPorEvento(projectCounts);
         setVotantesPorEvento(voterCounts);
       } catch (err) {
-        setError(err.message || "No se pudieron cargar los eventos");
+        if (!cancelled) setError(err.message || "No se pudieron cargar los eventos");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingCounts(false);
+        }
       }
     }
 
     loadEventos();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  const eventSummary = useMemo(() => {
+    return eventos.reduce(
+      (summary, evento) => {
+        const status = getEventStatus(evento);
+
+        return {
+          total: summary.total + 1,
+          active: summary.active + (status.className === "status-active" ? 1 : 0),
+          planning: summary.planning + (status.className === "status-planning" ? 1 : 0),
+          private: summary.private + (isPrivateEvent(evento) ? 1 : 0),
+        };
+      },
+      { total: 0, active: 0, planning: 0, private: 0 }
+    );
+  }, [eventos]);
+
+  const statusFilterOptions = [
+    { value: "TODOS", label: "Todos" },
+    { value: "Votación activa", label: "Activos" },
+    { value: "Planificación", label: "Planificados" },
+    { value: "Finalizado", label: "Finalizados" },
+  ];
+
   const filteredEventos = useMemo(() => {
-    return eventos.filter((evento) => {
-      const status = getEventStatus(evento);
+    return [...eventos]
+      .sort((a, b) => String(getEventStart(a) || "").localeCompare(String(getEventStart(b) || "")))
+      .filter((evento) => {
+        const status = getEventStatus(evento);
 
-      const text = [
-        evento.nombre,
-        evento.descripcion,
-        evento.codigoAccesoPublico,
-        evento.codigoAcceso,
-        evento.tipo,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+        const text = [
+          evento.nombre,
+          evento.descripcion,
+          evento.codigoAccesoPublico,
+          evento.codigoAcceso,
+          evento.tipo,
+          evento.tipoEvento,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
 
-      const matchesSearch = text.includes(search.toLowerCase());
-      const matchesStatus = selectedStatus === "TODOS" || status.label === selectedStatus;
+        const matchesSearch = text.includes(search.toLowerCase());
+        const matchesStatus = selectedStatus === "TODOS" || status.label === selectedStatus;
 
-      return matchesSearch && matchesStatus;
-    });
+        return matchesSearch && matchesStatus;
+      });
   }, [eventos, search, selectedStatus]);
 
-  function handleEventClick(evento, puedeGestionarEventos) {
+  function handleEventClick(evento) {
     if (!hasEventAccess(evento, puedeGestionarEventos)) {
       setSelectedEvent(evento);
       return;
@@ -156,8 +201,12 @@ function EventsListScreen() {
     <main className="events-page events-mock-page">
       <header className="events-header">
         <div>
-          <h1>Gestión de Eventos</h1>
-          <p>Administra todos tus eventos de votación</p>
+          <h1>{puedeGestionarEventos ? "Gestión de eventos" : "Eventos"}</h1>
+          <p>
+            {puedeGestionarEventos
+              ? "Administra eventos, votaciones, proyectos y resultados."
+              : "Explora eventos disponibles y participa en sus votaciones."}
+          </p>
         </div>
 
         {puedeGestionarEventos ? (
@@ -173,6 +222,37 @@ function EventsListScreen() {
           Solo los organizadores pueden crear y configurar eventos.
         </div>
       ) : null}
+
+      <section className="events-summary-strip">
+        <article className="events-summary-card summary-total">
+          <div className="events-summary-icon">
+            <Calendar size={18} />
+          </div>
+          <span>Total eventos</span>
+          <strong>{eventSummary.total}</strong>
+        </article>
+        <article className="events-summary-card summary-active">
+          <div className="events-summary-icon">
+            <Vote size={18} />
+          </div>
+          <span>En votación</span>
+          <strong>{eventSummary.active}</strong>
+        </article>
+        <article className="events-summary-card summary-planning">
+          <div className="events-summary-icon">
+            <Clock size={18} />
+          </div>
+          <span>Planificados</span>
+          <strong>{eventSummary.planning}</strong>
+        </article>
+        <article className="events-summary-card summary-private">
+          <div className="events-summary-icon">
+            <Lock size={18} />
+          </div>
+          <span>Privados</span>
+          <strong>{eventSummary.private}</strong>
+        </article>
+      </section>
 
       {loading ? (
         <div className="feedback-card">Cargando eventos...</div>
@@ -191,12 +271,20 @@ function EventsListScreen() {
               />
             </div>
 
-            <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)}>
-              <option value="TODOS">Todos los estados</option>
-              <option value="Votación activa">Votación activa</option>
-              <option value="Planificación">Planificación</option>
-              <option value="Finalizado">Finalizado</option>
-            </select>
+            <div className="events-status-segment" role="group" aria-label="Filtrar eventos por estado">
+              {statusFilterOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={selectedStatus === option.value ? "active" : ""}
+                  onClick={() => setSelectedStatus(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            {loadingCounts ? <span className="events-counts-loading">Actualizando datos...</span> : null}
           </section>
 
           {filteredEventos.length === 0 ? (
@@ -208,30 +296,36 @@ function EventsListScreen() {
               {filteredEventos.map((evento) => {
                 const status = getEventStatus(evento);
                 const privateEvent = isPrivateEvent(evento);
+                const unlocked = hasEventAccess(evento, puedeGestionarEventos);
 
                 return (
                   <article
                     className="event-card event-card-clickable"
                     key={evento.id}
-                    onClick={() => handleEventClick(evento, puedeGestionarEventos)}
+                    onClick={() => handleEventClick(evento)}
                   >
                     <div className="event-card-header">
                       <div>
-                        <h3>{evento.nombre}</h3>
+                        <div className="event-card-title-row">
+                          <h3>{evento.nombre}</h3>
+                          <span className={`event-status ${status.className}`}>{status.label}</span>
+                        </div>
                         <p>{evento.descripcion || "Evento de votación y evaluación de proyectos."}</p>
                       </div>
                     </div>
 
                     <div className="event-card-meta">
-                      <div className="event-meta-item">
+                      <div className="event-meta-item event-date-range">
                         <Calendar size={16} />
                         <span>{formatDate(getEventStart(evento))}</span>
+                        <span className="date-separator">-</span>
+                        <span>{formatDate(getEventEnd(evento))}</span>
                       </div>
 
                       {privateEvent ? (
                         <div className="event-meta-item private-meta">
                           <Lock size={16} />
-                          <span>Privado</span>
+                          <span>{unlocked ? "Privado desbloqueado" : "Privado"}</span>
                         </div>
                       ) : (
                         <div className="event-meta-item public-meta">
@@ -243,7 +337,7 @@ function EventsListScreen() {
 
                     <div className="event-type-row">
                       <span className="event-type-chip">{getTypeLabel(evento.tipo || evento.tipoEvento)}</span>
-                      {(privateEvent && !hasEventAccess(evento, puedeGestionarEventos)) ? (
+                      {privateEvent && !unlocked ? (
                         <span className="event-private-chip">
                           <Lock size={13} />
                           Requiere código
@@ -258,7 +352,7 @@ function EventsListScreen() {
                         </div>
                         <div>
                           <span className="event-stat-label">Proyectos</span>
-                          <strong>{proyectosPorEvento[evento.id] ?? 0}</strong>
+                          <strong>{proyectosPorEvento[evento.id] ?? "..."}</strong>
                         </div>
                       </div>
 
@@ -268,19 +362,22 @@ function EventsListScreen() {
                         </div>
                         <div>
                           <span className="event-stat-label">Votantes</span>
-                          <strong>{votantesPorEvento[evento.id] ?? 0}</strong>
+                          <strong>{votantesPorEvento[evento.id] ?? "..."}</strong>
                         </div>
                       </div>
                     </div>
 
                     <div className="event-card-footer">
-                      {privateEvent ? (
+                      {privateEvent && !unlocked ? (
                         <>
                           <Lock size={14} />
-                          Requiere código de acceso →
+                          Introducir código de acceso
                         </>
                       ) : (
-                        "Ver proyectos, votaciones y resultados →"
+                        <>
+                          Ver proyectos, votaciones y resultados
+                          <ArrowRight size={15} />
+                        </>
                       )}
                     </div>
                   </article>
