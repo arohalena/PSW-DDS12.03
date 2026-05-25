@@ -1,7 +1,7 @@
-const VOTACIONES_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/votaciones`;
-const VOTACION_PROYECTOS_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/votacion-proyectos`;
-const VOTOS_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/votos`;
-const COMPETIDOR_EVENTO_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/competidor-evento`;
+const VOTACIONES_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/votaciones`;
+const VOTACION_PROYECTOS_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/votacion-proyectos`;
+const VOTOS_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/votos`;
+const COMPETIDOR_EVENTO_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/competidor-evento`;
 
 export async function getVotacionesByEvento(eventoId) {
   const response = await fetch(`${VOTACIONES_URL}/evento/${eventoId}`);

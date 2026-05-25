@@ -1,4 +1,4 @@
-const API_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/proyectos`;
+const API_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/proyectos`;
 
 export async function getProyectosByEvento(eventoId) {
 
