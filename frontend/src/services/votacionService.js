@@ -204,7 +204,7 @@ export async function retirarResultadosVotacion(id) {
   const r = await fetch(`${VOTACIONES_URL}/${id}/retirar-resultados`, { method: "POST" });
 
   if (!r.ok){
-    throw new Error((await r.text()) || "No se pudo retirar la publicaciÃ³n de resultados");
+    throw new Error((await r.text()) || "No se pudo retirar la publicación de resultados");
   }
 
   return r.json();
