@@ -31,6 +31,11 @@ export function ProjectMaterials ({ proyectoId }) {
 
       setFiles((prev) => [...prev, ...updatedFiles]);
       setNewFiles([]);
+      
+      // Recargar la página después de subir material
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
 
     } catch (err) {
       alert("Hubo un problema al subir los archivos: " + err.message);

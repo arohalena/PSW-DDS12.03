@@ -23,7 +23,6 @@ import {
 } from "../../services/proyectoService";
 import { asignarProyectoAVotacion, getVotacionesByEvento } from "../../services/votacionService";
 import { getUsuarioLogueado } from "../../services/sessionService";
-import { MaterialGallery } from "../../common/MaterialGallery";
 import { ProjectMaterials } from "../../common/ProjectMaterials";
 import "../../styles/my-project-dashboard.css";
 
@@ -91,7 +90,7 @@ function MiniRadarChart({ data }) {
   const size = 260;
   const center = size / 2;
   const radius = 82;
-  const safeData = data.length ? data : [];
+  const safeData = Array.isArray(data) ? data : [];
 
   if (safeData.length === 0) return null;
 
@@ -831,40 +830,31 @@ function MyProjectDashboardScreen() {
                 </div>
               )}
             </article>
-          </section>
-            <section className="mock-card mock-gallery-card">
-              <div className="mock-section-heading">
-                <div>
-                  <h2>Galería del proyecto</h2>
-                  <p>Capturas, demo y material visual del proyecto.</p>
-                </div>
-              </div>
 
-          <section className="my-project-material-grid">
-            <article className="my-project-card">
-              <div className="participant-card-header">
-                <div className="participant-card-title">
-                  <Image size={18} />
-                  <h3>Galeria del proyecto</h3>
-                </div>
+          </section> 
+          <article className="my-project-card">
+            <div className="participant-card-header">
+              <div className="participant-card-title">
+                <Image size={18} />
+                <h3>Galeria del proyecto</h3>
               </div>
-              <div className="my-project-material-body">
-                <MaterialGallery proyectoId={selectedProject?.id} />
-              </div>
-            </article>
+            </div>
+            <div className="my-project-material-body">
+              <MaterialGallery proyectoId={selectedProject?.id} />
+            </div>
+          </article>
 
-            <article className="my-project-card">
-              <div className="participant-card-header">
-                <div className="participant-card-title">
-                  <Plus size={18} />
-                  <h3>Subir material</h3>
-                </div>
+          <article className="my-project-card">
+            <div className="participant-card-header">
+              <div className="participant-card-title">
+                <Plus size={18} />
+                <h3>Subir material</h3>
               </div>
-              <div className="my-project-material-body">
-                <ProjectMaterials proyectoId={selectedProject?.id} />
-              </div>
-            </article>
-          </section>
+            </div>
+            <div className="my-project-material-body">
+              <ProjectMaterials proyectoId={selectedProject?.id} />
+            </div>
+          </article>
 
           <section className="participant-comments-card">
             <div className="participant-card-header">
