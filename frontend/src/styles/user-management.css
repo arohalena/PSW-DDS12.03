@@ -1477,6 +1477,158 @@
   border-radius: 8px;
 }
 
+.team-create-modal {
+  width: min(100%, 920px);
+  padding: 0;
+  overflow: hidden auto;
+  background: #f8fafc;
+}
+
+.team-create-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1.35rem 1.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.team-create-icon {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.team-create-header span {
+  display: block;
+  color: #6366f1;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.team-create-header h2 {
+  margin: 0.2rem 0 0.25rem;
+  color: #0f172a;
+}
+
+.team-create-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.team-create-summary {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 0.6fr;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 0;
+}
+
+.team-create-summary article {
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.team-create-summary span {
+  display: block;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.team-create-summary strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+
+.team-create-section {
+  margin: 1rem 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.team-create-section-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.team-create-step {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.team-create-section-title h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.team-create-section-title p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.team-create-modal .feedback-card {
+  margin: 1rem 1.5rem 0;
+}
+
+.team-create-modal .users-modal-actions {
+  bottom: 0;
+  margin: 1rem 0 0;
+  background: #ffffff;
+}
+
+.team-create-modal .user-field:last-child {
+  margin-bottom: 0;
+}
+
+.team-create-modal textarea {
+  min-height: 6rem;
+}
+
+.team-create-modal .selected-competitors {
+  background: #ffffff;
+}
+
+@media (max-width: 760px) {
+  .team-create-header,
+  .team-create-summary,
+  .team-create-modal .users-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-create-section,
+  .team-create-summary,
+  .team-create-modal .feedback-card {
+    margin-inline: 1rem;
+  }
+}
+
 @media (max-width: 980px) {
   .users-mock-page .users-header {
     align-items: flex-start;

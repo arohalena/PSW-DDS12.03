@@ -1,5 +1,6 @@
 package com.Votify.backend.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,6 +56,33 @@ public class CompetidorEventoService {
         relacion.setEquipo(equipo);
 
         competidorEventoRepository.save(relacion);
+    }
+
+    public void validarMiembrosDisponiblesEnEvento(List<String> emails, EventoMO evento) {
+        if (emails == null || emails.isEmpty() || evento == null) return;
+
+        List<String> bloqueados = new ArrayList<>();
+
+        for (String email : emails) {
+            if (email == null) continue;
+
+            String emailLimpio = email.trim().toLowerCase();
+            if (emailLimpio.isEmpty()) continue;
+
+            competidorRepository.findByEmailIgnoreCase(emailLimpio).ifPresent((competidor) -> {
+                if (competidorEventoRepository.existsByCompetidorIdAndEventoId(competidor.getId(), evento.getId())) {
+                    bloqueados.add(competidor.getNombre() != null ? competidor.getNombre() : competidor.getEmail());
+                }
+            });
+        }
+
+        if (!bloqueados.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "No se puede crear el equipo: " + String.join(", ", bloqueados) +
+                    " ya participa en un equipo de este evento."
+            );
+        }
     }
 
     @Transactional

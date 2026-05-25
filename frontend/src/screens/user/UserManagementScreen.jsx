@@ -94,8 +94,13 @@ function UserModal({ open, onClose, onSubmit, initialData }) {
 
   async function submit(e) {
     e.preventDefault();
-    await onSubmit(form);
-    onClose();
+
+    try {
+      await onSubmit(form);
+      onClose();
+    } catch {
+      // El aviso se muestra en la pantalla principal; dejamos el modal abierto para corregir la selección.
+    }
   }
 
   return (
@@ -264,6 +269,7 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
     competidorIds: [],
   });
   const [votaciones, setVotaciones] = useState([]);
+  const [localError, setLocalError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -279,6 +285,7 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
       votacionId: "",
       competidorIds: [],
     });
+    setLocalError("");
   }, [open, eventos]);
 
   useEffect(() => {
@@ -300,19 +307,60 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
 
   if (!open) return null;
 
+  const selectedEvent = eventos.find((evento) => String(evento.id) === String(form.eventoId));
+  const selectedVoting = votaciones.find((votacion) => String(votacion.id) === String(form.votacionId));
+
   async function submit(e) {
     e.preventDefault();
-    await onSubmit(form);
-    onClose();
+
+    try {
+      setLocalError("");
+      await onSubmit(form);
+      onClose();
+    } catch {
+      setLocalError("No se pudo crear el equipo: algún competidor seleccionado ya participa en este evento.");
+    }
   }
 
   return (
     <div className="users-modal-backdrop">
-      <form className="users-modal users-modal-wide" onSubmit={submit}>
-        <h2>Crear equipo + proyecto</h2>
-        <p>Crea el equipo, crea su proyecto, selecciona el evento y la votación donde participará.</p>
+      <form className="users-modal users-modal-wide team-create-modal" onSubmit={submit}>
+        <div className="team-create-header">
+          <div className="team-create-icon">
+            <Trophy size={24} />
+          </div>
+          <div>
+            <span>Nuevo equipo</span>
+            <h2>Crear equipo + proyecto</h2>
+            <p>Configura la participacion inicial y elige los miembros antes de guardar.</p>
+          </div>
+        </div>
 
-        <div className="users-form-grid">
+        <div className="team-create-summary">
+          <article>
+            <span>Evento</span>
+            <strong>{selectedEvent?.nombre || "Sin evento"}</strong>
+          </article>
+          <article>
+            <span>Votacion</span>
+            <strong>{selectedVoting?.nombre || "Sin votacion"}</strong>
+          </article>
+          <article>
+            <span>Miembros</span>
+            <strong>{form.competidorIds.length}</strong>
+          </article>
+        </div>
+
+        <section className="team-create-section">
+          <div className="team-create-section-title">
+            <div className="team-create-step">1</div>
+            <div>
+              <h3>Identidad del equipo</h3>
+              <p>Nombre publico del equipo y proyecto asociado.</p>
+            </div>
+          </div>
+
+          <div className="users-form-grid">
           <label className="user-field">
             <span>Nombre del equipo</span>
             <input value={form.nombreEquipo} onChange={(e) => setForm({ ...form, nombreEquipo: e.target.value })} required />
@@ -322,9 +370,19 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
             <span>Nombre del proyecto</span>
             <input value={form.nombreProyecto} onChange={(e) => setForm({ ...form, nombreProyecto: e.target.value })} required />
           </label>
-        </div>
+          </div>
+        </section>
 
-        <label className="user-field">
+        <section className="team-create-section">
+          <div className="team-create-section-title">
+            <div className="team-create-step">2</div>
+            <div>
+              <h3>Proyecto y participacion</h3>
+              <p>El proyecto se crea ya vinculado al evento y a una votacion.</p>
+            </div>
+          </div>
+
+          <label className="user-field">
           <span>Descripción del proyecto</span>
           <textarea value={form.descripcionProyecto} onChange={(e) => setForm({ ...form, descripcionProyecto: e.target.value })} rows="3" required />
         </label>
@@ -353,26 +411,36 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
           <span>Votación donde participará el proyecto</span>
           <select value={form.votacionId} onChange={(e) => setForm({ ...form, votacionId: e.target.value })} required>
             <option value="">Selecciona votación</option>
-            {votaciones.map((votacion) => (
-              <option key={votacion.id} value={votacion.id}>
-                {votacion.tipo} + {votacion.modalidad}
-              </option>
-            ))}
+              {votaciones.map((votacion) => (
+                <option key={votacion.id} value={votacion.id}>
+                  {votacion.nombre || `${votacion.tipo} + ${votacion.modalidad}`}
+                </option>
+              ))}
           </select>
         </label>
+        </section>
 
-        <div className="user-field">
-          <span>Competidores del equipo</span>
+        <section className="team-create-section">
+          <div className="team-create-section-title">
+            <div className="team-create-step">3</div>
+            <div>
+              <h3>Miembros</h3>
+              <p>Si un competidor ya participa en este evento, se bloqueara la creacion.</p>
+            </div>
+          </div>
+
           <CompetitorSearchPicker
             competidores={competidores}
             selectedIds={form.competidorIds}
             onChange={(ids) => setForm({ ...form, competidorIds: ids })}
           />
-        </div>
+        </section>
+
+        {localError ? <div className="feedback-card error-box">{localError}</div> : null}
 
         <div className="users-modal-actions">
           <button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="primary-btn">Crear equipo</button>
+          <button type="submit" className="primary-btn">Crear equipo y proyecto</button>
         </div>
       </form>
     </div>
@@ -668,21 +736,32 @@ async function handleDeleteEquipo(equipo) {
   }
 
   async function handleCreateEquipo(data) {
+    setError("");
+    setSuccess("");
+
     const selectedCompetidores = competidores.filter((competidor) =>
       data.competidorIds.includes(competidor.id)
     );
 
-    const proyectoCreado = await createProyectoConEquipo({
-      nombre: data.nombreProyecto.trim(),
-      descripcion: data.descripcionProyecto.trim(),
-      tipoCategoria: data.tipoCategoria,
-      nombreEquipo: data.nombreEquipo.trim(),
-      miembrosEmails: selectedCompetidores.map((competidor) => competidor.email),
-      eventoId: data.eventoId,
-    });
+    try {
+      const proyectoCreado = await createProyectoConEquipo({
+        nombre: data.nombreProyecto.trim(),
+        descripcion: data.descripcionProyecto.trim(),
+        tipoCategoria: data.tipoCategoria,
+        nombreEquipo: data.nombreEquipo.trim(),
+        miembrosEmails: selectedCompetidores.map((competidor) => competidor.email),
+        eventoId: data.eventoId,
+      });
 
-    await asignarProyectoAVotacion(data.votacionId, proyectoCreado.id);
-    await loadAll();
+      await asignarProyectoAVotacion(data.votacionId, proyectoCreado.id);
+      await loadAll();
+      setSuccess("Equipo y proyecto creados correctamente.");
+    } catch (err) {
+      const message =
+        "No se pudo crear el equipo. Revisa que los competidores seleccionados no participen ya en otro equipo de este evento.";
+      setError(message);
+      throw new Error(message);
+    }
   }
 
   async function handleAssignCompetitors(equipo, selectedIds, currentAsignaciones) {

@@ -190,6 +190,8 @@ public class RankingService {
 
         List<VotacionProyectoMO> proyectosVotacion = votacionProyectoRepository.findByVotacion_Id(votacionId);
         long votantesActivos = votoRepository.countDistinctVotantesByEventoId(eventoId);
+        Map<UUID, List<Map<String, Object>>> criteriosPorVotacionProyecto =
+            getDetalleCriteriosMixto(eventoId, votacionId, votacion.getModalidad());
 
         List<Map<String, Object>> ranking = new ArrayList<>();
 
@@ -225,12 +227,59 @@ public class RankingService {
             entry.put("pesoPopular",      pesoPopular);
             entry.put("pesoJurado",       pesoJurado);
             entry.put("puntuacionTotal",  Math.round(puntuacionTotal * PRECISION_REDONDEO) / PRECISION_REDONDEO);
-            entry.put("criterios",        new ArrayList<>());
+            entry.put(
+                "criterios",
+                criteriosPorVotacionProyecto.getOrDefault(vp.getId(), new ArrayList<>())
+            );
 
             ranking.add(entry);
         }
 
         return ranking;
+    }
+
+    private Map<UUID, List<Map<String, Object>>> getDetalleCriteriosMixto(
+        UUID eventoId,
+        UUID votacionId,
+        ModalidadVotacionMO modalidad
+    ) {
+        if (modalidad != ModalidadVotacionMO.MULTICRITERIO &&
+            modalidad != ModalidadVotacionMO.MULTICRITERIO_PONDERADA) {
+            return Map.of();
+        }
+
+        EstrategiaCalculoRanking estrategia = modalidad == ModalidadVotacionMO.MULTICRITERIO_PONDERADA
+            ? estrategiaMulticriterioPonderada
+            : estrategiaMulticriterio;
+
+        Map<UUID, List<Map<String, Object>>> detallePorVotacionProyecto = new HashMap<>();
+
+        for (Map<String, Object> entry : estrategia.calcular(eventoId, votacionId)) {
+            Object vpId = entry.get("votacionProyectoId");
+            Object criterios = entry.get("criterios");
+
+            if (vpId instanceof UUID id && criterios instanceof List<?> lista) {
+                List<Map<String, Object>> detalle = new ArrayList<>();
+
+                for (Object item : lista) {
+                    if (item instanceof Map<?, ?> criterio) {
+                        Map<String, Object> criterioNormalizado = new LinkedHashMap<>();
+
+                        for (Map.Entry<?, ?> field : criterio.entrySet()) {
+                            if (field.getKey() instanceof String key) {
+                                criterioNormalizado.put(key, field.getValue());
+                            }
+                        }
+
+                        detalle.add(criterioNormalizado);
+                    }
+                }
+
+                detallePorVotacionProyecto.put(id, detalle);
+            }
+        }
+
+        return detallePorVotacionProyecto;
     }
 
     private double calcularPuntuacionVotos(List<VotoMO> votos, ModalidadVotacionMO modalidad) {

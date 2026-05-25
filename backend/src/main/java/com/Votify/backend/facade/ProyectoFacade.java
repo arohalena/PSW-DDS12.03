@@ -73,6 +73,7 @@ public class ProyectoFacade {
         EventoMO evento = eventoService.obtener(request.eventoId());
 
         proyectoService.validarCategoriaTexto(request.tipoCategoria());
+        competidorEventoService.validarMiembrosDisponiblesEnEvento(request.miembrosEmails(), evento);
 
         CreadorProyecto creador = elegirCreador(request.tipoCategoria());
         Proyecto dominio = creador.create(request.nombre(), request.descripcion());
@@ -185,7 +186,17 @@ public class ProyectoFacade {
             ? Collections.emptyList()
             : equipoService.findAllByIds(equipoIds);
 
-        List<EventoMO> eventos = eventoService.findAll();
+        List<EventoMO> eventos = asignaciones.stream()
+            .map(CompetidorEventoMO::getEvento)
+            .filter(evento -> evento != null)
+            .collect(Collectors.toMap(
+                EventoMO::getId,
+                evento -> evento,
+                (primero, repetido) -> primero
+            ))
+            .values()
+            .stream()
+            .toList();
 
         List<ProyectoMO> proyectos = new ArrayList<>();
 
