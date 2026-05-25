@@ -40,32 +40,9 @@ function getNavItems(rol) {
   }
 }
 
-function getRolBadge(rol) {
-  switch (rol) {
-    case "ORGANIZADOR": return { label: "Organizador", color: "#6366f1", bg: "#eef2ff" };
-    case "JURADO":      return { label: "Jurado",      color: "#7c3aed", bg: "#f5f3ff" };
-    case "COMPETIDOR":  return { label: "Competidor",  color: "#ea580c", bg: "#fff7ed" };
-    case "PUBLICO":     return { label: "Público",     color: "#16a34a", bg: "#f0fdf4" };
-    case "ESPECTADOR":  return { label: "Espectador",  color: "#16a34a", bg: "#f0fdf4" };
-    default:            return { label: rol || "Usuario", color: "#6b7280", bg: "#f3f4f6" };
-  }
-}
-
-function getInitials(nombre = "", email = "") {
-  const base = nombre || email || "U";
-  return base
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("");
-}
-
 function Sidebar() {
   const usuario  = useMemo(() => getUsuarioLogueado(), []);
   const navItems = useMemo(() => getNavItems(usuario?.rol), [usuario?.rol]);
-  const badge    = useMemo(() => getRolBadge(usuario?.rol), [usuario?.rol]);
-  const initials = getInitials(usuario?.nombre, usuario?.email);
 
   return (
     <aside className="sidebar">
@@ -95,25 +72,6 @@ function Sidebar() {
             );
           })}
         </nav>
-      </div>
-
-      <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="sidebar-user-avatar">
-            {initials || <UserCog size={16} />}
-          </div>
-          <div className="sidebar-user-info">
-            <span className="sidebar-user-name">
-              {usuario?.nombre || usuario?.email || "Usuario"}
-            </span>
-            <span
-              className="sidebar-user-badge"
-              style={{ color: badge.color, background: badge.bg }}
-            >
-              {badge.label}
-            </span>
-          </div>
-        </div>
       </div>
     </aside>
   );

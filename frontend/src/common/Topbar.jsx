@@ -43,12 +43,6 @@ function Topbar() {
 
   return (
     <header className="topbar">
-      <div className="topbar-left">
-        <span className="topbar-status-dot" />
-        <span className="topbar-title">Votify</span>
-      </div>
-
-
       <div className="topbar-user-wrapper">
         <button className="topbar-user" onClick={() => setOpenMenu((value) => !value)}>
           <div className="topbar-user-avatar">
