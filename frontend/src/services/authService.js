@@ -1,4 +1,4 @@
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/auth`;
+const API_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/auth`;
 
 export async function loginUsuario(credentials) {
   const response = await fetch(`${API_URL}/login`, {

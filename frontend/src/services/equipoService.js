@@ -1,6 +1,6 @@
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/equipos`;
-const EVENTOS_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/eventos`;
-const PROYECTOS_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/proyectos`;
+const API_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/equipos`;
+const EVENTOS_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/eventos`;
+const PROYECTOS_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/proyectos`;
 
 export async function getEquipos() {
   const response = await fetch(API_URL);
