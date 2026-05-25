@@ -94,8 +94,13 @@ function UserModal({ open, onClose, onSubmit, initialData }) {
 
   async function submit(e) {
     e.preventDefault();
-    await onSubmit(form);
-    onClose();
+
+    try {
+      await onSubmit(form);
+      onClose();
+    } catch {
+      // El aviso se muestra en la pantalla principal; dejamos el modal abierto para corregir la selección.
+    }
   }
 
   return (
@@ -264,6 +269,7 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
     competidorIds: [],
   });
   const [votaciones, setVotaciones] = useState([]);
+  const [localError, setLocalError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -279,6 +285,7 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
       votacionId: "",
       competidorIds: [],
     });
+    setLocalError("");
   }, [open, eventos]);
 
   useEffect(() => {
@@ -302,8 +309,14 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
 
   async function submit(e) {
     e.preventDefault();
-    await onSubmit(form);
-    onClose();
+
+    try {
+      setLocalError("");
+      await onSubmit(form);
+      onClose();
+    } catch {
+      setLocalError("No se pudo crear el equipo: algún competidor seleccionado ya participa en este evento.");
+    }
   }
 
   return (
@@ -369,6 +382,8 @@ function EquipoModal({ open, onClose, onSubmit, eventos, competidores }) {
             onChange={(ids) => setForm({ ...form, competidorIds: ids })}
           />
         </div>
+
+        {localError ? <div className="feedback-card error-box">{localError}</div> : null}
 
         <div className="users-modal-actions">
           <button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button>
@@ -668,21 +683,32 @@ async function handleDeleteEquipo(equipo) {
   }
 
   async function handleCreateEquipo(data) {
+    setError("");
+    setSuccess("");
+
     const selectedCompetidores = competidores.filter((competidor) =>
       data.competidorIds.includes(competidor.id)
     );
 
-    const proyectoCreado = await createProyectoConEquipo({
-      nombre: data.nombreProyecto.trim(),
-      descripcion: data.descripcionProyecto.trim(),
-      tipoCategoria: data.tipoCategoria,
-      nombreEquipo: data.nombreEquipo.trim(),
-      miembrosEmails: selectedCompetidores.map((competidor) => competidor.email),
-      eventoId: data.eventoId,
-    });
+    try {
+      const proyectoCreado = await createProyectoConEquipo({
+        nombre: data.nombreProyecto.trim(),
+        descripcion: data.descripcionProyecto.trim(),
+        tipoCategoria: data.tipoCategoria,
+        nombreEquipo: data.nombreEquipo.trim(),
+        miembrosEmails: selectedCompetidores.map((competidor) => competidor.email),
+        eventoId: data.eventoId,
+      });
 
-    await asignarProyectoAVotacion(data.votacionId, proyectoCreado.id);
-    await loadAll();
+      await asignarProyectoAVotacion(data.votacionId, proyectoCreado.id);
+      await loadAll();
+      setSuccess("Equipo y proyecto creados correctamente.");
+    } catch (err) {
+      const message =
+        "No se pudo crear el equipo. Revisa que los competidores seleccionados no participen ya en otro equipo de este evento.";
+      setError(message);
+      throw new Error(message);
+    }
   }
 
   async function handleAssignCompetitors(equipo, selectedIds, currentAsignaciones) {
