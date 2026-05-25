@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8090/api/proyectos";
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/proyectos`;
 
 export async function getProyectosByEvento(eventoId) {
 

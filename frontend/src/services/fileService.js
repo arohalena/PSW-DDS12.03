@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8090/api/material';
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/material`;
 
 export const uploadFiles = async (files, proyectoId = null) => {
   if (!Array.isArray(files) || files.length === 0) {

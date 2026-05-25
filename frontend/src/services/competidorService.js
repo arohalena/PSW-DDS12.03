@@ -1,5 +1,5 @@
-const API_URL = "http://localhost:8090/api/competidores";
-const COMPETIDOR_EVENTO_URL = "http://localhost:8090/api/competidor-evento";
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/competidores`;
+const COMPETIDOR_EVENTO_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/competidor-evento`;
 
 export async function getCompetidores() {
   const response = await fetch(API_URL);

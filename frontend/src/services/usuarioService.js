@@ -1,6 +1,6 @@
 import { getUsuarioLogueado } from "./sessionService";
 
-const API_URL = "http://localhost:8090/api/usuarios";
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/usuarios`;
 
 function buildHeaders() {
   const usuario = getUsuarioLogueado();

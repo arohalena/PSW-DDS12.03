@@ -1,7 +1,7 @@
-const VOTACIONES_URL = "http://localhost:8090/api/votaciones";
-const VOTACION_PROYECTOS_URL = "http://localhost:8090/api/votacion-proyectos";
-const VOTOS_URL = "http://localhost:8090/api/votos";
-const COMPETIDOR_EVENTO_URL = "http://localhost:8090/api/competidor-evento";
+const VOTACIONES_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/votaciones`;
+const VOTACION_PROYECTOS_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/votacion-proyectos`;
+const VOTOS_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/votos`;
+const COMPETIDOR_EVENTO_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/competidor-evento`;
 
 export async function getVotacionesByEvento(eventoId) {
   const response = await fetch(`${VOTACIONES_URL}/evento/${eventoId}`);

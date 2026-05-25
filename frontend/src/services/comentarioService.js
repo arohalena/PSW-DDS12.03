@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8090/api/comentarios";
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/comentarios`;
 
 export async function getComentariosByProyecto(proyectoId) {
 

@@ -1,6 +1,6 @@
-const CRITERIOS_URL = "http://localhost:8090/api/criterios";
-const PUNTUACIONES_URL = "http://localhost:8090/api/puntuaciones";
-const RANKING_URL = "http://localhost:8090/api/ranking";
+const CRITERIOS_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/criterios`;
+const PUNTUACIONES_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/puntuaciones`;
+const RANKING_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/ranking`;
 
 export async function getCriteriosByEvento(eventoId){
 

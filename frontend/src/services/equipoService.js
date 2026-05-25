@@ -1,6 +1,6 @@
-const API_URL = "http://localhost:8090/api/equipos";
-const EVENTOS_URL = "http://localhost:8090/api/eventos";
-const PROYECTOS_URL = "http://localhost:8090/api/proyectos";
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/equipos`;
+const EVENTOS_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/eventos`;
+const PROYECTOS_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8090'}/api/proyectos`;
 
 export async function getEquipos() {
   const response = await fetch(API_URL);
