@@ -69,10 +69,7 @@ function isPrivateEvent(evento) {
 
 function hasEventAccess(evento, puedeGestionarEventos) {
   if (!isPrivateEvent(evento) || puedeGestionarEventos) return true;
-
-  return (
-    localStorage.getItem(`votify_event_access_${evento.id}`) === "true"
-  );
+  return localStorage.getItem(getEventAccessStorageKey(evento.id)) === "true";
 }
 
 function EventsListScreen() {
