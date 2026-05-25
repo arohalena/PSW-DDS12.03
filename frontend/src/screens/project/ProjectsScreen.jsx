@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useModalShortcuts } from "../../common/useModalShortcuts";
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -96,6 +97,13 @@ function ProjectFormModal({
       .catch(() => setVotaciones([]));
   }, [open, form.eventoId]);
 
+  const formRef = useRef(null);
+  const modalRef = useModalShortcuts({
+    isOpen: open,
+    onClose,
+    onSubmit: () => formRef.current?.requestSubmit(),
+  });
+
   if (!open) return null;
 
   function equipoTieneOtroProyectoEnEvento() {
@@ -137,8 +145,15 @@ function ProjectFormModal({
   }
 
   return (
-    <div className="project-modal-backdrop">
-      <form className="project-pro-modal" onSubmit={submit}>
+      <div className="project-modal-backdrop">
+        <form
+          className="project-pro-modal"
+          onSubmit={submit}
+          ref={(node) => {
+            formRef.current = node;
+            modalRef.current = node;
+          }}
+        >
         <div className="project-pro-modal-header">
           <div>
             <h2>{editing ? "Editar proyecto" : "Crear proyecto"}</h2>
@@ -325,6 +340,12 @@ function ParticipationModal({
       .catch(() => setVotaciones([]));
   }, [open, eventoId]);
 
+  const modalRef = useModalShortcuts({
+  isOpen: open,
+  onClose,
+  onSubmit: () => modalRef.current?.querySelector("form")?.requestSubmit(),
+  });
+
   if (!open || !proyecto) return null;
 
   const relationVotingIds = currentRelations.map((rel) => rel.votacion?.id).filter(Boolean);
@@ -364,7 +385,8 @@ function ParticipationModal({
 
   return (
     <div className="project-modal-backdrop">
-      <div className="project-pro-modal">
+      <div className="project-pro-modal" ref=
+      {modalRef}>
         <div className="project-pro-modal-header">
           <div>
             <h2>Participación</h2>
@@ -533,11 +555,18 @@ function ParticipationModal({
 }
 
 function ConfirmModal({ open, title, message, warning, onCancel, onConfirm }) {
+
+  const modalRef = useModalShortcuts({
+  isOpen: open,
+  onClose: onCancel,
+  onSubmit: onConfirm,
+  });
+
   if (!open) return null;
 
   return (
     <div className="project-modal-backdrop">
-      <div className="project-confirm-modal">
+      <div className="project-confirm-modal" ref={modalRef}>
         <div className="project-confirm-icon">
           <Trash2 size={28} />
         </div>
