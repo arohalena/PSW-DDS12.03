@@ -1,5 +1,7 @@
-const API_URL = "http://localhost:8090/api/competidores";
-const COMPETIDOR_EVENTO_URL = "http://localhost:8090/api/competidor-evento";
+import API_BASE_URL from "../config/apiConfig";
+
+const API_URL = `${API_BASE_URL}/competidores`;
+const COMPETIDOR_EVENTO_URL = `${API_BASE_URL}/competidor-evento`;
 
 export async function getCompetidores() {
   const response = await fetch(API_URL);

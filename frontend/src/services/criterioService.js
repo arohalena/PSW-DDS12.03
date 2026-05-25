@@ -1,6 +1,8 @@
-const CRITERIOS_URL = "http://localhost:8090/api/criterios";
-const PUNTUACIONES_URL = "http://localhost:8090/api/puntuaciones";
-const RANKING_URL = "http://localhost:8090/api/ranking";
+import API_BASE_URL from "../config/apiConfig";
+
+const CRITERIOS_URL = `${API_BASE_URL}/criterios`;
+const PUNTUACIONES_URL = `${API_BASE_URL}/puntuaciones`;
+const RANKING_URL = `${API_BASE_URL}/ranking`;
 
 export async function getCriteriosByEvento(eventoId){
 

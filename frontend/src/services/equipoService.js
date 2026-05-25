@@ -1,6 +1,8 @@
-const API_URL = "http://localhost:8090/api/equipos";
-const EVENTOS_URL = "http://localhost:8090/api/eventos";
-const PROYECTOS_URL = "http://localhost:8090/api/proyectos";
+import API_BASE_URL from "../config/apiConfig";
+
+const API_URL = `${API_BASE_URL}/equipos`;
+const EVENTOS_URL = `${API_BASE_URL}/eventos`;
+const PROYECTOS_URL = `${API_BASE_URL}/proyectos`;
 
 export async function getEquipos() {
   const response = await fetch(API_URL);

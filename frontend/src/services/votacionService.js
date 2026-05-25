@@ -1,7 +1,9 @@
-const VOTACIONES_URL = "http://localhost:8090/api/votaciones";
-const VOTACION_PROYECTOS_URL = "http://localhost:8090/api/votacion-proyectos";
-const VOTOS_URL = "http://localhost:8090/api/votos";
-const COMPETIDOR_EVENTO_URL = "http://localhost:8090/api/competidor-evento";
+import API_BASE_URL from "../config/apiConfig";
+
+const VOTACIONES_URL = `${API_BASE_URL}/votaciones`;
+const VOTACION_PROYECTOS_URL = `${API_BASE_URL}/votacion-proyectos`;
+const VOTOS_URL = `${API_BASE_URL}/votos`;
+const COMPETIDOR_EVENTO_URL = `${API_BASE_URL}/competidor-evento`;
 
 export async function getVotacionesByEvento(eventoId) {
   const response = await fetch(`${VOTACIONES_URL}/evento/${eventoId}`);
