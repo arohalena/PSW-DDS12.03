@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useModalShortcuts } from "./useModalShortcuts";
 
 function UserModal({ isOpen, onClose, onSubmit, initialData }) {
   const [nombre, setNombre] = useState("");
@@ -7,6 +8,13 @@ function UserModal({ isOpen, onClose, onSubmit, initialData }) {
   const [error, setError] = useState("");
 
   const isEditMode = Boolean(initialData);
+
+  const formRef = useRef(null);
+  const modalRef = useModalShortcuts({
+    isOpen,
+    onClose,
+    onSubmit: () => formRef.current?.requestSubmit(),
+  });
 
   useEffect(() => {
     if (initialData) {
@@ -46,7 +54,7 @@ function UserModal({ isOpen, onClose, onSubmit, initialData }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card">
+      <div className="modal-card" ref={modalRef}>
         <div className="modal-header">
           <h2>{isEditMode ? "Editar Usuario" : "Añadir Nuevo Usuario"}</h2>
           <button className="ghost-close" onClick={onClose}>
@@ -54,7 +62,7 @@ function UserModal({ isOpen, onClose, onSubmit, initialData }) {
           </button>
         </div>
 
-        <form className="modal-form" onSubmit={handleSubmit}>
+        <form className="modal-form" onSubmit={handleSubmit} ref={formRef}>
           <label>
             Nombre Completo *
             <input

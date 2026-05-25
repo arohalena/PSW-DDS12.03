@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { useModalShortcuts } from "../../common/useModalShortcuts";
 import "../../styles/projects.css";
 
 export default function CommentProjectModal({ open, onClose, proyecto, relaciones, onSubmit }) {
   const [texto, setTexto] = useState("");
   const [votacionProyectoId, setVotacionProyectoId] = useState("");
+
+  const formRef = useRef(null);
+  const modalRef = useModalShortcuts({
+    isOpen: open,
+    onClose,
+    onSubmit: () => formRef.current?.requestSubmit(),
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -30,7 +38,14 @@ export default function CommentProjectModal({ open, onClose, proyecto, relacione
 
   return (
     <div className="project-modal-backdrop">
-      <form className="project-modal" onSubmit={submit}>
+      <form
+        className="project-modal"
+        onSubmit={submit}
+        ref={(node) => {
+          formRef.current = node;
+          modalRef.current = node;
+        }}
+      >
         <h2>Añadir comentario</h2>
         <p>
           Añade feedback para el proyecto <strong>{proyecto.nombre}</strong>.
