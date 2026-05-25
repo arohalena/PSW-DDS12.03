@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   Trophy,
   Medal,
@@ -20,7 +20,11 @@ import {
   Gavel,
 } from "lucide-react";
 import { getEventos } from "../../services/eventoService";
-import { getVotacionesByEvento, publicarResultadosVotacion } from "../../services/votacionService";
+import {
+  getAsignacionesCompetidorEvento,
+  getVotacionesByEvento,
+  publicarResultadosVotacion,
+} from "../../services/votacionService";
 import {
   getRanking,
   getCriteriosByEvento,
@@ -33,12 +37,14 @@ import "../../styles/ranking.css";
 const MODALIDADES_MULTICRITERIO = ["MULTICRITERIO", "MULTICRITERIO_PONDERADA"];
 
 function RankingScreen() {
+  const { eventoId: eventoParamId, votingId: votingParamId } = useParams();
   const [eventos, setEventos] = useState([]);
   const [eventoId, setEventoId] = useState("");
   const [votaciones, setVotaciones] = useState([]);
   const [votacionId, setVotacionId] = useState("");
   const [ranking, setRanking] = useState([]);
   const [criterios, setCriterios] = useState([]);
+  const [asignacionesEvento, setAsignacionesEvento] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,7 +97,10 @@ function RankingScreen() {
       try {
         const data = await getEventos();
         setEventos(data || []);
-        if (data?.length > 0) setEventoId(data[0].id);
+        if (data?.length > 0) {
+          const eventoDesdeRuta = data.find((ev) => String(ev.id) === String(eventoParamId));
+          setEventoId(eventoDesdeRuta?.id || data[0].id);
+        }
       } catch {
         setError("No se pudieron cargar los eventos.");
       } finally {
@@ -100,7 +109,7 @@ function RankingScreen() {
     };
 
     loadEventos();
-  }, []);
+  }, [eventoParamId]);
 
   useEffect(() => {
     if (!eventoId) return;
@@ -110,17 +119,20 @@ function RankingScreen() {
         setLoading(true);
         setError("");
 
-        const [votacionesData, criteriosData] = await Promise.all([
+        const [votacionesData, criteriosData, asignacionesData] = await Promise.all([
           getVotacionesByEvento(eventoId),
           getCriteriosByEvento(eventoId),
+          getAsignacionesCompetidorEvento(eventoId).catch(() => []),
         ]);
 
         setCriterios(criteriosData || []);
         setVotaciones(votacionesData || []);
+        setAsignacionesEvento(asignacionesData || []);
         setSelectedCategory("all");
 
         if (votacionesData?.length > 0) {
-          setVotacionId(votacionesData[0].id);
+          const votacionDesdeRuta = votacionesData.find((v) => String(v.id) === String(votingParamId));
+          setVotacionId(votacionDesdeRuta?.id || votacionesData[0].id);
         } else {
           setVotacionId("");
           setRanking([]);
@@ -134,7 +146,7 @@ function RankingScreen() {
     };
 
     loadVotacionesYCriterios();
-  }, [eventoId]);
+  }, [eventoId, votingParamId]);
 
   useEffect(() => {
     if (!eventoId || !votacionId) {
@@ -231,6 +243,44 @@ function RankingScreen() {
     () => ranking.filter((entry) => entry.ganador || Number(entry.posicion) <= 3).slice(0, 3),
     [ranking]
   );
+
+  const esGanadorEntry = (entry) =>
+    Boolean(entry.ganador) || Number(entry.posicion || 0) <= 3;
+
+  const normalizarEmail = (email) => String(email || "").trim().toLowerCase();
+
+  const usuarioPerteneceAlProyecto = (entry) => {
+    if (usuario?.rol !== "COMPETIDOR") return false;
+
+    const usuarioEmail = normalizarEmail(usuario.email);
+    const usuarioId = String(usuario.id || "");
+
+    return asignacionesEvento.some((asignacion) => {
+      const equipo = asignacion.equipo || {};
+      const proyectoEquipoId = equipo.proyecto?.id;
+      const mismoProyecto =
+        (proyectoEquipoId && String(proyectoEquipoId) === String(entry.proyectoId)) ||
+        (entry.equipoNombre && equipo.nombre === entry.equipoNombre);
+
+      if (!mismoProyecto) return false;
+
+      const competidor = asignacion.competidor || {};
+      const competidorEmail = normalizarEmail(competidor.email || competidor.usuario?.email);
+      const usuarioCompetidorId = String(competidor.usuario?.id || "");
+
+      return (
+        (usuarioEmail && competidorEmail === usuarioEmail) ||
+        (usuarioId && usuarioCompetidorId === usuarioId)
+      );
+    });
+  };
+
+  const puedeDescargarTodosCertificados = usuario?.rol === "ORGANIZADOR";
+
+  const puedeDescargarCertificado = (entry) =>
+    resultadoFinal &&
+    esGanadorEntry(entry) &&
+    (puedeDescargarTodosCertificados || usuarioPerteneceAlProyecto(entry));
 
   function getCriterioValue(entry, criterioId) {
     return entry.criterios?.find((criterio) => criterio.criterioId === criterioId)?.promedio ?? 0;
@@ -467,14 +517,13 @@ function RankingScreen() {
     URL.revokeObjectURL(url);
   };
 
-  const generarCertificado = (entry) => {
+  const abrirCertificados = (entries) => {
     const fecha = new Date().toLocaleDateString("es-ES", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
 
-    const puntuacion = formatearScorePrincipal(entry);
     const ventana = window.open("", "_blank", "width=1000,height=720");
 
     if (!ventana) {
@@ -482,17 +531,41 @@ function RankingScreen() {
       return;
     }
 
+    const certificados = entries
+      .map((entry) => {
+        const puntuacion = formatearScorePrincipal(entry);
+
+        return `
+          <section class="certificate">
+            <div class="seal">${entry.posicionVista || entry.posicion}</div>
+            <h1>Certificado de Reconocimiento</h1>
+            <div class="line"></div>
+            <p class="muted">Se otorga a</p>
+            <div class="project">
+              <strong>${entry.proyectoNombre}</strong>
+              <span>${entry.equipoNombre || "Equipo no disponible"}</span>
+            </div>
+            <p class="muted">por alcanzar el</p>
+            <div class="position">${entry.posicionVista || entry.posicion} lugar</div>
+            <p class="muted">${votacionSeleccionada?.nombre || "Votacion"} - ${eventoSeleccionado?.nombre || "Votify"}</p>
+            <div class="meta">Puntuacion final: ${puntuacion} - Emitido el ${fecha}</div>
+          </section>
+        `;
+      })
+      .join("");
+
     ventana.document.write(`
       <!doctype html>
       <html lang="es">
         <head>
           <meta charset="utf-8" />
-          <title>Certificado ${entry.proyectoNombre}</title>
+          <title>Certificados Votify</title>
           <style>
             * { box-sizing: border-box; }
             body { margin: 0; font-family: Arial, sans-serif; background: #f3f4f6; color: #111827; }
-            .page { min-height: 100vh; display: grid; place-items: center; padding: 32px; }
-            .certificate { width: min(980px, 100%); background: linear-gradient(135deg, #f8fafc, #eef2ff); border: 10px double #6366f1; padding: 56px; text-align: center; box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18); }
+            .page { min-height: 100vh; display: grid; gap: 32px; place-items: center; padding: 32px; }
+            .certificate { width: min(980px, 100%); background: linear-gradient(135deg, #f8fafc, #eef2ff); border: 10px double #6366f1; padding: 56px; text-align: center; box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18); break-after: page; }
+            .certificate:last-child { break-after: auto; }
             .seal { width: 92px; height: 92px; border-radius: 999px; margin: 0 auto 22px; display: grid; place-items: center; background: #facc15; color: #713f12; font-size: 42px; font-weight: 800; }
             h1 { margin: 0; font-size: 42px; color: #312e81; }
             .line { width: 140px; height: 4px; background: #6366f1; margin: 18px auto 30px; border-radius: 999px; }
@@ -509,20 +582,7 @@ function RankingScreen() {
         <body>
           <div class="page">
             <main>
-              <section class="certificate">
-                <div class="seal">${entry.posicionVista || entry.posicion}</div>
-                <h1>Certificado de Reconocimiento</h1>
-                <div class="line"></div>
-                <p class="muted">Se otorga a</p>
-                <div class="project">
-                  <strong>${entry.proyectoNombre}</strong>
-                  <span>${entry.equipoNombre || "Equipo no disponible"}</span>
-                </div>
-                <p class="muted">por alcanzar el</p>
-                <div class="position">${entry.posicionVista || entry.posicion} lugar</div>
-                <p class="muted">${votacionSeleccionada?.nombre || "Votacion"} - ${eventoSeleccionado?.nombre || "Votify"}</p>
-                <div class="meta">Puntuacion final: ${puntuacion} - Emitido el ${fecha}</div>
-              </section>
+              ${certificados}
               <div class="actions"><button onclick="window.print()">Descargar / imprimir PDF</button></div>
             </main>
           </div>
@@ -531,6 +591,31 @@ function RankingScreen() {
     `);
 
     ventana.document.close();
+  };
+
+  const generarCertificado = (entry) => {
+    if (!puedeDescargarCertificado(entry)) {
+      setError("Solo el organizador o los competidores del proyecto ganador pueden descargar este certificado.");
+      return;
+    }
+
+    abrirCertificados([entry]);
+  };
+
+  const generarCertificadosGanadores = () => {
+    if (!puedeDescargarTodosCertificados) {
+      setError("Solo el organizador puede descargar todos los certificados.");
+      return;
+    }
+
+    const entries = rankingFiltrado.filter(esGanadorEntry).slice(0, 3);
+
+    if (entries.length === 0) {
+      setError("No hay ganadores con certificado disponible.");
+      return;
+    }
+
+    abrirCertificados(entries);
   };
 
   const seleccionarProyecto = (proyectoId) => {
@@ -768,12 +853,6 @@ function RankingScreen() {
                 <span>Votantes Activos</span>
                 <strong>{votantesActivos}</strong>
               </article>
-              {/* No funciona lo de participacion asi q lo comento
-              <article>
-                <span>Participacion</span>
-                <strong>{participacion}</strong>
-              </article>
-              */}
             </section>
 
             <section className="ranking-top-podium">
@@ -956,10 +1035,20 @@ function RankingScreen() {
                     <div className="ranking-awards-icon">
                       <Award size={22} />
                     </div>
-                    <div>
+                    <div className="ranking-awards-heading-copy">
                       <h2>Premios y Reconocimientos</h2>
-                      <p>Genera certificados para los ganadores</p>
+                      <p>Certificados disponibles para ganadores</p>
                     </div>
+                    {puedeDescargarTodosCertificados ? (
+                      <button
+                        type="button"
+                        className="ranking-button ranking-button-outline"
+                        onClick={generarCertificadosGanadores}
+                      >
+                        <Download size={16} />
+                        Descargar certificados
+                      </button>
+                    ) : null}
                   </div>
 
                   <div className="ranking-awards-podium">
@@ -998,14 +1087,16 @@ function RankingScreen() {
                           <span>{etiquetaScorePrincipal()}</span>
                         </div>
 
-                        <button
-                          type="button"
-                          className="ranking-button ranking-button-primary"
-                          onClick={() => generarCertificado(entry)}
-                        >
-                          <FileText size={16} />
-                          Certificado
-                        </button>
+                        {puedeDescargarCertificado(entry) ? (
+                          <button
+                            type="button"
+                            className="ranking-button ranking-button-primary"
+                            onClick={() => generarCertificado(entry)}
+                          >
+                            <FileText size={16} />
+                            Certificado
+                          </button>
+                        ) : null}
                       </article>
                     ))}
                   </div>

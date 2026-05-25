@@ -1,7 +1,7 @@
 .ranking-results-page {
-  min-height: 100vh;
-  background: #f8fafc;
-  padding: 24px;
+  min-height: 100%;
+  background: transparent;
+  padding: 0;
   color: #111827;
 }
 
@@ -15,16 +15,15 @@
   align-items: center;
   gap: 0.5rem;
   color: #6b7280;
+  font-size: 14px;
   margin-bottom: 1rem;
 }
 
 .ranking-breadcrumbs a {
   color: #6366f1;
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 800;
 }
-
-
 
 .ranking-context-header {
   background: #fff;
@@ -729,6 +728,7 @@
 
 .ranking-awards-panel {
   margin-bottom: 28px;
+  overflow: visible;
 }
 
 .ranking-awards-heading {
@@ -737,6 +737,11 @@
   display: flex;
   gap: 14px;
   align-items: center;
+}
+
+.ranking-awards-heading-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .ranking-awards-icon {
@@ -762,11 +767,12 @@
 
 .ranking-awards-podium {
   background: linear-gradient(135deg, #f1f5f9, #f5f3ff);
-  padding: 42px 24px 52px;
+  padding: 68px 24px 52px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   align-items: end;
+  overflow: visible;
 }
 
 .ranking-award-card {
@@ -774,7 +780,7 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
   text-align: center;
   padding: 126px 18px 18px;
 }
@@ -784,6 +790,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 90px;
+  border-radius: 10px 10px 0 0;
 }
 
 .ranking-award-card.position-1 {
@@ -984,7 +991,7 @@
 
 @media (max-width: 850px) {
   .ranking-results-page {
-    padding: 14px;
+    padding: 0;
   }
 
   .ranking-context-header,
@@ -996,6 +1003,11 @@
   .ranking-context-info,
   .ranking-header-actions {
     justify-content: flex-start;
+  }
+
+  .ranking-awards-heading {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .ranking-selectors,
