@@ -1,6 +1,6 @@
-const CRITERIOS_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/criterios`;
-const PUNTUACIONES_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/puntuaciones`;
-const RANKING_URL = `${'https://psw-dds1203-backend-9zd6-production.up.railway.app' || 'http://localhost:8090'}/api/ranking`;
+const CRITERIOS_URL = "http://localhost:8090/api/criterios";
+const PUNTUACIONES_URL = "http://localhost:8090/api/puntuaciones";
+const RANKING_URL = "http://localhost:8090/api/ranking";
 
 export async function getCriteriosByEvento(eventoId){
 
@@ -186,6 +186,28 @@ export async function sugerirPlantillaCriterios(descripcion, tipoEvento){
   if (!response.ok){
 
     throw new Error("No se pudo obtener la sugerencia");
+
+  }
+
+  return response.json();
+
+}
+
+export async function sugerirCriteriosIA({ descripcion, tipoEvento, eventoNombre, modalidad }){
+
+  const params = new URLSearchParams();
+
+  if (descripcion) params.append("descripcion", descripcion);
+  if (tipoEvento) params.append("tipoEvento", tipoEvento);
+  if (eventoNombre) params.append("eventoNombre", eventoNombre);
+  if (modalidad) params.append("modalidad", modalidad);
+
+  const response = await fetch(`${CRITERIOS_URL}/plantillas/sugerencia-ia?${params}`);
+
+  if (!response.ok){
+
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo generar la sugerencia con IA");
 
   }
 
