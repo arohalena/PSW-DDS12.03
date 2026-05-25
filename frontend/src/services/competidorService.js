@@ -31,15 +31,20 @@ export async function createCompetidor(competidor) {
 
 export async function assignCompetidor(datos) {
   try { 
-    await fetch(`${COMPETIDOR_EVENTO_URL}/asignar`, {
+    const response = await fetch(`${COMPETIDOR_EVENTO_URL}/asignar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(datos),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "No se pudo asignar el competidor");
+    }
   } catch(error) {  
-    throw new Error(error || "No se pudo asignar el competidor");
+    throw new Error(error.message || "No se pudo asignar el competidor");
   }
 }
 

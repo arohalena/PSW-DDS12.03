@@ -680,6 +680,14 @@ function ProjectsScreen() {
     };
   }, [enrichedProjects]);
 
+  const statusFilterOptions = [
+    { value: "TODOS", label: "Todos" },
+    { value: "CON_EVENTO", label: "En evento" },
+    { value: "SIN_EVENTO", label: "Sin evento" },
+    { value: "CON_VOTACIONES", label: "Con votaciones" },
+    { value: "SIN_VOTACIONES", label: "Sin votaciones" },
+  ];
+
   function goToProjectDetail(proyecto) {
     const eventoId = proyecto.evento?.id;
 
@@ -825,26 +833,34 @@ function ProjectsScreen() {
       </header>
 
       <section className="projects-stats-grid">
-        <div className="project-stat-card">
-          <FolderKanban size={22} />
+        <div className="project-stat-card stat-total">
+          <span className="project-stat-icon">
+            <FolderKanban size={20} />
+          </span>
           <strong>{stats.total}</strong>
           <span>Total</span>
         </div>
 
-        <div className="project-stat-card">
-          <CheckCircle size={22} />
+        <div className="project-stat-card stat-with-event">
+          <span className="project-stat-icon">
+            <CheckCircle size={20} />
+          </span>
           <strong>{stats.withEvent}</strong>
           <span>En evento</span>
         </div>
 
-        <div className="project-stat-card">
-          <Vote size={22} />
+        <div className="project-stat-card stat-with-voting">
+          <span className="project-stat-icon">
+            <Vote size={20} />
+          </span>
           <strong>{stats.withVoting}</strong>
           <span>Con votaciones</span>
         </div>
 
-        <div className="project-stat-card">
-          <Users size={22} />
+        <div className="project-stat-card stat-without-event">
+          <span className="project-stat-icon">
+            <Users size={20} />
+          </span>
           <strong>{stats.withoutEvent}</strong>
           <span>Sin evento</span>
         </div>
@@ -854,6 +870,15 @@ function ProjectsScreen() {
       {success ? <div className="project-feedback success-box">{success}</div> : null}
 
       <section className="projects-card">
+        <div className="projects-card-header">
+          <div>
+            <h2>Proyectos</h2>
+            <p>
+              {filteredProjects.length} visibles de {stats.total} proyectos registrados.
+            </p>
+          </div>
+        </div>
+
         <div className="projects-toolbar">
           <div className="projects-search">
             <Search size={17} />
@@ -864,13 +889,18 @@ function ProjectsScreen() {
             />
           </div>
 
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="TODOS">Todos</option>
-            <option value="CON_EVENTO">Con evento</option>
-            <option value="SIN_EVENTO">Sin evento</option>
-            <option value="CON_VOTACIONES">Con votaciones</option>
-            <option value="SIN_VOTACIONES">Sin votaciones</option>
-          </select>
+          <div className="projects-filter-segment" role="group" aria-label="Filtrar proyectos">
+            {statusFilterOptions.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                className={statusFilter === option.value ? "active" : ""}
+                onClick={() => setStatusFilter(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
@@ -894,13 +924,15 @@ function ProjectsScreen() {
                 }}
               >
                 <div className="project-pro-card-header">
-                  <div className="project-pro-avatar">
-                    {proyecto.nombre?.charAt(0)?.toUpperCase() || "P"}
-                  </div>
+                  <div className="project-pro-title">
+                    <div className="project-pro-avatar">
+                      {proyecto.nombre?.charAt(0)?.toUpperCase() || "P"}
+                    </div>
 
-                  <div>
-                    <h3>{proyecto.nombre}</h3>
-                    <span>{proyecto.tipoCategoria}</span>
+                    <div>
+                      <h3>{proyecto.nombre}</h3>
+                      <span>{proyecto.tipoCategoria}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -972,6 +1004,7 @@ function ProjectsScreen() {
                     </button>
                   </div>
                 ) : null}
+
               </article>
             ))}
           </div>

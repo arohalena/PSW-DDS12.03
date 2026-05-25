@@ -396,8 +396,13 @@ function AssignCompetitorsModal({ open, onClose, equipo, competidores, currentAs
 
   async function submit(e) {
     e.preventDefault();
-    await onSubmit(equipo, selectedIds, currentAsignaciones);
-    onClose();
+
+    try {
+      await onSubmit(equipo, selectedIds, currentAsignaciones);
+      onClose();
+    } catch {
+      onClose();
+    }
   }
 
   return (
@@ -490,6 +495,7 @@ function UserManagementScreen() {
   const [selectedRole, setSelectedRole] = useState("TODOS");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -616,6 +622,19 @@ function UserManagementScreen() {
     });
   }, [equipos, search, asignacionesPorEquipo, proyectos]);
 
+  const tabOptions = [
+    { value: "usuarios", label: "Usuarios", count: filteredUsuarios.length },
+    { value: "competidores", label: "Competidores", count: filteredCompetidores.length },
+    { value: "equipos", label: "Equipos", count: filteredEquipos.length },
+  ];
+
+  const activePanel = tabOptions.find((tab) => tab.value === activeTab) || tabOptions[0];
+
+  const roleFilterOptions = [
+    { value: "TODOS", label: "Todos" },
+    ...ROLES.map((role) => ({ value: role, label: roleLabel(role) })),
+  ];
+
   async function handleSubmitUser(data) {
     if (editingUser) {
       await updateUsuario(editingUser.id, data);
@@ -668,10 +687,13 @@ async function handleDeleteEquipo(equipo) {
 
   async function handleAssignCompetitors(equipo, selectedIds, currentAsignaciones) {
     const eventoId = equipo.evento?.id;
+    setError("");
+    setSuccess("");
 
     if (!eventoId) {
-      setError("El equipo no tiene evento asociado.");
-      return;
+      const message = "El equipo no tiene evento asociado.";
+      setError(message);
+      throw new Error(message);
     }
 
     const currentIds = currentAsignaciones
@@ -683,15 +705,23 @@ async function handleDeleteEquipo(equipo) {
       (asignacion) => asignacion.competidor?.id && !selectedIds.includes(asignacion.competidor.id)
     );
 
-    for (const competidorId of toAdd) {
-      await assignCompetidor({ competidorId, eventoId, equipoId: equipo.id });
-    }
+    try {
+      for (const competidorId of toAdd) {
+        await assignCompetidor({ competidorId, eventoId, equipoId: equipo.id });
+      }
 
-    for (const asignacion of toRemove) {
-      await deleteAsignacionCompetidor(asignacion.id);
-    }
+      for (const asignacion of toRemove) {
+        await deleteAsignacionCompetidor(asignacion.id);
+      }
 
-    await loadAll();
+      await loadAll();
+      setSuccess("Competidores actualizados correctamente.");
+    } catch (err) {
+      const message =
+        "No se pudo actualizar el equipo. Revisa que el competidor no esté ya asignado a otro equipo del mismo evento.";
+      setError(message);
+      throw new Error(message);
+    }
   }
 
   return (
@@ -726,17 +756,35 @@ async function handleDeleteEquipo(equipo) {
       </header>
 
       <section className="users-stats-grid">
-        <div className="users-stat-card"><div className="users-stat-icon blue"><Users size={23} /></div><div><strong>{usuarios.length}</strong><span>Usuarios</span></div></div>
-        <div className="users-stat-card"><div className="users-stat-icon purple"><Shield size={23} /></div><div><strong>{usuarios.filter((u) => u.rol === "JURADO").length}</strong><span>Jurado</span></div></div>
-        <div className="users-stat-card"><div className="users-stat-icon green"><UserPlus size={23} /></div><div><strong>{competidores.length}</strong><span>Competidores</span></div></div>
-        <div className="users-stat-card"><div className="users-stat-icon orange"><Trophy size={23} /></div><div><strong>{equipos.length}</strong><span>Equipos</span></div></div>
+        <div className="users-stat-card stat-users"><div className="users-stat-icon blue"><Users size={23} /></div><div><strong>{usuarios.length}</strong><span>Usuarios</span></div></div>
+        <div className="users-stat-card stat-jury"><div className="users-stat-icon purple"><Shield size={23} /></div><div><strong>{usuarios.filter((u) => u.rol === "JURADO").length}</strong><span>Jurado</span></div></div>
+        <div className="users-stat-card stat-competitors"><div className="users-stat-icon green"><UserPlus size={23} /></div><div><strong>{competidores.length}</strong><span>Competidores</span></div></div>
+        <div className="users-stat-card stat-teams"><div className="users-stat-icon orange"><Trophy size={23} /></div><div><strong>{equipos.length}</strong><span>Equipos</span></div></div>
       </section>
+
+      {error ? <div className="feedback-card error-box users-page-feedback">{error}</div> : null}
+      {success ? <div className="feedback-card success-box users-page-feedback">{success}</div> : null}
 
       <section className="users-card">
         <div className="users-tabs">
-          <button className={activeTab === "usuarios" ? "active" : ""} onClick={() => setActiveTab("usuarios")}>Usuarios</button>
-          <button className={activeTab === "competidores" ? "active" : ""} onClick={() => setActiveTab("competidores")}>Competidores</button>
-          <button className={activeTab === "equipos" ? "active" : ""} onClick={() => setActiveTab("equipos")}>Equipos</button>
+          {tabOptions.map((tab) => (
+            <button
+              type="button"
+              key={tab.value}
+              className={activeTab === tab.value ? "active" : ""}
+              onClick={() => setActiveTab(tab.value)}
+            >
+              {tab.label}
+              <span className="users-tab-count">{tab.count}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="users-card-header">
+          <div>
+            <h2>{activePanel.label}</h2>
+            <p>{activePanel.count} resultados visibles con los filtros actuales.</p>
+          </div>
         </div>
 
         <div className="users-toolbar">
@@ -746,17 +794,23 @@ async function handleDeleteEquipo(equipo) {
           </div>
 
           {activeTab === "usuarios" ? (
-            <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-              <option value="TODOS">Todos los roles</option>
-              {ROLES.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}
-            </select>
+            <div className="users-role-segment" role="group" aria-label="Filtrar usuarios por rol">
+              {roleFilterOptions.map((option) => (
+                <button
+                  type="button"
+                  key={option.value}
+                  className={selectedRole === option.value ? "active" : ""}
+                  onClick={() => setSelectedRole(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           ) : null}
         </div>
 
         {loading ? (
           <div className="feedback-card">Cargando datos...</div>
-        ) : error ? (
-          <div className="feedback-card error-box">{error}</div>
         ) : (
           <>
             {activeTab === "usuarios" ? (
@@ -777,6 +831,7 @@ async function handleDeleteEquipo(equipo) {
                             <button disabled={!puedeGestionar} onClick={() => { setEditingUser(usuario); setUserModalOpen(true); }}><Edit size={16} /></button>
                             <button
                               disabled={!puedeGestionar}
+                              className="danger-action-btn"
                               onClick={() => {
                                 setDeleteConfig({
                                   title: "Eliminar usuario",
@@ -892,12 +947,27 @@ async function handleDeleteEquipo(equipo) {
                       </div>
 
                       <div className="equipo-members">
-                        {asignaciones.slice(0, 4).map((a) => (
-                          <div className="mini-avatar" key={a.id}>
-                            {initials(a.competidor?.nombre, a.competidor?.email)}
+                        <div className="equipo-members-summary">
+                          <span>{asignaciones.length} miembro{asignaciones.length === 1 ? "" : "s"}</span>
+                        </div>
+
+                        {asignaciones.length > 0 ? (
+                          <div className="equipo-members-list">
+                            {asignaciones.map((a) => (
+                              <div className="equipo-member-row" key={a.id}>
+                                <div className="mini-avatar">
+                                  {initials(a.competidor?.nombre, a.competidor?.email)}
+                                </div>
+                                <div>
+                                  <strong>{a.competidor?.nombre || "Competidor"}</strong>
+                                  <small>{a.competidor?.email || "Sin email"}</small>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                        <span>{asignaciones.length} miembro{asignaciones.length === 1 ? "" : "s"}</span>
+                        ) : (
+                          <span className="equipo-member-empty">Sin competidores asignados</span>
+                        )}
                       </div>
 
                       <button
@@ -909,7 +979,7 @@ async function handleDeleteEquipo(equipo) {
                         }}
                       >
                         <Plus size={16} />
-                        Asignar más competidores
+                        Gestionar miembros
                       </button>
                       {puedeGestionar ? (
                         <button

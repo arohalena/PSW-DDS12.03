@@ -663,11 +663,13 @@ function EventDetailScreen() {
               {eventStatus.label}
             </span>
 
+            {/* No me gusta que se muestre arriba el estado la votacion seleccionada pq ya se ve abajo me parece redundante
             <span className={`voting-status-chip ${getVotingEstadoClass(selectedVotingEstado)}`}>
               {selectedVoting
                 ? `Votación ${getVotingEstadoLabel(selectedVotingEstado)}`
                 : "Sin votación"}
             </span>
+            */}
 
             {privateEvent ? (
               <span className="event-code-chip">
