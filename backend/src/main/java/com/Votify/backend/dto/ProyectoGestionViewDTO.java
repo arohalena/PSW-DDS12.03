@@ -17,6 +17,7 @@ public class ProyectoGestionViewDTO {
     private TipoCategoriaMO tipoCategoria;
     private RefDTO equipo;       
     private RefDTO evento;       
+    private long totalVotos;
     private List<VotacionRefDTO> votaciones;
 
     @Data @AllArgsConstructor
@@ -32,5 +33,6 @@ public class ProyectoGestionViewDTO {
         private String nombre;
         private String tipo;
         private String modalidad;
+        private long totalVotos;
     }
 }

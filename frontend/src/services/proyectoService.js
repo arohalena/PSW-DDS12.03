@@ -1,5 +1,17 @@
 const API_URL = `${'https://psw-dds1203-production.up.railway.app/psw-dds1203-backend-9zd6-production.up.railway.app/' || 'http://localhost:8090'}/api/proyectos`;
 
+async function getErrorMessage(response, fallback) {
+  const errorText = await response.text();
+  if (!errorText) return fallback;
+
+  try {
+    const parsed = JSON.parse(errorText);
+    return parsed.message || parsed.error || errorText;
+  } catch {
+    return errorText;
+  }
+}
+
 export async function getProyectosByEvento(eventoId) {
 
     const response = await fetch(`${API_URL}/evento/${eventoId}`);
@@ -160,8 +172,7 @@ export async function deleteProyecto(id) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo eliminar el proyecto.");
+    throw new Error(await getErrorMessage(response, "No se pudo eliminar el proyecto."));
   }
 }
 

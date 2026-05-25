@@ -151,6 +151,12 @@
   color: #b91c1c;
 }
 
+.success-box {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
 .projects-table-wrapper {
   overflow-x: auto;
 }
@@ -1037,7 +1043,7 @@
 
 .project-pro-info {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.65rem;
 }
 
@@ -1440,6 +1446,23 @@
 .project-danger-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.project-danger-btn.is-disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.project-delete-hint {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.1rem;
+  padding: 0 0.65rem;
+  border-radius: 0.75rem;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 .project-vote-select-field {
   display: grid;

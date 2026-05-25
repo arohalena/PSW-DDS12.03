@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useModalShortcuts } from "../../common/useModalShortcuts";
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -66,6 +65,7 @@ function ProjectFormModal({
   onSubmit,
 }) {
   const editing = Boolean(proyecto);
+  const nameInputRef = useRef(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [votaciones, setVotaciones] = useState([]);
   const [error, setError] = useState("");
@@ -83,6 +83,12 @@ function ProjectFormModal({
     });
 
     setError("");
+
+    const focusTimer = window.setTimeout(() => {
+      nameInputRef.current?.focus();
+    }, 0);
+
+    return () => window.clearTimeout(focusTimer);
   }, [open, proyecto]);
 
   useEffect(() => {
@@ -96,13 +102,6 @@ function ProjectFormModal({
       .then((data) => setVotaciones(data || []))
       .catch(() => setVotaciones([]));
   }, [open, form.eventoId]);
-
-  const formRef = useRef(null);
-  const modalRef = useModalShortcuts({
-    isOpen: open,
-    onClose,
-    onSubmit: () => formRef.current?.requestSubmit(),
-  });
 
   if (!open) return null;
 
@@ -145,15 +144,8 @@ function ProjectFormModal({
   }
 
   return (
-      <div className="project-modal-backdrop">
-        <form
-          className="project-pro-modal"
-          onSubmit={submit}
-          ref={(node) => {
-            formRef.current = node;
-            modalRef.current = node;
-          }}
-        >
+    <div className="project-modal-backdrop">
+      <form className="project-pro-modal" onSubmit={submit}>
         <div className="project-pro-modal-header">
           <div>
             <h2>{editing ? "Editar proyecto" : "Crear proyecto"}</h2>
@@ -163,7 +155,13 @@ function ProjectFormModal({
             </p>
           </div>
 
-          <button type="button" className="project-modal-close" onClick={onClose}>
+          <button
+            type="button"
+            className="project-modal-close"
+            onClick={onClose}
+            tabIndex={-1}
+            aria-label="Cerrar modal"
+          >
             <X size={20} />
           </button>
         </div>
@@ -172,6 +170,7 @@ function ProjectFormModal({
           <label className="project-field">
             <span>Nombre</span>
             <input
+              ref={nameInputRef}
               value={form.nombre}
               onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
               placeholder="Ej. Votify AI"
@@ -340,12 +339,6 @@ function ParticipationModal({
       .catch(() => setVotaciones([]));
   }, [open, eventoId]);
 
-  const modalRef = useModalShortcuts({
-  isOpen: open,
-  onClose,
-  onSubmit: () => modalRef.current?.querySelector("form")?.requestSubmit(),
-  });
-
   if (!open || !proyecto) return null;
 
   const relationVotingIds = currentRelations.map((rel) => rel.votacion?.id).filter(Boolean);
@@ -385,8 +378,7 @@ function ParticipationModal({
 
   return (
     <div className="project-modal-backdrop">
-      <div className="project-pro-modal" ref=
-      {modalRef}>
+      <div className="project-pro-modal">
         <div className="project-pro-modal-header">
           <div>
             <h2>Participación</h2>
@@ -555,18 +547,11 @@ function ParticipationModal({
 }
 
 function ConfirmModal({ open, title, message, warning, onCancel, onConfirm }) {
-
-  const modalRef = useModalShortcuts({
-  isOpen: open,
-  onClose: onCancel,
-  onSubmit: onConfirm,
-  });
-
   if (!open) return null;
 
   return (
     <div className="project-modal-backdrop">
-      <div className="project-confirm-modal" ref={modalRef}>
+      <div className="project-confirm-modal">
         <div className="project-confirm-icon">
           <Trash2 size={28} />
         </div>
@@ -630,12 +615,14 @@ function ProjectsScreen() {
         tipoCategoria: p.tipoCategoria,
         equipo: p.equipo,   
         evento: p.evento,   
+        totalVotos: p.totalVotos || 0,
       }));
 
       const map = {};
       (vistaProyectos || []).forEach((p) => {
         map[p.id] = (p.votaciones || []).map((v) => ({
           id: v.relacionId,
+          totalVotos: v.totalVotos || 0,
           votacion: {
             id: v.votacionId,
             nombre: v.nombre,
@@ -798,6 +785,12 @@ function ProjectsScreen() {
       setError("");
       setSuccess("");
 
+      if ((project?.totalVotos || 0) > 0) {
+        setConfirmDeleteProject(null);
+        setError("No se puede eliminar un proyecto con votos emitidos. Los votos son inmutables.");
+        return;
+      }
+
       await deleteProyecto(project.id);
 
       setConfirmDeleteProject(null);
@@ -939,6 +932,10 @@ function ProjectsScreen() {
         ) : (
           <div className="projects-pro-grid">
             {filteredProjects.map((proyecto) => (
+              (() => {
+                const hasVotes = (proyecto.totalVotos || 0) > 0;
+
+                return (
               <article
                 className="project-pro-card"
                 key={proyecto.id}
@@ -982,12 +979,20 @@ function ProjectsScreen() {
                     <span>Votaciones</span>
                     <strong>{proyecto.relations.length}</strong>
                   </div>
+
+                  <div>
+                    <span>Votos</span>
+                    <strong>{proyecto.totalVotos || 0}</strong>
+                  </div>
                 </div>
 
                 {proyecto.relations.length > 0 ? (
                   <div className="project-pro-voting-tags">
                     {proyecto.relations.map((rel) => (
-                      <span key={rel.id}>{votingLabel(rel.votacion)}</span>
+                      <span key={rel.id}>
+                        {votingLabel(rel.votacion)}
+                        {(rel.totalVotos || 0) > 0 ? ` · ${rel.totalVotos} votos` : ""}
+                      </span>
                     ))}
                   </div>
                 ) : (
@@ -1022,19 +1027,27 @@ function ProjectsScreen() {
                     </button>
                     <button
                       type="button"
-                      className="project-danger-btn"
+                      className={`project-danger-btn ${hasVotes ? "is-disabled" : ""}`}
+                      disabled={hasVotes}
+                      title={hasVotes ? "No se puede eliminar un proyecto con votos emitidos." : "Eliminar proyecto"}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (hasVotes) return;
                         setConfirmDeleteProject(proyecto);
                       }}
                     >
                       <Trash2 size={15} />
                       Eliminar
                     </button>
+                    {hasVotes ? (
+                      <span className="project-delete-hint">Bloqueado por votos</span>
+                    ) : null}
                   </div>
                 ) : null}
 
               </article>
+                );
+              })()
             ))}
           </div>
         )}
@@ -1080,7 +1093,7 @@ function ProjectsScreen() {
         open={Boolean(confirmDeleteProject)}
         title="Eliminar proyecto"
         message={`Vas a eliminar "${confirmDeleteProject?.nombre}".`}
-        warning="Se eliminarán sus comentarios, votos, evaluaciones y relaciones con votaciones. También desaparecerá de los rankings."
+        warning="Solo se puede eliminar si el proyecto no tiene votos emitidos. Si ya hay votos, se conserva por inmutabilidad y auditoría."
         onCancel={() => setConfirmDeleteProject(null)}
         onConfirm={() => handleDeleteProject(confirmDeleteProject)}
       />
