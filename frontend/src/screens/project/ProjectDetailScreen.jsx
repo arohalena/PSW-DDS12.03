@@ -201,24 +201,61 @@ function ProjectDetailScreen() {
 
         if (effectiveEventoId) {
           let asignacionesEquipo = [];
+          const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-          if (equipoEncontrado?.id) {
-            const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+          // Filtrar asignaciones que pertenezcan al equipo encontrado o al proyecto
+          asignacionesEquipo = asignacionesEventoActual.filter((asignacion) => {
+            // Caso 1: Coincide por equipo ID
+            if (equipoEncontrado?.id && 
+                String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)) {
+              return true;
+            }
+            
+            // Caso 2: Coincide por proyecto ID (para equipos sin ID explícito)
+            if (idProyecto && 
+                String(asignacion.proyecto?.id || asignacion.proyectoId) === String(idProyecto)) {
+              return true;
+            }
+            
+            // Caso 3: El equipo de la asignación referencia al proyecto
+            if (asignacion.equipo?.proyecto?.id && 
+                String(asignacion.equipo.proyecto.id) === String(idProyecto)) {
+              return true;
+            }
+            
+            // Caso 4: La asignación tiene equipo cuyo ID coincide con el proyecto ID
+            if (idProyecto && equipoEncontrado?.id &&
+                String(asignacion.equipoId || asignacion.equipo?.id) === String(equipoEncontrado.id)) {
+              return true;
+            }
 
-            asignacionesEquipo = asignacionesEventoActual.filter(
-              (asignacion) =>
-                String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
-            );
-          }
+            return false;
+          });
+
+          // Debug: log para ver qué asignaciones se encontraron
+          console.log("Asignaciones del evento:", asignacionesEventoActual.length);
+          console.log("Asignaciones filtradas:", asignacionesEquipo.length);
+          console.log("Equipo encontrado:", equipoEncontrado);
+          console.log("ID Proyecto:", idProyecto);
 
           const miembrosEquipo = asignacionesEquipo
-            .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
+            .map((asignacion) => {
+              // Intentar extraer competidor de diferentes campos
+              const competidor = asignacion.competidor || 
+                                asignacion.competidorMO || 
+                                asignacion.usuario ||
+                                asignacion.miembro ||
+                                null;
+              console.log("Asignación:", asignacion, "Competidor extraído:", competidor);
+              return competidor;
+            })
             .filter(Boolean)
             .filter(
               (competidor, index, array) =>
                 array.findIndex((item) => String(item.id) === String(competidor.id)) === index
             );
 
+          console.log("Miembros del equipo:", miembrosEquipo);
           setMiembros(miembrosEquipo);
 
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
