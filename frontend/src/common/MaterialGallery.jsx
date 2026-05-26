@@ -7,14 +7,23 @@ export function MaterialGallery({ proyectoId }) {
   const [materiales, setMateriales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [error, setError] = useState(null);
+  const [lastInfo, setLastInfo] = useState(null);
 
   useEffect(() => {
     const cargarMateriales = async () => {
       try {
+        console.debug('[MaterialGallery] solicitando materiales para proyectoId=', proyectoId);
         const data = await getMaterialesByProyecto(proyectoId);
-        setMateriales(data);
-      } catch (error) {
-        console.error('Error cargando materiales:', error);
+        console.debug('[MaterialGallery] respuesta materiales:', data);
+        setMateriales(Array.isArray(data) ? data : []);
+        setLastInfo({ count: Array.isArray(data) ? data.length : 0 });
+        setError(null);
+      } catch (err) {
+        console.error('Error cargando materiales:', err);
+        setMateriales([]);
+        setError(err?.message || String(err));
+        setLastInfo(null);
       } finally {
         setLoading(false);
       }
@@ -106,11 +115,22 @@ export function MaterialGallery({ proyectoId }) {
     return <div className="material-gallery">Cargando materiales...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="material-gallery-error">
+        <div>Error cargando materiales: {error}</div>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>proyectoId: {String(proyectoId)}</div>
+      </div>
+    );
+  }
+
   if (materiales.length === 0) {
     return (
       <div className="material-gallery-empty">
         <div>No hay materiales para este proyecto aún.</div>
-        <div style={{marginTop:8, fontSize:12, color:'#666'}}>proyectoId: {String(proyectoId)}</div>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
+          proyectoId: {String(proyectoId)}{lastInfo ? ` — count: ${lastInfo.count}` : ''}
+        </div>
       </div>
     );
   }
