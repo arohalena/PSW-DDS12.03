@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Star,
   Trophy,
+  Image,
   Users,
   Vote,
 } from "lucide-react";
