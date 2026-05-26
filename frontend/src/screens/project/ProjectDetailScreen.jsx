@@ -571,44 +571,6 @@ function ProjectDetailScreen() {
         <article className="project-balanced-card">
           <div className="project-balanced-card-heading">
             <div>
-              <h2>Informacion del equipo</h2>
-              <p>Participantes vinculados al proyecto.</p>
-            </div>
-          </div>
-
-          <div className="project-balanced-team-summary">
-            <div className="project-balanced-team-title">
-              <span>
-                <Trophy size={21} />
-              </span>
-              <strong>{equipo?.nombre || "Sin equipo asignado"}</strong>
-            </div>
-            <span>
-              {miembros.length} miembro{miembros.length === 1 ? "" : "s"} registrado
-              {miembros.length === 1 ? "" : "s"}
-            </span>
-          </div>
-
-          <div className="project-balanced-members">
-            {miembros.length === 0 ? (
-              <p className="project-muted">No hay competidores asignados al equipo en este evento.</p>
-            ) : (
-              miembros.map((miembro) => (
-                <div className="project-balanced-member" key={miembro.id}>
-                  <div>{initials(miembro.nombre, miembro.email)}</div>
-                  <section>
-                    <strong>{miembro.nombre || miembro.email}</strong>
-                    <span>{miembro.email}</span>
-                  </section>
-                </div>
-              ))
-            )}
-          </div>
-        </article>
-
-        <article className="project-balanced-card">
-          <div className="project-balanced-card-heading">
-            <div>
               <h2>Votaciones asociadas</h2>
               <p>Selecciona una votacion para ver su puntuacion.</p>
             </div>
