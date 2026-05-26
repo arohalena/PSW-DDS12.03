@@ -688,7 +688,7 @@ function ProjectDetailScreen() {
           </div>
         </div>
         <div className="my-project-material-body">
-          <MaterialGallery proyectoId={selectedProject?.id} />
+          <MaterialGallery proyectoId={proyecto.id} />
         </div>
       </section>
 
