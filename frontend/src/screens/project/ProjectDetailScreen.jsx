@@ -200,63 +200,59 @@ function ProjectDetailScreen() {
         setComentarios(comentariosData || []);
 
         if (effectiveEventoId) {
-          let asignacionesEquipo = [];
-          const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+          let miembrosEquipo = [];
 
-          // Filtrar asignaciones que pertenezcan al equipo encontrado o al proyecto
-          asignacionesEquipo = asignacionesEventoActual.filter((asignacion) => {
-            // Caso 1: Coincide por equipo ID
-            if (equipoEncontrado?.id && 
-                String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)) {
-              return true;
-            }
-            
-            // Caso 2: Coincide por proyecto ID (para equipos sin ID explícito)
-            if (idProyecto && 
-                String(asignacion.proyecto?.id || asignacion.proyectoId) === String(idProyecto)) {
-              return true;
-            }
-            
-            // Caso 3: El equipo de la asignación referencia al proyecto
-            if (asignacion.equipo?.proyecto?.id && 
-                String(asignacion.equipo.proyecto.id) === String(idProyecto)) {
-              return true;
-            }
-            
-            // Caso 4: La asignación tiene equipo cuyo ID coincide con el proyecto ID
-            if (idProyecto && equipoEncontrado?.id &&
-                String(asignacion.equipoId || asignacion.equipo?.id) === String(equipoEncontrado.id)) {
-              return true;
-            }
+          // Primero intentar obtener miembros directamente del equipo
+          if (equipoEncontrado?.competidores && equipoEncontrado.competidores.length > 0) {
+            console.log("Miembros desde equipo.competidores:", equipoEncontrado.competidores);
+            miembrosEquipo = equipoEncontrado.competidores;
+          } else if (equipoEncontrado?.miembros && equipoEncontrado.miembros.length > 0) {
+            console.log("Miembros desde equipo.miembros:", equipoEncontrado.miembros);
+            miembrosEquipo = equipoEncontrado.miembros;
+          } else {
+            // Si no están en el equipo, intentar obtener del evento
+            const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+            console.log("Asignaciones del evento:", asignacionesEventoActual.length);
 
-            return false;
-          });
+            // Filtrar asignaciones que pertenezcan al equipo encontrado o al proyecto
+            const asignacionesEquipo = asignacionesEventoActual.filter((asignacion) => {
+              // Caso 1: Coincide por equipo ID
+              if (equipoEncontrado?.id && 
+                  String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)) {
+                return true;
+              }
+              
+              // Caso 2: Coincide por proyecto ID (para equipos sin ID explícito)
+              if (idProyecto && 
+                  String(asignacion.proyecto?.id || asignacion.proyectoId) === String(idProyecto)) {
+                return true;
+              }
+              
+              // Caso 3: El equipo de la asignación referencia al proyecto
+              if (asignacion.equipo?.proyecto?.id && 
+                  String(asignacion.equipo.proyecto.id) === String(idProyecto)) {
+                return true;
+              }
 
-          // Debug: log para ver qué asignaciones se encontraron
-          console.log("Asignaciones del evento:", asignacionesEventoActual.length);
-          console.log("Asignaciones filtradas:", asignacionesEquipo.length);
+              return false;
+            });
+
+            console.log("Asignaciones filtradas:", asignacionesEquipo.length);
+
+            miembrosEquipo = asignacionesEquipo
+              .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
+              .filter(Boolean);
+          }
+
+          // Eliminar duplicados
+          const miembrosUnicos = miembrosEquipo.filter(
+            (competidor, index, array) =>
+              array.findIndex((item) => String(item.id) === String(competidor.id)) === index
+          );
+
           console.log("Equipo encontrado:", equipoEncontrado);
-          console.log("ID Proyecto:", idProyecto);
-
-          const miembrosEquipo = asignacionesEquipo
-            .map((asignacion) => {
-              // Intentar extraer competidor de diferentes campos
-              const competidor = asignacion.competidor || 
-                                asignacion.competidorMO || 
-                                asignacion.usuario ||
-                                asignacion.miembro ||
-                                null;
-              console.log("Asignación:", asignacion, "Competidor extraído:", competidor);
-              return competidor;
-            })
-            .filter(Boolean)
-            .filter(
-              (competidor, index, array) =>
-                array.findIndex((item) => String(item.id) === String(competidor.id)) === index
-            );
-
-          console.log("Miembros del equipo:", miembrosEquipo);
-          setMiembros(miembrosEquipo);
+          console.log("Miembros del equipo:", miembrosUnicos);
+          setMiembros(miembrosUnicos);
 
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
           const relaciones = (
