@@ -691,16 +691,17 @@ function ProjectDetailScreen() {
         </section>
       ) : null}
 
-      <section className="project-balanced-card project-balanced-gallery">
-        <div className="project-balanced-card-heading">
-          <div>
-            <h2>Galeria del proyecto</h2>
-            <p>Capturas, demo y material visual del proyecto.</p>
+      <article className="my-project-card">
+        <div className="participant-card-header">
+          <div className="participant-card-title">
+            <Image size={18} />
+            <h3>Galeria del proyecto</h3>
           </div>
         </div>
-
-        <MaterialGallery proyectoId={idProyecto} />
-      </section>
+        <div className="my-project-material-body">
+          <MaterialGallery proyectoId={proyecto.id} />
+        </div>
+      </article>
 
       <section className="project-balanced-card">
         <div className="project-balanced-card-heading">
