@@ -200,59 +200,40 @@ function ProjectDetailScreen() {
         setComentarios(comentariosData || []);
 
         if (effectiveEventoId) {
-          let miembrosEquipo = [];
-
-          // Primero intentar obtener miembros directamente del equipo
-          if (equipoEncontrado?.competidores && equipoEncontrado.competidores.length > 0) {
-            console.log("Miembros desde equipo.competidores:", equipoEncontrado.competidores);
-            miembrosEquipo = equipoEncontrado.competidores;
-          } else if (equipoEncontrado?.miembros && equipoEncontrado.miembros.length > 0) {
-            console.log("Miembros desde equipo.miembros:", equipoEncontrado.miembros);
-            miembrosEquipo = equipoEncontrado.miembros;
-          } else {
-            // Si no están en el equipo, intentar obtener del evento
+          if (equipoEncontrado?.id) {
             const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
-            console.log("Asignaciones del evento:", asignacionesEventoActual.length);
 
-            // Filtrar asignaciones que pertenezcan al equipo encontrado o al proyecto
-            const asignacionesEquipo = asignacionesEventoActual.filter((asignacion) => {
-              // Caso 1: Coincide por equipo ID
-              if (equipoEncontrado?.id && 
-                  String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)) {
-                return true;
-              }
-              
-              // Caso 2: Coincide por proyecto ID (para equipos sin ID explícito)
-              if (idProyecto && 
-                  String(asignacion.proyecto?.id || asignacion.proyectoId) === String(idProyecto)) {
-                return true;
-              }
-              
-              // Caso 3: El equipo de la asignación referencia al proyecto
-              if (asignacion.equipo?.proyecto?.id && 
-                  String(asignacion.equipo.proyecto.id) === String(idProyecto)) {
-                return true;
-              }
+            asignacionesEquipo = asignacionesEventoActual.filter(
+              (asignacion) =>
+                String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+            );
 
-              return false;
-            });
+            if (asignacionesEquipo.length === 0) {
+              const todasAsignaciones = [];
 
-            console.log("Asignaciones filtradas:", asignacionesEquipo.length);
+              await Promise.all(
+                (eventosData || []).map(async (eventoItem) => {
+                  const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
+                  todasAsignaciones.push(...asignaciones);
+                })
+              );
 
-            miembrosEquipo = asignacionesEquipo
-              .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
-              .filter(Boolean);
+              asignacionesEquipo = todasAsignaciones.filter(
+                (asignacion) =>
+                  String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+              );
+            }
           }
 
-          // Eliminar duplicados
-          const miembrosUnicos = miembrosEquipo.filter(
-            (competidor, index, array) =>
-              array.findIndex((item) => String(item.id) === String(competidor.id)) === index
-          );
+          const miembrosEquipo = asignacionesEquipo
+            .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
+            .filter(Boolean)
+            .filter(
+              (competidor, index, array) =>
+                array.findIndex((item) => String(item.id) === String(competidor.id)) === index
+            );
 
-          console.log("Equipo encontrado:", equipoEncontrado);
-          console.log("Miembros del equipo:", miembrosUnicos);
-          setMiembros(miembrosUnicos);
+          setMiembros(miembrosEquipo);
 
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
           const relaciones = (
