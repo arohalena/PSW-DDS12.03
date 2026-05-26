@@ -200,14 +200,26 @@ function ProjectDetailScreen() {
         if (effectiveEventoId) {
           let asignacionesEquipo = [];
 
-          if (equipoEncontrado?.id) {
-            const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+          // Cargar asignaciones del evento y tratar de resolver miembros tanto por equipo como por proyecto.
+          const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-            asignacionesEquipo = asignacionesEventoActual.filter(
-              (asignacion) =>
-                String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
-            );
-          }
+          // Filtrar asignaciones que pertenezcan al equipo encontrado o directamente al proyecto.
+          asignacionesEquipo = asignacionesEventoActual.filter((asignacion) => {
+            const asignacionEquipoId = String(asignacion.equipo?.id || asignacion.equipoId || "");
+            const asignacionProyectoId = String(asignacion.proyecto?.id || asignacion.proyectoId || "");
+            const equipoId = String(equipoEncontrado?.id || "");
+
+            // Coincide por equipo explícito
+            if (equipoId && asignacionEquipoId && asignacionEquipoId === equipoId) return true;
+
+            // Coincide por proyecto (casos donde no exista equipo pero la asignación referencia el proyecto)
+            if (String(idProyecto) && asignacionProyectoId && asignacionProyectoId === String(idProyecto)) return true;
+
+            // También permitir coincidencias donde la asignación tenga equipo que a su vez referencia el proyecto
+            if (asignacion.equipo && asignacion.equipo.proyecto && String(asignacion.equipo.proyecto.id) === String(idProyecto)) return true;
+
+            return false;
+          });
 
           const miembrosEquipo = asignacionesEquipo
             .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
