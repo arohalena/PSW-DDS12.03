@@ -203,7 +203,7 @@ function ProjectDetailScreen() {
           if (equipoEncontrado?.id) {
             const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-            asignacionesEquipo = asignacionesEventoActual.filter(
+            const asignacionesEquipo = asignacionesEventoActual.filter(
               (asignacion) =>
                 String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
             );
