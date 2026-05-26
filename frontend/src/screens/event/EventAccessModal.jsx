@@ -54,7 +54,7 @@ export default function EventAccessModal({ event, onClose, onSuccess }) {
 
   return (
     <div className="event-access-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="event-access-modal"}>
+      <div className="event-access-modal">
         <div className="event-access-modal-header">
           <div className="event-access-decoration event-access-decoration-one" />
           <div className="event-access-decoration event-access-decoration-two" />
