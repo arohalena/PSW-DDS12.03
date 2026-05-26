@@ -29,12 +29,12 @@ public class ValidadorJurado extends ValidadorVotoBase {
         if (votacion.getTipo() != TipoVotacionMO.JURADO) return;
 
         if (request.usuarioId() == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación es de jurado u organizador; se necesita usuarioId.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación es de jurado; se necesita usuarioId.");
         }
 
         UsuarioMO usuario = usuarioService.obtener(request.usuarioId());
-        if (usuario == null || (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Debes ser jurado u organizador para votar en esta votación.");
+        if (usuario == null || (usuario.getRol() != RolMO.JURADO)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Debes ser jurado para votar en esta votación.");
         }
     }
 }
