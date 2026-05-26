@@ -269,12 +269,17 @@ public class SugerenciaCriterioService {
         );
     }
 
-    String jsonLimpio = outputText
-        .replaceAll("(?s)```json\\s*", "")
-        .replaceAll("(?s)```\\s*", "")
-        .trim();
+    // Extrae el primer bloque JSON válido que encuentre en el texto
+    String jsonLimpio = extraerJson(outputText);
 
-    JsonNode content = objectMapper.readTree(jsonLimpio); // ← usa jsonLimpio, no outputText
+    if (jsonLimpio == null) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_GATEWAY,
+            "No se pudo interpretar la respuesta de IA."
+        );
+    }
+
+    JsonNode content = objectMapper.readTree(jsonLimpio);
     List<SugerenciaCriterioDTO> criterios = new ArrayList<>();
 
     for (JsonNode criterio : content.path("criterios")) {
@@ -293,7 +298,24 @@ public class SugerenciaCriterioService {
     }
 
     return new PlantillaSugerenciaDTO("ia", "IA generativa", criterios);
-}
+    }
+    
+    private String extraerJson(String texto) {
+    int inicio = texto.indexOf('{');
+    int fin = texto.lastIndexOf('}');
+
+    if (inicio == -1 || fin == -1 || fin <= inicio) return null;
+
+    String candidato = texto.substring(inicio, fin + 1);
+
+    try {
+        objectMapper.readTree(candidato);
+        return candidato;
+    } catch (Exception e) {
+        return null;
+    }
+    }
+
 
     private List<SugerenciaCriterioDTO> normalizarCriterios(List<SugerenciaCriterioDTO> criterios) {
         List<SugerenciaCriterioDTO> validos = criterios.stream()
