@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Star,
   Trophy,
+  Image,
   Users,
   Vote,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import {
 import { getRanking } from "../../services/criterioService";
 import { MaterialGallery } from "../../common/MaterialGallery";
 import "../../styles/projects.css";
+import "../../styles/my-project-dashboard.css"
 
 const PROJECT_DETAIL_CACHE_PREFIX = "votify:project-detail:";
 
@@ -680,14 +682,15 @@ function ProjectDetailScreen() {
       ) : null}
 
       <section className="project-balanced-card project-balanced-gallery">
-        <div className="project-balanced-card-heading">
-          <div>
-            <h2>Galeria del proyecto</h2>
-            <p>Capturas, demo y material visual del proyecto.</p>
+        <div className="participant-card-header">
+          <div className="participant-card-title">
+            <Image size={18} />
+            <h3>Galeria del proyecto</h3>
           </div>
         </div>
-
-        <MaterialGallery proyectoId={idProyecto} />
+        <div className="my-project-material-body">
+          <MaterialGallery proyectoId={idProyecto} />
+        </div>
       </section>
 
       <section className="project-balanced-card">

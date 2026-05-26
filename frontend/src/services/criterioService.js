@@ -192,3 +192,25 @@ export async function sugerirPlantillaCriterios(descripcion, tipoEvento){
   return response.json();
 
 }
+
+export async function sugerirCriteriosIA({ descripcion, tipoEvento, eventoNombre, modalidad }){
+
+  const params = new URLSearchParams();
+
+  if (descripcion) params.append("descripcion", descripcion);
+  if (tipoEvento) params.append("tipoEvento", tipoEvento);
+  if (eventoNombre) params.append("eventoNombre", eventoNombre);
+  if (modalidad) params.append("modalidad", modalidad);
+
+  const response = await fetch(`${CRITERIOS_URL}/plantillas/sugerencia-ia?${params}`);
+
+  if (!response.ok){
+
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo generar la sugerencia con IA");
+
+  }
+
+  return response.json();
+
+}

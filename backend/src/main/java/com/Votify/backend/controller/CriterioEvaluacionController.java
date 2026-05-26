@@ -79,4 +79,15 @@ public class CriterioEvaluacionController extends GenericController<CriterioEval
         return sugerenciaService.sugerir(descripcion, tipoEvento);
 
     }
+
+    @GetMapping("/plantillas/sugerencia-ia")
+    public PlantillaSugerenciaDTO sugerirPlantillaIA(
+            @RequestParam(required = false) String descripcion,
+            @RequestParam(required = false) String tipoEvento,
+            @RequestParam(required = false) String eventoNombre,
+            @RequestParam(required = false) String modalidad){
+
+        return sugerenciaService.sugerirConIA(descripcion, tipoEvento, eventoNombre, modalidad);
+
+    }
 }

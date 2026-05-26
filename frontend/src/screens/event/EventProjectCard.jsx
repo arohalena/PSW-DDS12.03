@@ -25,10 +25,6 @@ export default function EventProjectCard({ eventoId, votingId, proyecto, votacio
 
         <div className="event-detail-project-meta">
           <span>
-            <Users size={14} />
-            Equipo participante
-          </span>
-          <span>
             <Star size={14} />
             Evaluación abierta
           </span>

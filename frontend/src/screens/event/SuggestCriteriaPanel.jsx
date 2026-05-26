@@ -2,23 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Lightbulb, Plus } from "lucide-react";
 import {
   getPlantillasCriterios,
+  sugerirCriteriosIA,
   sugerirPlantillaCriterios,
 } from "../../services/criterioService";
 
-function SuggestCriteriaPanel({ tipoEvento, onApply }) {
-  const [plantillas, setPlantillas]           = useState([]);
+function SuggestCriteriaPanel({ tipoEvento, eventoNombre, modalidad, onApply }) {
+  const [plantillas, setPlantillas] = useState([]);
   const [plantillaActual, setPlantillaActual] = useState(null);
-  const [descripcion, setDescripcion]         = useState("");
-  const [seleccionados, setSeleccionados]     = useState(new Set());
-  const [loading, setLoading]                 = useState(true);
-  const [error, setError]                     = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [seleccionados, setSeleccionados] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-
     const init = async () => {
-
       try {
-
         const [todas, inicial] = await Promise.all([
           getPlantillasCriterios(),
           sugerirPlantillaCriterios("", tipoEvento),
@@ -27,52 +26,47 @@ function SuggestCriteriaPanel({ tipoEvento, onApply }) {
         setPlantillas(todas);
         setPlantillaActual(inicial);
         setDescripcion(inicial.label.toLowerCase());
-
       } catch (err) {
-
         setError(err.message);
-
       } finally {
-
         setLoading(false);
-
       }
     };
 
     init();
-
   }, [tipoEvento]);
 
   const sugerencias = useMemo(() => plantillaActual?.criterios || [], [plantillaActual]);
 
-  async function handleSugerir() {
-
+  async function handleSugerirIA() {
     try {
-
       setError("");
-      const detectada = await sugerirPlantillaCriterios(descripcion, tipoEvento);
-      setPlantillaActual(detectada);
+      setGenerating(true);
+
+      const sugerencia = await sugerirCriteriosIA({
+        descripcion,
+        tipoEvento,
+        eventoNombre,
+        modalidad,
+      });
+
+      setPlantillaActual(sugerencia);
       setSeleccionados(new Set());
-
     } catch (err) {
-
-      setError(err.message);
-
+      setError(extraerMensajeError(err.message));
+    } finally {
+      setGenerating(false);
     }
   }
 
   function handlePlantillaClick(plantilla) {
-
     setPlantillaActual(plantilla);
     setDescripcion(plantilla.label.toLowerCase());
     setSeleccionados(new Set());
-
   }
 
   function toggleSelect(idx) {
-
     setSeleccionados((prev) => {
-
       const next = new Set(prev);
 
       if (next.has(idx)) {
@@ -82,25 +76,20 @@ function SuggestCriteriaPanel({ tipoEvento, onApply }) {
       }
 
       return next;
-
     });
   }
 
   function handleAplicar() {
-
     if (seleccionados.size === 0) return;
 
     const elegidos = sugerencias.filter((_, idx) => seleccionados.has(idx));
 
     onApply(elegidos);
     setSeleccionados(new Set());
-
   }
 
   if (loading) {
-
     return <div className="suggest-criteria-panel">Cargando sugerencias...</div>;
-
   }
 
   return (
@@ -111,8 +100,8 @@ function SuggestCriteriaPanel({ tipoEvento, onApply }) {
         </span>
 
         <div>
-          <strong>Sugerencia Automática de Criterios</strong>
-          <p>Obtén criterios recomendados según el tipo de evento</p>
+          <strong>Sugerencia de criterios con IA</strong>
+          <p>Genera una rúbrica real usando la descripción del evento</p>
         </div>
       </div>
 
@@ -123,13 +112,18 @@ function SuggestCriteriaPanel({ tipoEvento, onApply }) {
           <input
             type="text"
             value={descripcion}
-            placeholder="Ej: hackathon, ia, sostenibilidad..."
+            placeholder="Ej: hackathon de salud, IA para educación, feria sostenible..."
             onChange={(e) => setDescripcion(e.target.value)}
           />
 
-          <button type="button" className="suggest-button" onClick={handleSugerir}>
+          <button
+            type="button"
+            className="suggest-button"
+            onClick={handleSugerirIA}
+            disabled={generating || !descripcion.trim()}
+          >
             <Sparkles size={16} />
-            Sugerir
+            {generating ? "Generando..." : "Sugerir con IA"}
           </button>
         </div>
       </label>
@@ -143,7 +137,6 @@ function SuggestCriteriaPanel({ tipoEvento, onApply }) {
 
       <div className="suggest-list">
         {sugerencias.map((criterio, idx) => {
-
           const selected = seleccionados.has(idx);
 
           return (
@@ -195,6 +188,17 @@ function SuggestCriteriaPanel({ tipoEvento, onApply }) {
       </div>
     </div>
   );
+}
+
+function extraerMensajeError(message = "") {
+  if (!message) return "No se pudo generar la sugerencia con IA.";
+
+  try {
+    const parsed = JSON.parse(message);
+    return parsed.message || parsed.error || message;
+  } catch {
+    return message;
+  }
 }
 
 export default SuggestCriteriaPanel;
