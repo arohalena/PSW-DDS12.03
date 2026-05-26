@@ -1,14 +1,13 @@
 import { getEventoByCodigo } from "../../services/eventoService";
 import { getEventAccessStorageKey } from "../../services/sessionService";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Lock,
   ShieldCheck,
   X,
 } from "lucide-react";
 
-import { useModalShortcuts } from "../../common/useModalShortcuts";
 import "../../styles/events.css";
 
 function getEventCode(evento) {
@@ -19,13 +18,6 @@ export default function EventAccessModal({ event, onClose, onSuccess }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
-
-  const formRef = useRef(null);
-  const modalRef = useModalShortcuts({
-    isOpen: true,
-    onClose,
-    onSubmit: () => formRef.current?.requestSubmit(),
-  });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -62,7 +54,7 @@ export default function EventAccessModal({ event, onClose, onSuccess }) {
 
   return (
     <div className="event-access-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="event-access-modal" ref={modalRef}>
+      <div className="event-access-modal"}>
         <div className="event-access-modal-header">
           <div className="event-access-decoration event-access-decoration-one" />
           <div className="event-access-decoration event-access-decoration-two" />
@@ -85,7 +77,7 @@ export default function EventAccessModal({ event, onClose, onSuccess }) {
           </div>
         </div>
 
-        <form className="event-access-modal-body" onSubmit={handleSubmit} ref={formRef}>
+        <form className="event-access-modal-body" onSubmit={handleSubmit}>
           <div className="event-access-info">
             <ShieldCheck size={20} />
             <div>
