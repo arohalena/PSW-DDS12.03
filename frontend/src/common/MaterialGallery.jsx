@@ -107,7 +107,12 @@ export function MaterialGallery({ proyectoId }) {
   }
 
   if (materiales.length === 0) {
-    return <div className="material-gallery-empty">No hay materiales para este proyecto aún.</div>;
+    return (
+      <div className="material-gallery-empty">
+        <div>No hay materiales para este proyecto aún.</div>
+        <div style={{marginTop:8, fontSize:12, color:'#666'}}>proyectoId: {String(proyectoId)}</div>
+      </div>
+    );
   }
 
   return (
