@@ -8,13 +8,13 @@ import {
   MessageCircle,
   Star,
   Trophy,
+  Image,
   Users,
   Vote,
 } from "lucide-react";
 import { getProyectoById, getProyectos } from "../../services/proyectoService";
 import { getEventos } from "../../services/eventoService";
 import { getEquipos } from "../../services/equipoService";
-import { getCompetidoresByEquipo } from "../../services/competidorService";
 import { getComentariosByProyecto } from "../../services/comentarioService";
 import {
   getAsignacionesCompetidorEvento,
@@ -25,8 +25,9 @@ import {
 import { getRanking } from "../../services/criterioService";
 import { MaterialGallery } from "../../common/MaterialGallery";
 import "../../styles/projects.css";
+import "../../styles/my-project-dashboard.css"
 
-const PROJECT_DETAIL_CACHE_PREFIX = "votify:project-detail:v2:";
+const PROJECT_DETAIL_CACHE_PREFIX = "votify:project-detail:";
 
 function initials(name = "", email = "") {
   const base = name || email || "P";
@@ -100,22 +101,6 @@ function resolveEquipoForProject(project, equipos = []) {
     equipos.find((item) => String(item.proyecto?.id) === String(project?.id)) ||
     null
   );
-}
-
-function uniqueCompetidores(competidores = []) {
-  const seen = new Set();
-
-  return competidores.filter((competidor) => {
-    if (!competidor) return false;
-
-    const key = competidor.id
-      ? `id:${competidor.id}`
-      : `email:${String(competidor.email || "").trim().toLowerCase()}`;
-
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 }
 
 function formatScore(value) {
@@ -214,29 +199,42 @@ function ProjectDetailScreen() {
         setEquipo(equipoEncontrado);
         setComentarios(comentariosData || []);
 
-        let miembrosEquipo = [];
+        if (effectiveEventoId) {
+          if (equipoEncontrado?.id) {
+            const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-        if (equipoEncontrado?.id) {
-          const [miembrosPorEquipo, asignacionesEventoActual] = await Promise.all([
-            getCompetidoresByEquipo(equipoEncontrado.id).catch(() => []),
-            effectiveEventoId
-              ? getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => [])
-              : Promise.resolve([]),
-          ]);
-
-          const miembrosPorEvento = asignacionesEventoActual
-            .filter(
+            const asignacionesEquipo = asignacionesEventoActual.filter(
               (asignacion) =>
                 String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
-            )
-            .map((asignacion) => asignacion.competidor || asignacion.competidorMO);
+            );
 
-          miembrosEquipo = uniqueCompetidores([...miembrosPorEvento, ...miembrosPorEquipo]);
-        }
+            if (asignacionesEquipo.length === 0) {
+              const todasAsignaciones = [];
 
-        setMiembros(miembrosEquipo);
+              await Promise.all(
+                (eventosData || []).map(async (eventoItem) => {
+                  const asignaciones = await getAsignacionesCompetidorEvento(eventoItem.id).catch(() => []);
+                  todasAsignaciones.push(...asignaciones);
+                })
+              );
 
-        if (effectiveEventoId) {
+              asignacionesEquipo = todasAsignaciones.filter(
+                (asignacion) =>
+                  String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+              );
+            }
+          }
+
+          const miembrosEquipo = asignacionesEquipo
+            .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
+            .filter(Boolean)
+            .filter(
+              (competidor, index, array) =>
+                array.findIndex((item) => String(item.id) === String(competidor.id)) === index
+            );
+
+          setMiembros(miembrosEquipo);
+
           const votaciones = await getVotacionesByEvento(effectiveEventoId).catch(() => []);
           const relaciones = (
             await Promise.all(
@@ -306,6 +304,7 @@ function ProjectDetailScreen() {
             })
           );
         } else {
+          setMiembros([]);
           setVotacionesProyecto([]);
           setVoteCountsByRelation({});
           setRankingByVotingId({});
@@ -316,7 +315,7 @@ function ProjectDetailScreen() {
               proyecto: proyectoEncontrado,
               evento: eventoEncontrado,
               equipo: equipoEncontrado,
-              miembros: miembrosEquipo,
+              miembros: [],
               votacionesProyecto: [],
               comentarios: comentariosData || [],
               voteCountsByRelation: {},
@@ -606,7 +605,7 @@ function ProjectDetailScreen() {
 
           <div className="project-balanced-members">
             {miembros.length === 0 ? (
-              <p className="project-muted">No hay competidores asignados al equipo.</p>
+              <p className="project-muted">No hay competidores asignados al equipo en este evento.</p>
             ) : (
               miembros.map((miembro) => (
                 <div className="project-balanced-member" key={miembro.id}>
@@ -697,14 +696,15 @@ function ProjectDetailScreen() {
       ) : null}
 
       <section className="project-balanced-card project-balanced-gallery">
-        <div className="project-balanced-card-heading">
-          <div>
-            <h2>Galeria del proyecto</h2>
-            <p>Capturas, demo y material visual del proyecto.</p>
+        <div className="participant-card-header">
+          <div className="participant-card-title">
+            <Image size={18} />
+            <h3>Galeria del proyecto</h3>
           </div>
         </div>
-
-        <MaterialGallery proyectoId={proyecto.id} />
+        <div className="my-project-material-body">
+          <MaterialGallery proyectoId={idProyecto} />
+        </div>
       </section>
 
       <section className="project-balanced-card">
