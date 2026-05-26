@@ -252,43 +252,48 @@ public class SugerenciaCriterioService {
     }
 
     private PlantillaSugerenciaDTO parseAISuggestion(String responseBody) throws JsonProcessingException {
-        JsonNode response = objectMapper.readTree(responseBody);
-        String outputText = response
-            .path("candidates")
-            .path(0)
-            .path("content")
-            .path("parts")
-            .path(0)
-            .path("text")
-            .asText("");
+    JsonNode response = objectMapper.readTree(responseBody);
+    String outputText = response
+        .path("candidates")
+        .path(0)
+        .path("content")
+        .path("parts")
+        .path(0)
+        .path("text")
+        .asText("");
 
-        if (outputText.isBlank()) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_GATEWAY,
-                "La IA no devolvió criterios."
-            );
-        }
-
-        JsonNode content = objectMapper.readTree(outputText);
-        List<SugerenciaCriterioDTO> criterios = new ArrayList<>();
-
-        for (JsonNode criterio : content.path("criterios")) {
-            criterios.add(new SugerenciaCriterioDTO(
-                criterio.path("nombre").asText(),
-                criterio.path("descripcion").asText(),
-                criterio.path("peso").asInt()
-            ));
-        }
-
-        if (criterios.isEmpty()) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_GATEWAY,
-                "La IA no devolvió criterios válidos."
-            );
-        }
-
-        return new PlantillaSugerenciaDTO("ia", "IA generativa", criterios);
+    if (outputText.isBlank()) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_GATEWAY,
+            "La IA no devolvió criterios."
+        );
     }
+
+    String jsonLimpio = outputText
+        .replaceAll("(?s)```json\\s*", "")
+        .replaceAll("(?s)```\\s*", "")
+        .trim();
+
+    JsonNode content = objectMapper.readTree(jsonLimpio); // ← usa jsonLimpio, no outputText
+    List<SugerenciaCriterioDTO> criterios = new ArrayList<>();
+
+    for (JsonNode criterio : content.path("criterios")) {
+        criterios.add(new SugerenciaCriterioDTO(
+            criterio.path("nombre").asText(),
+            criterio.path("descripcion").asText(),
+            criterio.path("peso").asInt()
+        ));
+    }
+
+    if (criterios.isEmpty()) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_GATEWAY,
+            "La IA no devolvió criterios válidos."
+        );
+    }
+
+    return new PlantillaSugerenciaDTO("ia", "IA generativa", criterios);
+}
 
     private List<SugerenciaCriterioDTO> normalizarCriterios(List<SugerenciaCriterioDTO> criterios) {
         List<SugerenciaCriterioDTO> validos = criterios.stream()
