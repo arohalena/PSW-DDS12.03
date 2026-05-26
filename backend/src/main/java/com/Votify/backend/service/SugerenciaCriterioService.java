@@ -195,12 +195,7 @@ public class SugerenciaCriterioService {
         requestBody.put("generationConfig", Map.of(
             "temperature", 0.4,
             "maxOutputTokens", 900,
-            "responseFormat", Map.of(
-                "text", Map.of(
-                    "mimeType", "application/json",
-                    "schema", jsonSchemaFormat()
-                )
-            )
+            "responseMimeType", "application/json"
         ));
 
         String model = URLEncoder.encode(geminiModel, StandardCharsets.UTF_8);
@@ -219,7 +214,7 @@ public class SugerenciaCriterioService {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_GATEWAY,
-                "Gemini no pudo generar la sugerencia de criterios."
+                "Gemini error " + response.statusCode() + ": " + response.body() 
             );
         }
 
