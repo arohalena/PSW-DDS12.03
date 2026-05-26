@@ -200,26 +200,14 @@ function ProjectDetailScreen() {
         if (effectiveEventoId) {
           let asignacionesEquipo = [];
 
-          // Cargar asignaciones del evento y tratar de resolver miembros tanto por equipo como por proyecto.
-          const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
+          if (equipoEncontrado?.id) {
+            const asignacionesEventoActual = await getAsignacionesCompetidorEvento(effectiveEventoId).catch(() => []);
 
-          // Filtrar asignaciones que pertenezcan al equipo encontrado o directamente al proyecto.
-          asignacionesEquipo = asignacionesEventoActual.filter((asignacion) => {
-            const asignacionEquipoId = String(asignacion.equipo?.id || asignacion.equipoId || "");
-            const asignacionProyectoId = String(asignacion.proyecto?.id || asignacion.proyectoId || "");
-            const equipoId = String(equipoEncontrado?.id || "");
-
-            // Coincide por equipo explícito
-            if (equipoId && asignacionEquipoId && asignacionEquipoId === equipoId) return true;
-
-            // Coincide por proyecto (casos donde no exista equipo pero la asignación referencia el proyecto)
-            if (String(idProyecto) && asignacionProyectoId && asignacionProyectoId === String(idProyecto)) return true;
-
-            // También permitir coincidencias donde la asignación tenga equipo que a su vez referencia el proyecto
-            if (asignacion.equipo && asignacion.equipo.proyecto && String(asignacion.equipo.proyecto.id) === String(idProyecto)) return true;
-
-            return false;
-          });
+            asignacionesEquipo = asignacionesEventoActual.filter(
+              (asignacion) =>
+                String(asignacion.equipo?.id || asignacion.equipoId) === String(equipoEncontrado.id)
+            );
+          }
 
           const miembrosEquipo = asignacionesEquipo
             .map((asignacion) => asignacion.competidor || asignacion.competidorMO)
@@ -691,17 +679,16 @@ function ProjectDetailScreen() {
         </section>
       ) : null}
 
-      <article className="my-project-card">
-        <div className="participant-card-header">
-          <div className="participant-card-title">
-            <Image size={18} />
-            <h3>Galeria del proyecto</h3>
+      <section className="project-balanced-card project-balanced-gallery">
+        <div className="project-balanced-card-heading">
+          <div>
+            <h2>Galeria del proyecto</h2>
+            <p>Capturas, demo y material visual del proyecto.</p>
           </div>
         </div>
-        <div className="my-project-material-body">
-          <MaterialGallery proyectoId={proyecto.id} />
-        </div>
-      </article>
+
+        <MaterialGallery proyectoId={proyecto.id} />
+      </section>
 
       <section className="project-balanced-card">
         <div className="project-balanced-card-heading">
