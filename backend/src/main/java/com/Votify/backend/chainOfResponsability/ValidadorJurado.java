@@ -5,10 +5,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.dto.VotoRequest;
+import com.Votify.backend.model.RolMO;
 import com.Votify.backend.model.TipoVotacionMO;
 import com.Votify.backend.model.UsuarioMO;
 import com.Votify.backend.model.VotacionMO;
-import com.Votify.backend.model.RolMO;
 import com.Votify.backend.repository.VotacionRepository;
 import com.Votify.backend.service.UsuarioService;
 
@@ -29,12 +29,12 @@ public class ValidadorJurado extends ValidadorVotoBase {
         if (votacion.getTipo() != TipoVotacionMO.JURADO) return;
 
         if (request.usuarioId() == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación es de jurado; se necesita usuarioId.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta votación es de jurado u organizador; se necesita usuarioId.");
         }
 
         UsuarioMO usuario = usuarioService.obtener(request.usuarioId());
-        if (usuario == null || usuario.getRol() != RolMO.JURADO) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Debes ser jurado para votar en esta votación.");
+        if (usuario == null || (usuario.getRol() != RolMO.JURADO && usuario.getRol() != RolMO.ORGANIZADOR)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Debes ser jurado u organizador para votar en esta votación.");
         }
     }
 }
