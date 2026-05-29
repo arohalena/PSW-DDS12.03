@@ -1,8 +1,8 @@
 // ─── Utilidades compartidas entre todas las vistas de dashboard ───────────────
 
-export function formatDate(value) {
-  if (!value) return "Sin fecha";
-  return new Date(value).toLocaleDateString("es-ES");
+export function formatDate(dateValue) {
+  if (!dateValue) return "Sin fecha";
+  return new Date(dateValue).toLocaleDateString("es-ES");
 }
 
 export function isActiveEvent(evento) {

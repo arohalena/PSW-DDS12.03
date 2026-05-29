@@ -13,6 +13,10 @@ public interface VotoRepository extends JpaRepository<VotoMO, UUID> {
 
     List<VotoMO> findByVotacionProyecto_Id(UUID votacionProyectoId);
 
+    List<VotoMO> findByVotacionProyecto_Votacion_Id(UUID votacionId);
+
+    List<VotoMO> findByVotacionProyecto_Votacion_Evento_Id(UUID eventoId);
+
     long countByVotacionProyecto_Votacion_IdAndAnonTokenHash(UUID votacionId, String anonTokenHash);
 
     boolean existsByVotacionProyecto_IdAndAnonTokenHash(UUID votacionProyectoId, String anonTokenHash);

@@ -567,88 +567,48 @@ function ProjectDetailScreen() {
         </aside>
       </section>
 
-      <section className="project-balanced-content-grid">
-        <article className="project-balanced-card">
-          <div className="project-balanced-card-heading">
-            <div>
-              <h2>Informacion del equipo</h2>
-              <p>Participantes vinculados al proyecto.</p>
-            </div>
+      <article className="project-balanced-card">
+        <div className="project-balanced-card-heading">
+          <div>
+            <h2>Votaciones asociadas</h2>
+            <p>Selecciona una votacion para ver su puntuacion.</p>
           </div>
+          <CheckCircle2 size={22} />
+        </div>
 
-          <div className="project-balanced-team-summary">
-            <div className="project-balanced-team-title">
-              <span>
-                <Trophy size={21} />
-              </span>
-              <strong>{equipo?.nombre || "Sin equipo asignado"}</strong>
-            </div>
-            <span>
-              {miembros.length} miembro{miembros.length === 1 ? "" : "s"} registrado
-              {miembros.length === 1 ? "" : "s"}
-            </span>
-          </div>
+        <div className="project-balanced-votings">
+          {votacionesProyecto.length === 0 ? (
+            <p className="project-muted">Este proyecto todavia no esta asignado a ninguna votacion.</p>
+          ) : (
+            votacionesProyecto.map((relacion) => {
+              const active =
+                String(relacion.votacion?.id) === String(selectedVotingId);
+              const estado = votingStateLabel(relacion.votacion);
+              const estadoClass = `state-${(relacion.votacion?.estadoActual || relacion.votacion?.estado || "ABIERTA").toLowerCase()}`;
 
-          <div className="project-balanced-members">
-            {miembros.length === 0 ? (
-              <p className="project-muted">No hay competidores asignados al equipo en este evento.</p>
-            ) : (
-              miembros.map((miembro) => (
-                <div className="project-balanced-member" key={miembro.id}>
-                  <div>{initials(miembro.nombre, miembro.email)}</div>
-                  <section>
-                    <strong>{miembro.nombre || miembro.email}</strong>
-                    <span>{miembro.email}</span>
-                  </section>
-                </div>
-              ))
-            )}
-          </div>
-        </article>
-
-        <article className="project-balanced-card">
-          <div className="project-balanced-card-heading">
-            <div>
-              <h2>Votaciones asociadas</h2>
-              <p>Selecciona una votacion para ver su puntuacion.</p>
-            </div>
-            <CheckCircle2 size={22} />
-          </div>
-
-          <div className="project-balanced-votings">
-            {votacionesProyecto.length === 0 ? (
-              <p className="project-muted">Este proyecto todavia no esta asignado a ninguna votacion.</p>
-            ) : (
-              votacionesProyecto.map((relacion) => {
-                const active =
-                  String(relacion.votacion?.id) === String(selectedVotingId);
-                const estado = votingStateLabel(relacion.votacion);
-                const estadoClass = `state-${(relacion.votacion?.estadoActual || relacion.votacion?.estado || "ABIERTA").toLowerCase()}`;
-
-                return (
-                  <button
-                    type="button"
-                    className={`project-balanced-voting-row ${active ? "active" : ""}`}
-                    key={relacion.id}
-                    onClick={() => setSelectedVotingId(relacion.votacion?.id || "")}
-                  >
-                    <div>
-                      <strong>{votingLabel(relacion.votacion)}</strong>
-                      <span>
-                        {votingTypeLabel(relacion.votacion?.tipo)} - {modalityLabel(relacion.votacion?.modalidad)}
-                      </span>
-                    </div>
-                    <div className="project-balanced-voting-side">
-                      <span className={`project-state-pill ${estadoClass}`}>{estado}</span>
-                      <strong>{voteCountsByRelation[relacion.id] || 0} votos</strong>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </article>
-      </section>
+              return (
+                <button
+                  type="button"
+                  className={`project-balanced-voting-row ${active ? "active" : ""}`}
+                  key={relacion.id}
+                  onClick={() => setSelectedVotingId(relacion.votacion?.id || "")}
+                >
+                  <div>
+                    <strong>{votingLabel(relacion.votacion)}</strong>
+                    <span>
+                      {votingTypeLabel(relacion.votacion?.tipo)} - {modalityLabel(relacion.votacion?.modalidad)}
+                    </span>
+                  </div>
+                  <div className="project-balanced-voting-side">
+                    <span className={`project-state-pill ${estadoClass}`}>{estado}</span>
+                    <strong>{voteCountsByRelation[relacion.id] || 0} votos</strong>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </article>
 
       {criteriosSeleccionados.length > 0 ? (
         <section className="project-balanced-card">
