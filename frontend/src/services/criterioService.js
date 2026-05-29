@@ -206,11 +206,29 @@ export async function sugerirCriteriosIA({ descripcion, tipoEvento, eventoNombre
 
   if (!response.ok){
 
-    const errorText = await response.text();
-    throw new Error(errorText || "No se pudo generar la sugerencia con IA");
+    throw new Error(await extraerMensajeErrorIA(response));
 
   }
 
   return response.json();
 
+}
+
+async function extraerMensajeErrorIA(response) {
+  const fallback = "Ahora mismo no se puede utilizar la generación por IA. Puedes usar una plantilla de criterios o configurarlos manualmente.";
+  const text = await response.text();
+
+  try {
+    const json = JSON.parse(text);
+    const message = json.message || json.error || fallback;
+    if (/gemini|api[_\s-]?key|invalid_argument|googleapis/i.test(message)) {
+      return fallback;
+    }
+    return message;
+  } catch {
+    if (/gemini|api[_\s-]?key|invalid_argument|googleapis/i.test(text)) {
+      return fallback;
+    }
+    return text || fallback;
+  }
 }
