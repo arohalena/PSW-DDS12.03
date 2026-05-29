@@ -226,7 +226,7 @@ public class VotacionService extends GenericService<VotacionMO> {
             }
         }
 
-        if (ponderada && total.compareTo(new BigDecimal("PORCENTAJE_TOTAL")) != 0) {
+        if (ponderada && total.compareTo(new BigDecimal(PORCENTAJE_TOTAL)) != 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La suma de los pesos debe ser exactamente 100%.");
         }
     }
