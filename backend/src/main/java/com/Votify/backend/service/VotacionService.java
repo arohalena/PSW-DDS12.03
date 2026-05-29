@@ -68,9 +68,8 @@ public class VotacionService extends GenericService<VotacionMO> {
             sincronizarCriterios(evento, request, esPonderada, criteriosExistentes);
         }
 
-        VotacionMO guardada = votacionRepository.save(construirVotacion(request, evento));
+        return votacionRepository.save(construirVotacion(request, evento));
 
-        return guardada;
     }
 
     private void validarRequestCreacion(CrearVotacionRequest request) {
