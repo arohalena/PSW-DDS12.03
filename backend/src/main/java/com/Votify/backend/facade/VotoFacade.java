@@ -25,6 +25,7 @@ import com.Votify.backend.model.VotacionMO;
 import com.Votify.backend.model.VotacionProyectoMO;
 import com.Votify.backend.model.VotoCriterioMO;
 import com.Votify.backend.model.VotoMO;
+import com.Votify.backend.service.AuditoriaVotoService;
 import com.Votify.backend.service.ComentarioService;
 import com.Votify.backend.service.CriterioEvaluacionService;
 import com.Votify.backend.service.PuntuacionCriterioService;
@@ -47,6 +48,7 @@ public class VotoFacade {
     private final PuntuacionCriterioService puntuacionCriterioService;
     private final VotoCriterioService votoCriterioService;
     private final ComentarioService comentarioService;
+    private final AuditoriaVotoService auditoriaVotoService;
 
     @Transactional
     public VotoMO votarSimple(EmitirVotoSimpleRequest request) {
@@ -66,6 +68,7 @@ public class VotoFacade {
         );
 
         comentarioService.guardarComentarioGlobal(vp, request.anonTokenHash(), request.comentario());
+        auditoriaVotoService.registrarVotoSiNoExiste(guardado);
 
         return guardado;
     }
@@ -94,6 +97,7 @@ public class VotoFacade {
         if (request.comentario() != null && !request.comentario().isBlank()) {
             comentarioService.guardarComentarioGlobal(vp, request.anonTokenHash(), request.comentario());
         }
+        auditoriaVotoService.registrarVotoSiNoExiste(guardado);
 
         return guardado;
     }
@@ -183,6 +187,7 @@ public class VotoFacade {
         }
 
         comentarioService.guardarComentarioGlobal(vp, request.anonTokenHash(), request.comentario());
+        auditoriaVotoService.registrarVotoSiNoExiste(guardado);
 
         return guardado;
     }
