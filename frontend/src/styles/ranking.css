@@ -167,6 +167,15 @@
   color: #fff;
 }
 
+.ranking-button-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.ranking-button-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
 .ranking-selectors {
   display: grid;
   grid-template-columns: 1fr 1.5fr;

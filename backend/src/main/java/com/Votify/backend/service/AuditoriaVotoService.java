@@ -13,6 +13,7 @@ import com.Votify.backend.dto.IntegridadAuditoriaDTO;
 import com.Votify.backend.dto.RegistroAuditoriaDTO;
 import com.Votify.backend.dto.ResumenAuditoriaProyectoDTO;
 import com.Votify.backend.model.AuditoriaVotoMO;
+import com.Votify.backend.model.VotoMO;
 import com.Votify.backend.repository.AuditoriaVotoRepository;
 import com.Votify.backend.repository.VotoRepository;
 
@@ -45,8 +46,23 @@ public class AuditoriaVotoService extends GenericService<AuditoriaVotoMO> {
 
     public IntegridadAuditoriaDTO comprobarIntegridad(UUID votacionId) {
         long votos = votoRepository.countByVotacionProyecto_Votacion_Id(votacionId);
-        long auditoria = auditoriaVotoRepository.countByVotacionId(votacionId);
+        long auditoria = auditoriaVotoRepository.countDistinctVotosAuditadosByVotacionId(votacionId);
         return new IntegridadAuditoriaDTO(votacionId, votos, auditoria, votos == auditoria);
+    }
+
+    public void registrarVotoSiNoExiste(VotoMO voto) {
+        if (voto == null || voto.getId() == null || auditoriaVotoRepository.existsByVotoId(voto.getId())) {
+            return;
+        }
+
+        AuditoriaVotoMO auditoria = new AuditoriaVotoMO();
+        auditoria.setVotoId(voto.getId());
+        auditoria.setVotacionId(voto.getVotacionProyecto().getVotacion().getId());
+        auditoria.setProyectoId(voto.getVotacionProyecto().getProyecto().getId());
+        auditoria.setAnonTokenHash(voto.getAnonTokenHash());
+        auditoria.setAccion("INSERT");
+
+        auditoriaVotoRepository.save(auditoria);
     }
 
     public List<RegistroAuditoriaDTO> registrosPorEvento(UUID eventoId, UUID votacionId) {
