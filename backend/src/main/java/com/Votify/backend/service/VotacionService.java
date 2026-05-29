@@ -33,6 +33,8 @@ public class VotacionService extends GenericService<VotacionMO> {
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
     private final VotacionDeletionService votacionDeletionService;
 
+    private final int PORCENTAJE_TOTAL = 100;
+
     @Override
     protected JpaRepository<VotacionMO, UUID> getRepository() {
         return votacionRepository;
@@ -107,12 +109,12 @@ public class VotacionService extends GenericService<VotacionMO> {
                 "Para votación MIXTA debes especificar el peso porcentual de popular y jurado.");
         }
 
-        if (popular < 0 || popular > 100 || jurado < 0 || jurado > 100) {
+        if (popular < 0 || popular > PORCENTAJE_TOTAL || jurado < 0 || jurado > PORCENTAJE_TOTAL) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Los porcentajes deben estar entre 0 y 100.");
         }
 
-        if (popular + jurado != 100) {
+        if (popular + jurado != PORCENTAJE_TOTAL) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Los porcentajes de popular y jurado deben sumar exactamente 100.");
         }
@@ -224,7 +226,7 @@ public class VotacionService extends GenericService<VotacionMO> {
             }
         }
 
-        if (ponderada && total.compareTo(new BigDecimal("100")) != 0) {
+        if (ponderada && total.compareTo(new BigDecimal("PORCENTAJE_TOTAL")) != 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La suma de los pesos debe ser exactamente 100%.");
         }
     }
