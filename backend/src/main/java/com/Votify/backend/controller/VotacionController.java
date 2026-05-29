@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.Votify.backend.command.CommandInvoker;
+import com.Votify.backend.command.VotifyCommandFactory;
 import com.Votify.backend.dto.CrearVotacionRequest;
 import com.Votify.backend.model.CriterioEvaluacionMO;
 import com.Votify.backend.model.VotacionMO;
@@ -26,6 +28,8 @@ public class VotacionController extends GenericController<VotacionMO> {
 
     private final VotacionService votacionService;
     private final CriterioEvaluacionService criterioEvaluacionService;
+    private final CommandInvoker commandInvoker;
+    private final VotifyCommandFactory commandFactory;
 
     @Override
     protected GenericService<VotacionMO> getService() {
@@ -72,21 +76,21 @@ public class VotacionController extends GenericController<VotacionMO> {
     @PostMapping("/{id}/cerrar")
     public VotacionMO cerrar(@PathVariable UUID id) {
 
-        return votacionService.cerrar(id);
+        return commandInvoker.execute(commandFactory.cerrarVotacion(id));
         
     }
 
     @PostMapping("/{id}/publicar-resultados")
     public VotacionMO publicarResultados(@PathVariable UUID id) {
 
-        return votacionService.publicarResultados(id);
+        return commandInvoker.execute(commandFactory.publicarResultados(id));
 
     }
 
     @PostMapping("/{id}/retirar-resultados")
     public VotacionMO retirarPublicacionResultados(@PathVariable UUID id) {
 
-        return votacionService.retirarPublicacionResultados(id);
+        return commandInvoker.execute(commandFactory.retirarPublicacionResultados(id));
 
     }
 }

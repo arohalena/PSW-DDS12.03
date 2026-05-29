@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.Votify.backend.command.CommandInvoker;
+import com.Votify.backend.command.VotifyCommandFactory;
 import com.Votify.backend.dto.EmitirEvaluacionRequest;
 import com.Votify.backend.dto.EmitirVotoPuntosRequest;
 import com.Votify.backend.dto.EmitirVotoSimpleRequest;
@@ -25,6 +27,8 @@ import lombok.RequiredArgsConstructor;
 public class VotoController {
 
     private final VotoFacade votoFacade;
+    private final CommandInvoker commandInvoker;
+    private final VotifyCommandFactory commandFactory;
 
     @GetMapping
     public List<VotoMO> getAll() {
@@ -65,16 +69,16 @@ public class VotoController {
 
     @PostMapping("/simple")
     public VotoMO votarSimple(@RequestBody EmitirVotoSimpleRequest request) {
-        return votoFacade.votarSimple(request);
+        return commandInvoker.execute(commandFactory.emitirVotoSimple(request));
     }
 
     @PostMapping("/multicriterio")
     public VotoMO votarMulticriterio(@RequestBody EmitirEvaluacionRequest request) {
-        return votoFacade.votarMulticriterio(request);
+        return commandInvoker.execute(commandFactory.emitirVotoMulticriterio(request));
     }
 
     @PostMapping("/puntos")
     public VotoMO votarPuntos(@RequestBody EmitirVotoPuntosRequest request) {
-        return votoFacade.votarPuntos(request);
+        return commandInvoker.execute(commandFactory.emitirVotoPuntos(request));
     }
 }
