@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.Votify.backend.dto.IntegridadAuditoriaDTO;
 import com.Votify.backend.dto.RegistroAuditoriaDTO;
@@ -31,11 +32,15 @@ public class AuditoriaVotoService extends GenericService<AuditoriaVotoMO> {
         return auditoriaVotoRepository;
     }
 
+    @Transactional
     public List<AuditoriaVotoMO> findByVotacion(UUID votacionId) {
+        registrarVotosFaltantesPorVotacion(votacionId);
         return auditoriaVotoRepository.findByVotacionId(votacionId);
     }
 
+    @Transactional
     public List<ResumenAuditoriaProyectoDTO> resumenPorProyecto(UUID votacionId) {
+        registrarVotosFaltantesPorVotacion(votacionId);
         return auditoriaVotoRepository.contarPorProyecto(votacionId).stream()
             .map(row -> new ResumenAuditoriaProyectoDTO(
                 (UUID) row[0],
@@ -44,7 +49,9 @@ public class AuditoriaVotoService extends GenericService<AuditoriaVotoMO> {
             .toList();
     }
 
+    @Transactional
     public IntegridadAuditoriaDTO comprobarIntegridad(UUID votacionId) {
+        registrarVotosFaltantesPorVotacion(votacionId);
         long votos = votoRepository.countByVotacionProyecto_Votacion_Id(votacionId);
         long auditoria = auditoriaVotoRepository.countDistinctVotosAuditadosByVotacionId(votacionId);
         return new IntegridadAuditoriaDTO(votacionId, votos, auditoria, votos == auditoria);
@@ -65,10 +72,31 @@ public class AuditoriaVotoService extends GenericService<AuditoriaVotoMO> {
         auditoriaVotoRepository.save(auditoria);
     }
 
+    @Transactional
     public List<RegistroAuditoriaDTO> registrosPorEvento(UUID eventoId, UUID votacionId) {
+        if (votacionId != null) {
+            registrarVotosFaltantesPorVotacion(votacionId);
+        } else {
+            registrarVotosFaltantesPorEvento(eventoId);
+        }
+
         return auditoriaVotoRepository.findEnriquecidosByEvento(eventoId, votacionId).stream()
             .map(this::mapearRegistro)
             .toList();
+    }
+
+    private void registrarVotosFaltantesPorVotacion(UUID votacionId) {
+        if (votacionId == null) return;
+
+        votoRepository.findByVotacionProyecto_Votacion_Id(votacionId)
+            .forEach(this::registrarVotoSiNoExiste);
+    }
+
+    private void registrarVotosFaltantesPorEvento(UUID eventoId) {
+        if (eventoId == null) return;
+
+        votoRepository.findByVotacionProyecto_Votacion_Evento_Id(eventoId)
+            .forEach(this::registrarVotoSiNoExiste);
     }
 
     private RegistroAuditoriaDTO mapearRegistro(Object[] row) {
