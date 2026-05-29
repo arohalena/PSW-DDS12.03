@@ -33,12 +33,15 @@ class EstrategiaRankingMulticriterioTest {
 
     @InjectMocks private EstrategiaRankingMulticriterio estrategia;
 
-    @Test
-    void calcular_promedioSinPonderar_esMediaDeCriterios() {
+    private CriterioEvaluacionMO criterio(String nombre, int peso) {
+        CriterioEvaluacionMO c = new CriterioEvaluacionMO();
+        c.setId(UUID.randomUUID());
+        c.setNombre(nombre);
+        c.setPeso(peso);
+        return c;
+    }
 
-        UUID eventoId = UUID.randomUUID();
-        UUID votacionId = UUID.randomUUID();
-
+    private VotacionProyectoMO nuevoVp() {
         ProyectoMO proyecto = new ProyectoMO();
         proyecto.setId(UUID.randomUUID());
         proyecto.setNombre("Proyecto A");
@@ -46,19 +49,22 @@ class EstrategiaRankingMulticriterioTest {
         VotacionProyectoMO vp = new VotacionProyectoMO();
         vp.setId(UUID.randomUUID());
         vp.setProyecto(proyecto);
+        return vp;
+    }
+
+    @Test
+    void calcular_promedioSinPonderar_esMediaDeCriterios() {
+
+        UUID eventoId = UUID.randomUUID();
+        UUID votacionId = UUID.randomUUID();
+
+        VotacionProyectoMO vp = nuevoVp();
 
         EquipoMO equipo = new EquipoMO();
         equipo.setNombre("Equipo X");
 
-        CriterioEvaluacionMO c1 = new CriterioEvaluacionMO();
-        c1.setId(UUID.randomUUID());
-        c1.setNombre("Innovación");
-        c1.setPeso(60);
-
-        CriterioEvaluacionMO c2 = new CriterioEvaluacionMO();
-        c2.setId(UUID.randomUUID());
-        c2.setNombre("Viabilidad");
-        c2.setPeso(40);
+        CriterioEvaluacionMO c1 = criterio("Innovación", 60);
+        CriterioEvaluacionMO c2 = criterio("Viabilidad", 40);
 
         when(criterioRepository.findByEvento_IdOrderByOrdenAsc(eventoId)).thenReturn(List.of(c1, c2));
         when(votacionProyectoRepository.findByVotacion_Id(votacionId)).thenReturn(List.of(vp));
@@ -66,7 +72,7 @@ class EstrategiaRankingMulticriterioTest {
         when(votoRepository.countByVotacionProyecto_Id(vp.getId())).thenReturn(4L);
         when(puntuacionRepository.promedioByCriterioAndVotacionProyecto(c1.getId(), vp.getId())).thenReturn(8.0);
         when(puntuacionRepository.promedioByCriterioAndVotacionProyecto(c2.getId(), vp.getId())).thenReturn(6.0);
-        when(equipoRepository.findByProyecto_Id(proyecto.getId())).thenReturn(equipo);
+        when(equipoRepository.findByProyecto_Id(vp.getProyecto().getId())).thenReturn(equipo);
 
         List<Map<String, Object>> ranking = estrategia.calcular(eventoId, votacionId);
 
@@ -82,5 +88,57 @@ class EstrategiaRankingMulticriterioTest {
         assertThat(criterios.get(0).get("ponderado")).isNull();
         assertThat(criterios.get(0).get("promedio")).isEqualTo(8.0);
         assertThat(criterios.get(1).get("promedio")).isEqualTo(6.0);
+    }
+
+    @Test
+    void calcular_sinCriterios_puntuacionTotalEsCeroYNoHayDivisionPorCero() {
+
+        UUID eventoId = UUID.randomUUID();
+        UUID votacionId = UUID.randomUUID();
+
+        VotacionProyectoMO vp = nuevoVp();
+
+        when(criterioRepository.findByEvento_IdOrderByOrdenAsc(eventoId)).thenReturn(List.of());
+        when(votacionProyectoRepository.findByVotacion_Id(votacionId)).thenReturn(List.of(vp));
+        when(votoRepository.countDistinctVotantesByEventoId(eventoId)).thenReturn(4L);
+        when(votoRepository.countByVotacionProyecto_Id(vp.getId())).thenReturn(4L);
+        when(equipoRepository.findByProyecto_Id(vp.getProyecto().getId())).thenReturn(null);
+
+        List<Map<String, Object>> ranking = estrategia.calcular(eventoId, votacionId);
+
+        Map<String, Object> entry = ranking.get(0);
+        assertThat(entry.get("puntuacionTotal")).isEqualTo(0.0);
+        assertThat((List<?>) entry.get("criterios")).isEmpty();
+    }
+
+    @Test
+    void calcular_promedioNull_seTrataComoCero() {
+
+        UUID eventoId = UUID.randomUUID();
+        UUID votacionId = UUID.randomUUID();
+
+        VotacionProyectoMO vp = nuevoVp();
+
+        CriterioEvaluacionMO c1 = criterio("Innovación", 50);
+        CriterioEvaluacionMO c2 = criterio("Viabilidad", 50);
+
+        when(criterioRepository.findByEvento_IdOrderByOrdenAsc(eventoId)).thenReturn(List.of(c1, c2));
+        when(votacionProyectoRepository.findByVotacion_Id(votacionId)).thenReturn(List.of(vp));
+        when(votoRepository.countDistinctVotantesByEventoId(eventoId)).thenReturn(2L);
+        when(votoRepository.countByVotacionProyecto_Id(vp.getId())).thenReturn(2L);
+        // c1 sin puntuaciones (null) -> 0 ; c2 = 6
+        when(puntuacionRepository.promedioByCriterioAndVotacionProyecto(c1.getId(), vp.getId())).thenReturn(null);
+        when(puntuacionRepository.promedioByCriterioAndVotacionProyecto(c2.getId(), vp.getId())).thenReturn(6.0);
+        when(equipoRepository.findByProyecto_Id(vp.getProyecto().getId())).thenReturn(null);
+
+        List<Map<String, Object>> ranking = estrategia.calcular(eventoId, votacionId);
+
+        Map<String, Object> entry = ranking.get(0);
+        // media = (0 + 6) / 2 = 3.0
+        assertThat(entry.get("puntuacionTotal")).isEqualTo(3.0);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> criterios = (List<Map<String, Object>>) entry.get("criterios");
+        assertThat(criterios.get(0).get("promedio")).isEqualTo(0.0);
     }
 }
