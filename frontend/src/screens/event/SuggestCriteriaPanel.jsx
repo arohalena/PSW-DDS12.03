@@ -128,7 +128,7 @@ function SuggestCriteriaPanel({ tipoEvento, eventoNombre, modalidad, onApply }) 
         </div>
       </label>
 
-      {error ? <div className="feedback-card error-box">{error}</div> : null}
+      {error ? <div className="feedback-card error-box suggest-ai-error">{error}</div> : null}
 
       <div className="suggest-hint">
         <Lightbulb size={14} />
