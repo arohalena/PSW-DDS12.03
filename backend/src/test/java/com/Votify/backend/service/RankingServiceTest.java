@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.ModoRankingMO;
@@ -160,6 +162,56 @@ class RankingServiceTest {
         assertThat(resultado.get(0).get("proyectoNombre")).isEqualTo("Alto");
         assertThat(resultado.get(0).get("posicion")).isEqualTo(1);
         assertThat(resultado.get(1).get("proyectoNombre")).isEqualTo("Bajo");
+        assertThat(resultado.get(1).get("posicion")).isEqualTo(2);
+    }
+
+    @Test
+    void calcularRanking_votacionInexistente_lanza404YNoUsaNingunaEstrategia() {
+
+        UUID eventoId = UUID.randomUUID();
+        UUID votacionId = UUID.randomUUID();
+
+        when(votacionRepository.findById(votacionId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> rankingService.calcularRanking(eventoId, votacionId))
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("votación");
+
+        verify(estrategiaSimple, never()).calcular(eventoId, votacionId);
+        verify(estrategiaPuntos, never()).calcular(eventoId, votacionId);
+        verify(estrategiaMulticriterio, never()).calcular(eventoId, votacionId);
+        verify(estrategiaMulticriterioPonderada, never()).calcular(eventoId, votacionId);
+    }
+
+    @Test
+    void calcularRanking_empateEnPuntuacion_conservaOrdenDeEntradaYNumeraSecuencialmente() {
+
+        UUID eventoId = UUID.randomUUID();
+        UUID votacionId = UUID.randomUUID();
+        VotacionMO votacion = votacionConModalidad(ModalidadVotacionMO.SIMPLE);
+
+        Map<String, Object> primero = new LinkedHashMap<>();
+        primero.put("proyectoNombre", "Primero");
+        primero.put("puntuacionTotal", 5.0);
+
+        Map<String, Object> segundo = new LinkedHashMap<>();
+        segundo.put("proyectoNombre", "Segundo");
+        segundo.put("puntuacionTotal", 5.0);
+
+        List<Map<String, Object>> rankingMock = new ArrayList<>();
+        rankingMock.add(primero);
+        rankingMock.add(segundo);
+
+        when(votacionRepository.findById(votacionId)).thenReturn(Optional.of(votacion));
+        when(estrategiaSimple.calcular(eventoId, votacionId)).thenReturn(rankingMock);
+
+        List<Map<String, Object>> resultado = rankingService.calcularRanking(eventoId, votacionId);
+
+        assertThat(resultado).hasSize(2);
+        // Empate: el sort es estable, se mantiene el orden de entrada
+        assertThat(resultado.get(0).get("proyectoNombre")).isEqualTo("Primero");
+        assertThat(resultado.get(0).get("posicion")).isEqualTo(1);
+        assertThat(resultado.get(1).get("proyectoNombre")).isEqualTo("Segundo");
         assertThat(resultado.get(1).get("posicion")).isEqualTo(2);
     }
 }

@@ -41,4 +41,22 @@ class CreadorProyectoTest {
         assertThat(pIA.getClass()).isNotEqualTo(pSos.getClass());
         assertThat(pIA.categoria()).isNotEqualTo(pSos.categoria());
     }
+
+    @Test
+    void proyectoIA_camposPersistenSinModificar() {
+        Proyecto p = new CreadorProyectoIA().create("Nombre", "Descripción larga");
+
+        assertThat(p.getNombre()).isEqualTo("Nombre");
+        assertThat(p.getDescripcion()).isEqualTo("Descripción larga");
+        assertThat(p.categoria()).isEqualTo(TipoCategoriaMO.IA);
+    }
+
+    @Test
+    void creadores_aceptanNombresVacios() {
+        // El creador NO valida nada — eso es del Facade. Si valida, hay un bug.
+        Proyecto p = new CreadorProyectoSostenibilidad().create("", "");
+
+        assertThat(p.getNombre()).isEmpty();
+        assertThat(p.categoria()).isEqualTo(TipoCategoriaMO.SOSTENIBILIDAD);
+    }
 }
