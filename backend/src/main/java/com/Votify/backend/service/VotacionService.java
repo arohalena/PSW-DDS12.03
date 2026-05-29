@@ -72,6 +72,11 @@ public class VotacionService extends GenericService<VotacionMO> {
     }
 
     private void validarRequestCreacion(CrearVotacionRequest request) {
+        validarCamposBasicosCreacion(request);
+        validarPesosVotacionMixta(request);
+    }
+
+    private void validarCamposBasicosCreacion(CrearVotacionRequest request) {
         if (request.eventoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El evento es requerido");
         }
@@ -87,22 +92,29 @@ public class VotacionService extends GenericService<VotacionMO> {
         if (request.modalidad() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La modalidad de votación es requerida");
         }
+    }
 
-        if (request.tipo() == com.Votify.backend.model.TipoVotacionMO.MIXTA) {
-            Integer popular = request.pesoPorcentajePopular();
-            Integer jurado  = request.pesoPorcentajeJurado();
-            if (popular == null || jurado == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Para votación MIXTA debes especificar el peso porcentual de popular y jurado.");
-            }
-            if (popular < 0 || popular > 100 || jurado < 0 || jurado > 100) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Los porcentajes deben estar entre 0 y 100.");
-            }
-            if (popular + jurado != 100) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Los porcentajes de popular y jurado deben sumar exactamente 100.");
-            }
+    private void validarPesosVotacionMixta(CrearVotacionRequest request) {
+        if (request.tipo() != com.Votify.backend.model.TipoVotacionMO.MIXTA) {
+            return;
+        }
+
+        Integer popular = request.pesoPorcentajePopular();
+        Integer jurado  = request.pesoPorcentajeJurado();
+
+        if (popular == null || jurado == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Para votación MIXTA debes especificar el peso porcentual de popular y jurado.");
+        }
+
+        if (popular < 0 || popular > 100 || jurado < 0 || jurado > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Los porcentajes deben estar entre 0 y 100.");
+        }
+
+        if (popular + jurado != 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Los porcentajes de popular y jurado deben sumar exactamente 100.");
         }
     }
 
