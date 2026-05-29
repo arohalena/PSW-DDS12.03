@@ -9,9 +9,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -47,7 +47,22 @@ class RankingServiceTest {
     @Mock private EstrategiaRankingMulticriterio estrategiaMulticriterio;
     @Mock private EstrategiaRankingMulticriterioPonderada estrategiaMulticriterioPonderada;
 
-    @InjectMocks private RankingService rankingService;
+    private RankingService rankingService;
+
+    @BeforeEach
+    void setUp() {
+        rankingService = new RankingService(
+            votacionProyectoRepository,
+            votoRepository,
+            equipoRepository,
+            votacionRepository,
+            usuarioRepository,
+            estrategiaSimple,
+            estrategiaPuntos,
+            estrategiaMulticriterio,
+            estrategiaMulticriterioPonderada
+        );
+    }
 
     private VotacionMO votacionConModalidad(ModalidadVotacionMO modalidad) {
         VotacionMO v = new VotacionMO();
