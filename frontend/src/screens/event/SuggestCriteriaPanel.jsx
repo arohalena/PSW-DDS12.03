@@ -128,7 +128,7 @@ function SuggestCriteriaPanel({ tipoEvento, eventoNombre, modalidad, onApply }) 
         </div>
       </label>
 
-      {error ? <div className="feedback-card error-box">{error}</div> : null}
+      {error ? <div className="feedback-card error-box suggest-ai-error">{error}</div> : null}
 
       <div className="suggest-hint">
         <Lightbulb size={14} />
@@ -191,11 +191,20 @@ function SuggestCriteriaPanel({ tipoEvento, eventoNombre, modalidad, onApply }) 
 }
 
 function extraerMensajeError(message = "") {
-  if (!message) return "No se pudo generar la sugerencia con IA.";
+  const fallback = "Ahora mismo no se puede utilizar la generación por IA. Puedes usar una plantilla de criterios o configurarlos manualmente.";
+
+  if (!message) return fallback;
+
+  if (/gemini|api[_\s-]?key|invalid_argument|googleapis/i.test(message)) {
+    return fallback;
+  }
 
   try {
     const parsed = JSON.parse(message);
-    return parsed.message || parsed.error || message;
+    const parsedMessage = parsed.message || parsed.error || fallback;
+    return /gemini|api[_\s-]?key|invalid_argument|googleapis/i.test(parsedMessage)
+      ? fallback
+      : parsedMessage;
   } catch {
     return message;
   }

@@ -18,16 +18,9 @@ import com.Votify.backend.model.EstadoVotacionMO;
 import com.Votify.backend.model.EventoMO;
 import com.Votify.backend.model.ModalidadVotacionMO;
 import com.Votify.backend.model.VotacionMO;
-import com.Votify.backend.model.VotacionProyectoMO;
-import com.Votify.backend.model.VotoMO;
-import com.Votify.backend.repository.ComentarioRepository;
 import com.Votify.backend.repository.CriterioEvaluacionRepository;
 import com.Votify.backend.repository.EventoRepository;
-import com.Votify.backend.repository.PuntuacionCriterioRepository;
-import com.Votify.backend.repository.VotacionProyectoRepository;
 import com.Votify.backend.repository.VotacionRepository;
-import com.Votify.backend.repository.VotoCriterioRepository;
-import com.Votify.backend.repository.VotoRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,12 +31,9 @@ public class VotacionService extends GenericService<VotacionMO> {
     private final VotacionRepository votacionRepository;
     private final EventoRepository eventoRepository;
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
+    private final VotacionDeletionService votacionDeletionService;
 
-    private final VotacionProyectoRepository votacionProyectoRepository;
-    private final ComentarioRepository comentarioRepository;
-    private final PuntuacionCriterioRepository puntuacionCriterioRepository;
-    private final VotoRepository votoRepository;
-    private final VotoCriterioRepository votoCriterioRepository;
+    private final int PORCENTAJE_TOTAL = 100;
 
     @Override
     protected JpaRepository<VotacionMO, UUID> getRepository() {
@@ -78,12 +68,16 @@ public class VotacionService extends GenericService<VotacionMO> {
             sincronizarCriterios(evento, request, esPonderada, criteriosExistentes);
         }
 
-        VotacionMO guardada = votacionRepository.save(construirVotacion(request, evento));
+        return votacionRepository.save(construirVotacion(request, evento));
 
-        return guardada;
     }
 
     private void validarRequestCreacion(CrearVotacionRequest request) {
+        validarCamposBasicosCreacion(request);
+        validarPesosVotacionMixta(request);
+    }
+
+    private void validarCamposBasicosCreacion(CrearVotacionRequest request) {
         if (request.eventoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El evento es requerido");
         }
@@ -99,22 +93,29 @@ public class VotacionService extends GenericService<VotacionMO> {
         if (request.modalidad() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La modalidad de votación es requerida");
         }
+    }
 
-        if (request.tipo() == com.Votify.backend.model.TipoVotacionMO.MIXTA) {
-            Integer popular = request.pesoPorcentajePopular();
-            Integer jurado  = request.pesoPorcentajeJurado();
-            if (popular == null || jurado == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Para votación MIXTA debes especificar el peso porcentual de popular y jurado.");
-            }
-            if (popular < 0 || popular > 100 || jurado < 0 || jurado > 100) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Los porcentajes deben estar entre 0 y 100.");
-            }
-            if (popular + jurado != 100) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Los porcentajes de popular y jurado deben sumar exactamente 100.");
-            }
+    private void validarPesosVotacionMixta(CrearVotacionRequest request) {
+        if (request.tipo() != com.Votify.backend.model.TipoVotacionMO.MIXTA) {
+            return;
+        }
+
+        Integer popular = request.pesoPorcentajePopular();
+        Integer jurado  = request.pesoPorcentajeJurado();
+
+        if (popular == null || jurado == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Para votación MIXTA debes especificar el peso porcentual de popular y jurado.");
+        }
+
+        if (popular < 0 || popular > PORCENTAJE_TOTAL || jurado < 0 || jurado > PORCENTAJE_TOTAL) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Los porcentajes deben estar entre 0 y 100.");
+        }
+
+        if (popular + jurado != PORCENTAJE_TOTAL) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Los porcentajes de popular y jurado deben sumar exactamente 100.");
         }
     }
 
@@ -224,7 +225,7 @@ public class VotacionService extends GenericService<VotacionMO> {
             }
         }
 
-        if (ponderada && total.compareTo(new BigDecimal("100")) != 0) {
+        if (ponderada && total.compareTo(new BigDecimal(PORCENTAJE_TOTAL)) != 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La suma de los pesos debe ser exactamente 100%.");
         }
     }
@@ -288,61 +289,12 @@ public class VotacionService extends GenericService<VotacionMO> {
     @Override
     @Transactional
     public void delete(UUID id) {
-        VotacionMO votacion = votacionRepository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votación no encontrada."));
-
-        validarVotacionSinVotos(id);
-
-        for (VotacionProyectoMO votacionProyecto : votacionProyectoRepository.findByVotacion_Id(id)) {
-            comentarioRepository.deleteAll(
-                comentarioRepository.findByVotacionProyecto_Id(votacionProyecto.getId())
-            );
-
-            puntuacionCriterioRepository.deleteAll(
-                puntuacionCriterioRepository.findByVotacionProyecto_Id(votacionProyecto.getId())
-            );
-
-            for (VotoMO voto : votoRepository.findByVotacionProyecto_Id(votacionProyecto.getId())) {
-                votoCriterioRepository.deleteAll(
-                    votoCriterioRepository.findByVoto_Id(voto.getId())
-                );
-
-                votoRepository.delete(voto);
-            }
-
-            votacionProyectoRepository.delete(votacionProyecto);
-        }
-
-        votacionRepository.delete(votacion);
+        votacionDeletionService.eliminar(id);
     }
 
-    public boolean tieneVotos(UUID id) {
-        return votoRepository.countByVotacionProyecto_Votacion_Id(id) > 0;
-    }
-
-    public void validarVotacionSinVotos(UUID id) {
-        if (tieneVotos(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "No se puede eliminar una votacion con votos emitidos. Los votos son inmutables.");
-        }
-    }
-
-    public void validarEventoSinVotos(UUID eventoId) {
-        for (VotacionMO votacion : votacionRepository.findByEvento_Id(eventoId)) {
-            if (tieneVotos(votacion.getId())) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "No se puede eliminar un evento con votaciones que ya tienen votos emitidos.");
-            }
-        }
-    }
-   
     @Transactional
     public void eliminarTodasDeEvento(UUID eventoId) {
-        validarEventoSinVotos(eventoId);
-        
-        for (VotacionMO v : votacionRepository.findByEvento_Id(eventoId)) {
-            delete(v.getId());
-        }
+        votacionDeletionService.eliminarTodasDeEvento(eventoId);
     }
 
     public void validarVotacionesDelEvento(List<UUID> votacionIds, UUID eventoId) {

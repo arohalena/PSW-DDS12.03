@@ -24,6 +24,7 @@ import {
   getAsignacionesCompetidorEvento,
   getVotacionesByEvento,
   publicarResultadosVotacion,
+  retirarResultadosVotacion,
 } from "../../services/votacionService";
 import {
   getRanking,
@@ -491,6 +492,30 @@ function RankingScreen() {
     }
   };
 
+  const handleRetirarResultados = async () => {
+    if (!puedeEditar || !votacionId || !resultadosPublicados) return;
+
+    try {
+      setPublicandoResultados(true);
+      setError("");
+      setAviso("");
+
+      const votacionActualizada = await retirarResultadosVotacion(votacionId);
+      setVotaciones((prev) =>
+        prev.map((v) => (v.id === votacionId ? { ...v, ...votacionActualizada } : v))
+      );
+
+      const data = await getRanking(eventoId, votacionId);
+      const ordenado = [...(data || [])].sort((a, b) => Number(a.posicion || 0) - Number(b.posicion || 0));
+      setRanking(ordenado);
+      setAviso("La publicación de resultados se ha retirado correctamente.");
+    } catch (err) {
+      setError(err.message || "No se pudo retirar la publicación de resultados.");
+    } finally {
+      setPublicandoResultados(false);
+    }
+  };
+
   const exportarResultados = () => {
     if (rankingFiltrado.length === 0) return;
 
@@ -725,6 +750,18 @@ function RankingScreen() {
               >
                 <CheckCircle size={16} />
                 {publicandoResultados ? "Publicando..." : "Publicar resultados"}
+              </button>
+            )}
+
+            {puedeEditar && resultadosPublicados && (
+              <button
+                type="button"
+                className="ranking-button ranking-button-danger"
+                onClick={handleRetirarResultados}
+                disabled={publicandoResultados}
+              >
+                <AlertTriangle size={16} />
+                {publicandoResultados ? "Retirando..." : "Retirar publicación"}
               </button>
             )}
 

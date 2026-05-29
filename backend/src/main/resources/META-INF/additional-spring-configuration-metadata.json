@@ -1,0 +1,36 @@
+{
+  "properties": [
+    {
+      "name": "admin.email",
+      "type": "java.lang.String",
+      "description": "Email del usuario administrador inicial."
+    },
+    {
+      "name": "admin.password",
+      "type": "java.lang.String",
+      "description": "Contraseña del usuario administrador inicial."
+    },
+    {
+      "name": "admin.nombre",
+      "type": "java.lang.String",
+      "description": "Nombre del usuario administrador inicial."
+    },
+    {
+      "name": "gemini.api-key",
+      "type": "java.lang.String",
+      "description": "Clave privada de Gemini usada para generar sugerencias de criterios con IA."
+    },
+    {
+      "name": "gemini.model",
+      "type": "java.lang.String",
+      "description": "Modelo de Gemini usado para generar sugerencias de criterios.",
+      "defaultValue": "gemini-2.5-flash"
+    },
+    {
+      "name": "gemini.generate-url",
+      "type": "java.lang.String",
+      "description": "URL de la API generateContent de Gemini.",
+      "defaultValue": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    }
+  ]
+}
